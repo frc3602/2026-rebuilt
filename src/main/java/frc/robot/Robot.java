@@ -10,13 +10,18 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.LimelightHelpers;
+import frc.robot.subsystems.CommandSwerveDrivetrain;
 import edu.wpi.first.wpilibj.shuffleboard.*;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.smartdashboard.*;
+import frc.robot.Telemetry;
 
 public class Robot extends TimedRobot {
     private Command m_autonomousCommand;
 
     private final RobotContainer m_robotContainer;
+
+    double tx;
+    double ms;
 
     /* log and replay timestamp and joystick data */
     private final HootAutoReplay m_timeAndJoystickReplay = new HootAutoReplay()
@@ -28,11 +33,14 @@ public class Robot extends TimedRobot {
     }
 
     @Override
+    public void robotInit() {
+
+    }
+
+    @Override
     public void robotPeriodic() {
         m_timeAndJoystickReplay.update();
         CommandScheduler.getInstance().run();
-        double tx = LimelightHelpers.getTX("primary");
-        SmartDashboard.putNumber("my heading", tx);
     }
 
     @Override
@@ -58,6 +66,8 @@ public class Robot extends TimedRobot {
 
     @Override
     public void autonomousExit() {}
+
+
 
     @Override
     public void teleopInit() {
