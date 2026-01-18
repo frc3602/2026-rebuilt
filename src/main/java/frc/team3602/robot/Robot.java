@@ -1,19 +1,21 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
+/*
+ * Copyright (C) 2026 Team 3602 All rights reserved. This work is
+ * licensed under the terms of the MIT license which can be found
+ * in the root directory of this project.
+ */
 
-package frc.robot;
+package frc.team3602.robot;
 
 import com.ctre.phoenix6.HootAutoReplay;
 
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import frc.robot.LimelightHelpers;
-import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.team3602.robot.LimelightHelpers;
+import frc.team3602.robot.Telemetry;
+import frc.team3602.robot.subsystems.CommandSwerveDrivetrain;
 import edu.wpi.first.wpilibj.shuffleboard.*;
 import edu.wpi.first.wpilibj.smartdashboard.*;
-import frc.robot.Telemetry;
 
 public class Robot extends TimedRobot {
     private Command m_autonomousCommand;
@@ -25,8 +27,8 @@ public class Robot extends TimedRobot {
 
     /* log and replay timestamp and joystick data */
     private final HootAutoReplay m_timeAndJoystickReplay = new HootAutoReplay()
-        .withTimestampReplay()
-        .withJoystickReplay();
+            .withTimestampReplay()
+            .withJoystickReplay();
 
     public Robot() {
         m_robotContainer = new RobotContainer();
@@ -44,13 +46,16 @@ public class Robot extends TimedRobot {
     }
 
     @Override
-    public void disabledInit() {}
+    public void disabledInit() {
+    }
 
     @Override
-    public void disabledPeriodic() {}
+    public void disabledPeriodic() {
+    }
 
     @Override
-    public void disabledExit() {}
+    public void disabledExit() {
+    }
 
     @Override
     public void autonomousInit() {
@@ -62,12 +67,12 @@ public class Robot extends TimedRobot {
     }
 
     @Override
-    public void autonomousPeriodic() {}
+    public void autonomousPeriodic() {
+    }
 
     @Override
-    public void autonomousExit() {}
-
-
+    public void autonomousExit() {
+    }
 
     @Override
     public void teleopInit() {
@@ -77,10 +82,12 @@ public class Robot extends TimedRobot {
     }
 
     @Override
-    public void teleopPeriodic() {}
+    public void teleopPeriodic() {
+    }
 
     @Override
-    public void teleopExit() {}
+    public void teleopExit() {
+    }
 
     @Override
     public void testInit() {
@@ -88,11 +95,14 @@ public class Robot extends TimedRobot {
     }
 
     @Override
-    public void testPeriodic() {}
+    public void testPeriodic() {
+    }
 
     @Override
-    public void testExit() {}
+    public void testExit() {
+    }
 
     @Override
-    public void simulationPeriodic() {}
+    public void simulationPeriodic() {
+    }
 }

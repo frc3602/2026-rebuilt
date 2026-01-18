@@ -1,28 +1,37 @@
-package frc.robot.subsystems;
+/*
+ * Copyright (C) 2026 Team 3602 All rights reserved. This work is
+ * licensed under the terms of the MIT license which can be found
+ * in the root directory of this project.
+ */
+
+package frc.team3602.robot.subsystems;
+
+import static frc.team3602.robot.Constants.*;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import static frc.robot.Constants.*;
 
-public class ShooterSubsystem extends SubsystemBase{
+public class ShooterSubsystem extends SubsystemBase {
     private double shooter1Speed = 0;
     private double shooter2Speed = 0;
     private double feederSpeed = 0;
-    //Shooter Motors
+    // Shooter Motors
     private static TalonFX shootermotor1;
     private static TalonFX shootermotor2;
-    //Feeding Motor
+    // Feeding Motor
     private static TalonFX feedermoter;
-    //Constructor
+
+    // Constructor
     public ShooterSubsystem() {
         shootermotor1 = new TalonFX(SHOOTER_MOTER_1_ID);
         shootermotor2 = new TalonFX(SHOOTER_MOTER_2_ID);
         feedermoter = new TalonFX(FEEDER_MOTER_ID);
     }
-        //Go
+
+    // Go
     public Command setShootSpeed(double shootSpeed) {
         return runOnce(() -> {
             shootermotor1.set(shootSpeed);
@@ -39,7 +48,7 @@ public class ShooterSubsystem extends SubsystemBase{
         });
     }
 
-        //Stop
+    // Stop
     public Command stopShooter(double shootStop) {
         return runOnce(() -> {
             shootermotor1.set(0);
@@ -54,8 +63,8 @@ public class ShooterSubsystem extends SubsystemBase{
             feederSpeed = 0;
         });
     }
-    
-    //Periodic
+
+    // Periodic
     @Override
     public void periodic() {
         SmartDashboard.putNumber("Shooter1 Speed", shooter1Speed);
