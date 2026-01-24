@@ -1,0 +1,37 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Drive to Shoot Right"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Drive to Intake Human Right"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Drive to Exit Human Right"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Drive to Climb Right"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": "Right Autons",
+  "choreoAuto": false
+}

@@ -1,0 +1,31 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Drive to Shoot Left"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Drive to Intake"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Drive to Climb Left"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": "Left Autons",
+  "choreoAuto": false
+}
