@@ -69,7 +69,7 @@ public class RobotContainer {
                 .whileTrue(drivetrain.applyRequest(() -> 
                         drive.withVelocityX(joystick.getLeftY() * MaxSpeed)                                                                            // (forward)
                         .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                        .withRotationalRate(-drivetrain.rAlignment()) // Drive counterclockwise with negative X (left)
+                        .withRotationalRate(drivetrain.rAlignment()) // Drive counterclockwise with negative X (left)
                 ));
         joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
         joystick.b().whileTrue(drivetrain.applyRequest(
