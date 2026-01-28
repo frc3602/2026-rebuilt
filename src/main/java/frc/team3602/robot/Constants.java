@@ -12,10 +12,12 @@ public final class Constants {
         public final static int kShooterMotor1ID = 5;
         public final static int kShooterMotor2ID = 6;
         public final static int kFeederMotorID = 7;
+        public final static int kHoodMotorID = 12;
 
         //Motor Speeds
         public final static double kShooterSpeed = .5;
         public final static double kFeederMotorSpeed = .5;
+        public final static double hoodMaxVolt = .4;
     }
 
     public final class IntakeConstants {

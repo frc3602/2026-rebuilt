@@ -51,9 +51,20 @@ public class Vision {
     double angleToGoalDegrees = limelightMountAngleDegrees + targetOffsetAngle_Vertical;
     double angleToGoalRadians = angleToGoalDegrees * (3.14159 / 180.0);
     //calculated Distance
-    public double getDist() {
+    
+//    public double getTargetDistance(
+//         cameraAngle = 61.964,
+//         cameraHeight = 0,
+//         targetAngle = 90,
+//         targetHeight = 0;
+// ) Double {
+//     return (targetHeight - cameraHeight) / Math.tan(Math.toRadians(cameraAngle + targetAngle))
+// }
+
+public double getDist() {
         return (goalHeightInches - limelightLensHeightInches) / Math.tan(angleToGoalRadians);
     }
+
 
     public double getPoseY() {
         return LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-primary").pose.getY();

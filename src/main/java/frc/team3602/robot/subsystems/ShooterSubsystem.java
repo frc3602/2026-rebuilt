@@ -10,24 +10,37 @@ import static frc.team3602.robot.Constants.*;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.team3602.robot.Constants;
 import frc.team3602.robot.Constants.ShooterConstants;
+import frc.team3602.robot.Vision;
+
 
 public class ShooterSubsystem extends SubsystemBase {
+
+    double voltage;
+    public final Vision vision = new Vision();
 
     // Shooter Motors
     private static TalonFX shootermotor1;
     private static TalonFX shootermotor2;
+    private static TalonFX hoodmotor;
     // Feeding Motor
     private static TalonFX feedermoter;
+
+    //PID
+    private PIDController hoodController = new PIDController(0, 0, 0);
 
     // Constructor
     public ShooterSubsystem() {
         shootermotor1 = new TalonFX(ShooterConstants.kShooterMotor1ID);
         shootermotor2 = new TalonFX(ShooterConstants.kShooterMotor2ID);
         feedermoter = new TalonFX(ShooterConstants.kFeederMotorID);
+        hoodmotor = new TalonFX(ShooterConstants.kHoodMotorID);
+
     }
 
     // Go
@@ -55,6 +68,25 @@ public class ShooterSubsystem extends SubsystemBase {
         return runOnce(() -> {
             feedermoter.set(0);
         });
+    }
+
+    public Command hoodConstraints() {
+        return run(() -> {
+
+            if (vision.getTurretHasTarget()) {
+            
+            }
+            if (voltage > ShooterConstants.hoodMaxVolt){
+                voltage = ShooterConstants.hoodMaxVolt;
+            }
+            else if (voltage < -ShooterConstants.hoodMaxVolt){
+                voltage = -ShooterConstants.hoodMaxVolt;
+            }
+            hoodmotor.setVoltage(voltage);
+        }
+
+        );
+
     }
 
     // Periodic

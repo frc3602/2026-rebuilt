@@ -20,7 +20,10 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.team3602.robot.Vision;
 import frc.team3602.robot.generated.TunerConstants;
 import frc.team3602.robot.subsystems.CommandSwerveDrivetrain;
+import frc.team3602.robot.subsystems.ShooterSubsystem;
 import frc.team3602.robot.subsystems.TurretSubsystem;
+import frc.team3602.robot.subsystems.SpindexerSubsystem;
+import frc.team3602.robot.subsystems.IntakeSubsystem;
 
 public class RobotContainer {
 
@@ -42,11 +45,17 @@ public class RobotContainer {
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     public final TurretSubsystem turret = new TurretSubsystem();
+    public final ShooterSubsystem shooter = new ShooterSubsystem();
+    public final SpindexerSubsystem spindexer = new SpindexerSubsystem();
+    public final IntakeSubsystem intake = new IntakeSubsystem();
 
     public RobotContainer() {
         turret.setDefaultCommand(turret.track());
+        shooter.setDefaultCommand(shooter.hoodConstraints());
         configureBindings();
     }
+
+
 
     private void configureBindings() {
         // Note that X is defined as forward according to WPILib convention,
