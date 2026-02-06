@@ -60,9 +60,9 @@ public class Vision {
         return LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-primary").pose.getY();
     }
     
-
-    public double getTurretIMUy() {
-        return LimelightHelpers.getIMUData("limelight-turret").gyroY;
+    //Retrieve IMU Pitch. - for Up instead of Down 
+    public double getTurretIMUPitch() {
+        return -LimelightHelpers.getIMUData("limelight-turret").Pitch;
     }
 
 

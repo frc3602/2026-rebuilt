@@ -61,7 +61,7 @@ public class RobotContainer {
         // and Y is defined as to the left according to WPILib convention.
         drivetrain.setDefaultCommand(
                 // Drivetrain will execute this command periodically
-                drivetrain.applyRequest(() -> drive.withVelocityX(joystick.getLeftY() * MaxSpeed) // Drive forward with
+                drivetrain.applyRequest(() -> drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with
                                                                                                   // negative Y
                                                                                                   // (forward)
                         .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
@@ -88,7 +88,8 @@ public class RobotContainer {
         joystick.povLeft().whileTrue(turret.setAngle(-30));
         joystick.povDown().whileTrue(turret.testTurret(0));
         joystick.rightBumper().whileTrue(turret.turretAlignment());
-       // joystick.y().whileTrue(shooter.setShootVoltage(10)).whileFalse(shooter.stopShooter(0.0));
+        joystick.y().whileTrue(shooter.setShootSpeed(10)).whileFalse(shooter.stopShooter(0.0));
+
 
 
         // Run SysId routines when holding back/start and X/Y.

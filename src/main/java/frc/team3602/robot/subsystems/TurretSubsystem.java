@@ -50,7 +50,7 @@ public class TurretSubsystem extends SubsystemBase {
 
     // Controllers *These PID values need to be changed*
     private final PIDController turretController = new PIDController(.06, 0.0, 0);
-    private final PIDController aimController = new PIDController(.015, 0.0, 0);
+    private final PIDController aimController = new PIDController(.04, 0.0, 0);
 
     private final Feedforwards aimFf = new Feedforwards(0);
 
@@ -171,10 +171,10 @@ public class TurretSubsystem extends SubsystemBase {
         SmartDashboard.putNumber("GetTy", vision.getTY());
         // turretFeedForward = turnFeedforward();
         SmartDashboard.putNumber("Turret Feedforward", turretFeedForward); // Bruh
-        SmartDashboard.putNumber("Turret IMUy", vision.getTurretIMUy());
+        SmartDashboard.putNumber("Turret IMUPitch", vision.getTurretIMUPitch());
         SmartDashboard.putNumber("GetDistance", vision.getDist());
-        angle = Math.toRadians(vision.getTY() + vision.getTurretIMUy());
-        distance =(62.0 - 16.75) / Math.tan(angle);
+        angle = Math.toRadians(vision.getTY() + vision.getTurretIMUPitch());
+        distance =(66.25 - 16.75) / Math.tan(angle);
         SmartDashboard.putNumber("counculatedDist", distance);
     }
 
