@@ -174,7 +174,7 @@ public class TurretSubsystem extends SubsystemBase {
         SmartDashboard.putNumber("Turret IMUPitch", vision.getTurretIMUPitch());
         SmartDashboard.putNumber("GetDistance", vision.getDist());
         angle = Math.toRadians(vision.getTY() + vision.getTurretIMUPitch());
-        distance =(66.25 - 16.75) / Math.tan(angle);
+        distance =(44.25 - 15.625) / Math.tan(angle);
         SmartDashboard.putNumber("counculatedDist", distance);
     }
 

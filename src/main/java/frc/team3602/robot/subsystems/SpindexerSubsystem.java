@@ -27,21 +27,27 @@ public class SpindexerSubsystem extends SubsystemBase {
 
     /* Commands */
 
-    public Command setSpindexerSpeed(double SpindexerSpeed) {
-        return runOnce(() -> {
-            spindexerMotor.set(spindexerConstants.kSpindexerMotorSpeed);
-        });
-    }
 
     public Command stopSpindexer() {
         return runOnce(() -> {
-            spindexerMotor.set(spindexerConstants.kStopSpindexerMotorSpeed);
+            spindexerMotor.set(0);
+            receiveMotor.set(0);
         });
     }
 
-    public Command setReceiveSpeed(double ReceiveSpeed) {
+    public Command setSpindexerReceive() {
         return runOnce(() -> {
             receiveMotor.set(spindexerConstants.kRecieveFuelSpeed);
+            spindexerMotor.set(spindexerConstants.kSpindexerMotorSpeed);
+            
+
+        });
+    }
+
+    public Command setFasterSpindexerReceive() {
+        return runOnce(() -> {
+            receiveMotor.set(spindexerConstants.kRecieveFuelSpeed*2);
+            spindexerMotor.set(spindexerConstants.kSpindexerMotorSpeed*2);
         });
     }
 
@@ -49,8 +55,8 @@ public class SpindexerSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        SmartDashboard.putData("spindexer speed", (Sendable) spindexerMotor.getVelocity());
-        SmartDashboard.putData("spindexer speed", (Sendable) spindexerMotor.getMotorVoltage());
+        // SmartDashboard.putData("spindexer sped", (Sendable) spindexerMotor.getVelocity());
+        // SmartDashboard.putData("spindexer speed", (Sendable) spindexerMotor.getMotorVoltage());
     }
 
 }

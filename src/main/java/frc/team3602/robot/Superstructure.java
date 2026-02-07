@@ -39,22 +39,22 @@ public class Superstructure {
             return intakeSubsys.reverseIntake().withTimeout(.2);}
 
             //Shooter
-        public Command ShootBall() {
-            return shooterSubsys.setShootSpeed(ShooterConstants.kFeederMotorSpeed).withTimeout(1);
-        }
-        public Command FeedBall() {
-            return shooterSubsys.setFeederSpeed(ShooterConstants.kFeederMotorSpeed).withTimeout(1);
-        }
+        // public Command ShootBall() {
+        //     return shooterSubsys.setShootSpeed(ShooterConstants.kFeederMotorSpeed).withTimeout(1);
+        // }
+        // public Command FeedBall() {
+        //     return shooterSubsys.setFeederSpeed(ShooterConstants.kFeederMotorSpeed).withTimeout(1);
+        // }
 
-        //Turret
+        // //Turret
 
-        //Spindexer
-        public Command RunSpindexer() {
-            return spindexerSubsys.setSpindexerSpeed(spindexerConstants.kSpindexerMotorSpeed).withTimeout(1);
-        }
+        // //Spindexer
+        // public Command RunSpindexer() {
+        //     return spindexerSubsys.setSpindexerSpeed(spindexerConstants.kSpindexerMotorSpeed).withTimeout(1);
+        // }
 
-        public Command ReceiveBall() {
-            return spindexerSubsys.setSpindexerSpeed(spindexerConstants.kRecieveFuelSpeed).withTimeout(1);
-        }
+        // public Command ReceiveBall() {
+        //     return spindexerSubsys.setSpindexerSpeed(spindexerConstants.kRecieveFuelSpeed).withTimeout(1);
+        // }
     }
 

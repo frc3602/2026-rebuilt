@@ -11,11 +11,9 @@ public final class Constants {
         //Motor ID
         public final static int kShooterMotor1ID = 5;
         public final static int kShooterMotor2ID = 6;
-        public final static int kFeederMotorID = 7;
 
         //Motor Speeds
         public final static double kShooterSpeed = .75;
-        public final static double kFeederMotorSpeed = .5;
     }
 
     public final class IntakeConstants {
@@ -38,13 +36,12 @@ public final class Constants {
 
     public final class spindexerConstants {
         //Motor ID
-        public final static int kSpindexerMotorID = 10;
+        public final static int kSpindexerMotorID = 12;
         public final static int kReceiveMotorID = 11;
 
-        public final static double kSpindexerMotorSpeed = 1;
-        public final static double kStopSpindexerMotorSpeed = 0;
+        public final static double kSpindexerMotorSpeed = -.3;
 
-        public final static double kRecieveFuelSpeed = 1;
+        public final static double kRecieveFuelSpeed = -0.4;
     }
 
     

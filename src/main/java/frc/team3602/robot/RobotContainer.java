@@ -48,7 +48,7 @@ public class RobotContainer {
 //     public final IntakeSubsystem intake = new IntakeSubsystem();
     public final ShooterSubsystem shooter = new ShooterSubsystem();
     public final TurretSubsystem turret = new TurretSubsystem(drivetrain);
-//     public final SpindexerSubsystem spindexer = new SpindexerSubsystem();
+    public final SpindexerSubsystem spindexer = new SpindexerSubsystem();
 //     public final Superstructure superStructure = new Superstructure(intake, shooter, spindexer, turret, drivetrain);
 
     public RobotContainer() {
@@ -89,6 +89,8 @@ public class RobotContainer {
         joystick.povDown().whileTrue(turret.testTurret(0));
         joystick.rightBumper().whileTrue(turret.turretAlignment());
         joystick.y().whileTrue(shooter.setShootSpeed(10)).whileFalse(shooter.stopShooter(0.0));
+         joystick.x().whileTrue(spindexer.setSpindexerReceive()).whileFalse(spindexer.stopSpindexer());
+        joystick.povUp().whileTrue(spindexer.setFasterSpindexerReceive()).whileFalse(spindexer.stopSpindexer());
 
 
 

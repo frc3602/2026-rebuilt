@@ -21,13 +21,13 @@ public class ShooterSubsystem extends SubsystemBase {
     private static TalonFX shootermotor1;
     private static TalonFX shootermotor2;
     // Feeding Motor
-    private static TalonFX feedermoter;
+    // private static TalonFX feedermoter;
 
     // Constructor
     public ShooterSubsystem() {
         shootermotor1 = new TalonFX(ShooterConstants.kShooterMotor1ID);
         shootermotor2 = new TalonFX(ShooterConstants.kShooterMotor2ID);
-        feedermoter = new TalonFX(ShooterConstants.kFeederMotorID);
+        // feedermoter = new TalonFX(ShooterConstants.kFeederMotorID);
     }
 
     // Go
@@ -46,11 +46,11 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
 
-    public Command setFeederSpeed(double speed) {
-        return runOnce(() -> {
-            feedermoter.set(ShooterConstants.kFeederMotorSpeed);
-        });
-    }
+    // public Command setFeederSpeed(double speed) {
+    //     return runOnce(() -> {
+    //         feedermoter.set(ShooterConstants.kFeederMotorSpeed);
+    //     });
+    // }
 
     // Stop
     public Command stopShooter(double shootStop) {
@@ -59,17 +59,17 @@ public class ShooterSubsystem extends SubsystemBase {
         });
     }
 
-    public Command stopFeeder(double feedStop) {
-        return runOnce(() -> {
-            feedermoter.set(0);
-        });
-    }
+    // public Command stopFeeder(double feedStop) {
+    //     return runOnce(() -> {
+    //         feedermoter.set(0);
+    //     });
+    // }
 
     // Periodic
     @Override
     public void periodic() {
         SmartDashboard.putNumber("Shooter1 Speed", ShooterConstants.kShooterSpeed);
         SmartDashboard.putNumber("Shooter2 Speed", ShooterConstants.kShooterSpeed);
-        SmartDashboard.putNumber("Feeder Speed", ShooterConstants.kFeederMotorSpeed);
+        // SmartDashboard.putNumber("Feeder Speed", ShooterConstants.kFeederMotorSpeed);
     }
 }
