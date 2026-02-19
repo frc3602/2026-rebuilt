@@ -96,6 +96,57 @@ public class TurretSubsystem extends SubsystemBase {
         });
     }
 
+public double calculateBallTimeOfFlight() {
+    //Ball Velocity m/s TODO: Must Change
+    double ballVelocity = 1;
+    //Ball Launch Angle degrees TODO: Must Change
+    double launchAngleDegrees = 15;
+    //Shooter Height meters
+    double shooterHeight = 0.4826;
+    //Target Height meters
+    double targetHeight = 1.8288;
+    // Convert launch angle from degrees to radians (Java's trig functions use radians)
+    double launchAngleRadians = Math.toRadians(launchAngleDegrees);
+    
+    // Calculate the vertical component of velocity
+    double vVertical = ballVelocity * Math.sin(launchAngleRadians);
+    
+    // Calculate height difference (positive if target is higher than shooter)
+    double heightDifference = targetHeight - shooterHeight;
+    
+    // Gravity constant (m/s²)
+    double g = 9.81;
+    
+    // Calculate the part inside the square root: (v sin(θ))² + 2gh
+    double insideSqrt = Math.pow(vVertical, 2) + 2 * g * heightDifference;
+    
+    // Take the square root (ensure it's not negative)
+    double sqrtTerm = Math.sqrt(Math.max(0, insideSqrt));
+    
+    // Complete formula: t = (vVertical + sqrtTerm) / g
+    double ballTimeOfFlight = (vVertical + sqrtTerm) / g;
+    
+    return ballTimeOfFlight;
+}
+
+public double calculateTurretOffset() {
+    //Pull RobotVelocity m/s
+    double robotVelocity = drivetrainSubsys.getState().Speeds.vxMetersPerSecond;
+
+    //Pull Time of Flight Calculation
+    double timeOfFlight = this.calculateBallTimeOfFlight();
+
+    // Calculate the lateral distance the robot moves during flight
+    double lateralMovement = robotVelocity * timeOfFlight;
+    
+    // Calculate the angle offset using arctan
+    double offsetRadians = Math.atan2(lateralMovement, vision.getDist());
+    
+    // Convert to degrees if needed (most turret code uses degrees)
+    return Math.toDegrees(offsetRadians);
+}
+
+
     double voltage;
 
     double aimOutput;

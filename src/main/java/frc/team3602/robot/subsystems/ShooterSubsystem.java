@@ -10,16 +10,32 @@ import static frc.team3602.robot.Constants.*;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+
+import frc.team3602.robot.Vision;
 import frc.team3602.robot.Constants.ShooterConstants;
+
 
 public class ShooterSubsystem extends SubsystemBase {
 
     // Shooter Motors
     private static TalonFX shootermotor1;
     private static TalonFX shootermotor2;
+<<<<<<< Updated upstream
+=======
+
+    //Instantiating Classes
+    public Vision vision;
+
+    //Interpolation Table Instantiation
+    public double shootLerpSpeed;
+    public final InterpolatingDoubleTreeMap shootLerp = new InterpolatingDoubleTreeMap();
+
+>>>>>>> Stashed changes
     // Feeding Motor
     // private static TalonFX feedermoter;
 
@@ -31,10 +47,10 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     // Go
-    public Command setShootSpeed(double shootSpeed) {
+    public Command setShootSpeed() {
         return runOnce(() -> {
-            shootermotor1.set(shootSpeed);
-            shootermotor2.set(-shootSpeed); 
+            shootermotor1.set(shootLerpSpeed);
+            shootermotor2.set(-shootLerpSpeed); 
         });
     }
 
@@ -72,5 +88,31 @@ public class ShooterSubsystem extends SubsystemBase {
         SmartDashboard.putNumber("Shooter1 Speed", ShooterConstants.kShooterSpeed);
         SmartDashboard.putNumber("Shooter2 Speed", ShooterConstants.kShooterSpeed);
         // SmartDashboard.putNumber("Feeder Speed", ShooterConstants.kFeederMotorSpeed);
+<<<<<<< Updated upstream
+=======
+        shootLerpSpeed = shootLerp.get(vision.getDist() / 12);
+>>>>>>> Stashed changes
     }
+    private void configShooterSubsys() {
+    // Interpolation table config
+    shootLerp.put(1.0, 0.57);
+    shootLerp.put(2.0, 0.59);
+    shootLerp.put(3.0, 0.61);
+    shootLerp.put(4.0, 0.63);
+    shootLerp.put(5.0, 0.65);
+    shootLerp.put(6.0, 0.67);
+    shootLerp.put(7.0, 0.69);
+    shootLerp.put(8.0, 0.71);
+    shootLerp.put(9.0, 0.73); 
+    shootLerp.put(10.0,0.75);
+    shootLerp.put(11.0,0.77);
+    shootLerp.put(12.0,0.79);
+    shootLerp.put(13.0,0.81);
+    shootLerp.put(14.0,0.83);
+    shootLerp.put(15.0,0.85);
+    shootLerp.put(16.0,0.87);
+    shootLerp.put(17.0,0.89);
+    shootLerp.put(18.0,0.9);
+    }
+
 }
