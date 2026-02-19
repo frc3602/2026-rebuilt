@@ -87,7 +87,7 @@ public class RobotContainer {
         joystick.povLeft().whileTrue(turret.setAngle(-10));
         //joystick.povDown().whileTrue(turret.testTurret(0));
         joystick.rightBumper().whileTrue(turret.turretAlignment());
-        joystick.y().whileTrue(shooter.setShootSpeed(10)).whileFalse(shooter.stopShooter());
+        joystick.y().whileTrue(shooter.setShootSpeed()).whileFalse(shooter.stopShooter());
         joystick.povDown().whileTrue(intake.dropIntake());
         joystick.povUp().whileTrue(intake.setIntakeSpeed()).onFalse(intake.stopIntake());
         // joystick.x().whileTrue(spindexer.setSpindexerReceive()).whileFalse(spindexer.stopSpindexer());

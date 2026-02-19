@@ -25,8 +25,6 @@ public class ShooterSubsystem extends SubsystemBase {
     // Shooter Motors
     private static TalonFX shootermotor1;
     private static TalonFX shootermotor2;
-<<<<<<< Updated upstream
-=======
 
     //Instantiating Classes
     public Vision vision;
@@ -34,8 +32,6 @@ public class ShooterSubsystem extends SubsystemBase {
     //Interpolation Table Instantiation
     public double shootLerpSpeed;
     public final InterpolatingDoubleTreeMap shootLerp = new InterpolatingDoubleTreeMap();
-
->>>>>>> Stashed changes
     // Feeding Motor
     // private static TalonFX feedermoter;
 
@@ -88,10 +84,9 @@ public class ShooterSubsystem extends SubsystemBase {
         SmartDashboard.putNumber("Shooter1 Speed", ShooterConstants.kShooterSpeed);
         SmartDashboard.putNumber("Shooter2 Speed", ShooterConstants.kShooterSpeed);
         // SmartDashboard.putNumber("Feeder Speed", ShooterConstants.kFeederMotorSpeed);
-<<<<<<< Updated upstream
-=======
+
         shootLerpSpeed = shootLerp.get(vision.getDist() / 12);
->>>>>>> Stashed changes
+
     }
     private void configShooterSubsys() {
     // Interpolation table config
