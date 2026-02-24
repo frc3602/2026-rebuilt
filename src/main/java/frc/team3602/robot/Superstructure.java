@@ -24,6 +24,7 @@ public class Superstructure {
     public SpindexerSubsystem spindexerSubsys;
     public TurretSubsystem turretSubsys;
     public CommandSwerveDrivetrain commandSwerveDrivetrainsubsys;
+    public Vision vision;
 
      public Superstructure(IntakeSubsystem intakeSubsys, ShooterSubsystem shooterSubsys, SpindexerSubsystem spindexerSubsys,
             TurretSubsystem turretSubsys, CommandSwerveDrivetrain commandSwerveDrivetrainSubsys) {
@@ -35,11 +36,14 @@ public class Superstructure {
 
         /*Score Commands*/
             public Command shootBall1() {
-                return Commands.sequence(
-                    spindexerSubsys.setSpindexerReceive(),
-                    shooterSubsys.setShootVoltage(12)
+                return Commands.parallel(
+                    turretSubsys.track(),
+                Commands.sequence(
+                    if(vision.getHasTarget()) 
+                    return 
+                    shooterSubsys.setShootVoltage(12).withTimeout(1.28).andThen(spindexerSubsys.setSpindexerReceive())
+                )
                 );
-
             }
             //Intake
          public Command IntakeBall() {

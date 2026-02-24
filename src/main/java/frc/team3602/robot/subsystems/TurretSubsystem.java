@@ -96,11 +96,19 @@ public class TurretSubsystem extends SubsystemBase {
         });
     }
 
+//Ball Velocity
+public double ballVelocity() {
+    /*Ball Velocity = Motor Speed *  */
+    double ballv = 1 * Math.PI * 4;
+    return ballv;
+}    
+
+//Calculating amount of Time the Ball is in the air
 public double calculateBallTimeOfFlight() {
-    //Ball Velocity m/s TODO: Must Change
-    double ballVelocity = 1;
+    //Ball Velocity m/s
+    double ballVelocity = ballVelocity();
     //Ball Launch Angle degrees TODO: Must Change
-    double launchAngleDegrees = 15;
+    double launchAngleDegrees = 35;
     //Shooter Height meters
     double shooterHeight = 0.4826;
     //Target Height meters
@@ -129,7 +137,8 @@ public double calculateBallTimeOfFlight() {
     return ballTimeOfFlight;
 }
 
-public double calculateTurretOffset() {
+//Calculating the Robot Velocity offset of the turret
+public double velocityTurretOffset() {
     //Pull RobotVelocity m/s
     double robotVelocity = drivetrainSubsys.getState().Speeds.vxMetersPerSecond;
 
@@ -140,10 +149,21 @@ public double calculateTurretOffset() {
     double lateralMovement = robotVelocity * timeOfFlight;
     
     // Calculate the angle offset using arctan
-    double offsetRadians = Math.atan2(lateralMovement, vision.getDist());
+    double offsetRadians = Math.atan2(lateralMovement, vision.getDist() * 0.0254);
     
     // Convert to degrees if needed (most turret code uses degrees)
     return Math.toDegrees(offsetRadians);
+}
+
+public double rotationTurretOffset() {
+    double targetDistance = vision.getDist() * 0.0254;
+
+    double xdegrees = Math.asin(11.68 / targetDistance);
+
+    double rotationOffset = 90 - xdegrees;
+
+    return rotationOffset;
+
 }
 
 
