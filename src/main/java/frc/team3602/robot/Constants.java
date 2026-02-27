@@ -42,9 +42,9 @@ public final class Constants {
         public final static int kSpindexerMotorID = 12;
         public final static int kReceiveMotorID = 11;
 
-        public final static double kSpindexerMotorSpeed = -1;
+        public final static double kSpindexerMotorSpeed = -.65;
 
-        public final static double kRecieveFuelSpeed = 1;
+        public final static double kRecieveFuelSpeed = .65;
     }
 
     

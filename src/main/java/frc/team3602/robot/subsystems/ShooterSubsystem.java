@@ -24,7 +24,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
     // Shooter Motors
     private static TalonFX shootermotor1;
-    private static TalonFX shootermotor2;
+    // private static TalonFX shootermotor2;
 
     //Instantiating Classes
     public Vision vision;
@@ -39,7 +39,7 @@ public class ShooterSubsystem extends SubsystemBase {
     // Constructor
     public ShooterSubsystem(Vision vision) {
         shootermotor1 = new TalonFX(ShooterConstants.kShooterMotor1ID, "rio");
-        shootermotor2 = new TalonFX(ShooterConstants.kShooterMotor2ID, "rio");
+        // shootermotor2 = new TalonFX(ShooterConstants.kShooterMotor2ID, "rio");
         this.vision = vision;
         // feedermoter = new TalonFX(ShooterConstants.kFeederMotorID);
         configShooterSubsys();
@@ -49,8 +49,8 @@ public class ShooterSubsystem extends SubsystemBase {
     // Go
     public Command setShootSpeed() {
         return run(() -> {
-            shootermotor1.set(-shootLerpSpeed);//-shootLerpSpeed
-            shootermotor2.set(shootLerpSpeed); //shootLerpSpeed
+            shootermotor1.set(-.95);//-shootLerpSpeed
+            // shootermotor2.set(shootLerpSpeed); //shootLerpSpeed
         });
     }
 
@@ -59,7 +59,7 @@ public class ShooterSubsystem extends SubsystemBase {
         public Command setShootVoltage(double shootVoltz) {
         return runOnce(() -> {
             shootermotor1.setVoltage(-shootVoltz);
-            shootermotor2.setVoltage(shootVoltz); 
+            // shootermotor2.setVoltage(shootVoltz); 
         });
     }
 
@@ -74,7 +74,7 @@ public class ShooterSubsystem extends SubsystemBase {
     public Command stopShooter() {
         return run(() -> {
             shootermotor1.set(0);
-            shootermotor2.set(0);
+            // shootermotor2.set(0);
         });
     }
 
@@ -111,7 +111,7 @@ public class ShooterSubsystem extends SubsystemBase {
     shootLerp.put(7.0, 0.69);
     shootLerp.put(8.0, 0.71);
     shootLerp.put(9.0, 0.73); 
-    shootLerp.put(10.0,0.75);
+    shootLerp.put(10.0,0.80);
     shootLerp.put(11.0,0.77);
     shootLerp.put(12.0,0.79);
     shootLerp.put(13.0,0.81);

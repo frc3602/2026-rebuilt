@@ -9,7 +9,12 @@ import frc.team3602.robot.LimelightHelpers.RawFiducial;
 
 
 public class Vision {
-    
+
+
+    public Vision() {
+    int[] validTagID = {21, 26, 18, 8, 9, 11};
+    LimelightHelpers.SetFiducialIDFiltersOverride("limelight-turret", validTagID);
+    }
 
     public double getDistToCamera(int id) {
         var tags =  LimelightHelpers.getRawFiducials("limelight-primary");

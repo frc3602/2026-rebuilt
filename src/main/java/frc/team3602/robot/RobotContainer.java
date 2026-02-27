@@ -62,7 +62,7 @@ public class RobotContainer {
     private Boolean intakeDown = (pivot.getPivotEncoder > 90);
 
     public RobotContainer() {
-        turret.setDefaultCommand(turret.track());
+        // 
         pivot.setDefaultCommand(pivot.holdPivot());
         configureBindings();
     }
@@ -94,7 +94,7 @@ public class RobotContainer {
                         .withRotationalRate(drivetrain.rAlignment()) // Drive counterclockwise with negative X (left)
                 ));
         driverController.a().whileTrue(spindexer.setFasterSpindexerReceive()).onFalse(spindexer.stopSpindexer());
-        driverController.b().whileTrue(shooter.setShootVoltage(8)).onFalse(shooter.stopShooter());
+        driverController.b().whileTrue(shooter.setShootSpeed()).onFalse(shooter.stopShooter());
         driverController.x().whileTrue(shooter.setShootSpeed()).onFalse(shooter.stopShooter());
         driverController.povRight().whileTrue(turret.setAngle(10));
         driverController.povLeft().whileTrue(turret.setAngle(-10));
