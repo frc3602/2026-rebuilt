@@ -16,6 +16,12 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
+import com.ctre.phoenix6.configs.MagnetSensorConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 
 import frc.team3602.robot.Vision;
 import frc.team3602.robot.Constants.ShooterConstants;
@@ -46,11 +52,19 @@ public class ShooterSubsystem extends SubsystemBase {
         SmartDashboard.putNumber("ShootSpeedInput", shootShuffleSpeed);
     }
 
+    final MotionMagicVelocityVoltage m_request = new MotionMagicVelocityVoltage(0);
+
     // Go
     public Command setShootSpeed() {
         return run(() -> {
             shootermotor1.set(-shootLerpSpeed);
             // shootermotor2.set(shootLerpSpeed); //shootLerpSpeed
+        });
+    }
+
+    public Command setShootVelocity(double rotationsPerSecond) {
+        return run(() -> {
+            shootermotor1.setControl(m_request.withVelocity(rotationsPerSecond));
         });
     }
 
@@ -98,7 +112,23 @@ public class ShooterSubsystem extends SubsystemBase {
 
     }
 
-    private void configShooterSubsys() {
+    private void configShooterSubsys() {       
+        TalonFXConfiguration talonFXConfigs = new TalonFXConfiguration();
+        
+        var slot0Configs = talonFXConfigs.Slot0;
+        slot0Configs.kS = 0.25; // Add 0.25 V output to overcome static friction
+        slot0Configs.kV = 0.19; // A velocity target of 1 rps results in 0.12 V output
+        slot0Configs.kA = 0.00; // An acceleration of 1 rps/s requires 0.01 V output
+        slot0Configs.kP = 0.11; // An error of 1 rps results in 0.11 V output
+        slot0Configs.kI = 0; // no output for integrated error
+        slot0Configs.kD = 0; // no output for error derivative
+
+        // set Motion Magic Velocity settings
+        var motionMagicConfigs = talonFXConfigs.MotionMagic;
+        motionMagicConfigs.MotionMagicAcceleration = 400; // Target acceleration of 400 rps/s (0.25 seconds to max)
+        motionMagicConfigs.MotionMagicJerk = 6000; // Targ  et jerk of 4000 rps/s/s (0.1 seconds)
+
+        shootermotor1.getConfigurator().apply(talonFXConfigs);
         // Interpolation table config
         shootLerp.put(2.0, 0.57);
         shootLerp.put(3.0, 0.61);
@@ -117,6 +147,8 @@ public class ShooterSubsystem extends SubsystemBase {
         shootLerp.put(16.0, 0.87);
         shootLerp.put(17.0, 0.89);
         shootLerp.put(18.0, 0.9);//6767
+
+
     }
 
 }
