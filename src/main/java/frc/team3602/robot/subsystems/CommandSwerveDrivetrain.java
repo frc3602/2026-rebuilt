@@ -62,12 +62,11 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private static final Rotation2d kRedAlliancePerspectiveRotation = Rotation2d.k180deg;
     /* Keep track if we've ever applied the operator perspective before or not */
     private boolean m_hasAppliedOperatorPerspective = false;
-
     /* Vision */
     public final Vision vision = new Vision();
     public final TurretSubsystem turret = new TurretSubsystem();
     public final CommandXboxController joystick = new CommandXboxController(0);
-
+    public double turbo;
     /* PID Controllers */
     private final PIDController rotationController = new PIDController(.1, 0, 0.001);
     private final PIDController yController = new PIDController(1, 0, 0.001);
@@ -249,6 +248,20 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
      */
     public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
         return m_sysIdRoutineToApply.quasistatic(direction);
+    }
+
+    public Command setNormalSpeed() {
+        return runOnce(() -> {
+            turbo = 0.8;
+        });
+       
+    }
+
+    public Command setTurbo() {
+        return runOnce(() -> {
+            turbo = 1.0;
+        });
+       
     }
 
     /**

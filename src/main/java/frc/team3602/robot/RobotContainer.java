@@ -32,9 +32,8 @@ import frc.team3602.robot.subsystems.TurretSubsystem;
 
 public class RobotContainer {
 
-       
-    private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top
-                                                                                        // speed
+
+    private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top                                                            // speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second
                                                                                       // max angular velocity
 
@@ -82,10 +81,10 @@ public class RobotContainer {
         // and Y is defined as to the left according to WPILib convention.
         drivetrain.setDefaultCommand(
                 // Drivetrain will execute this command periodically
-                drivetrain.applyRequest(() -> drive.withVelocityX(polarityChooser.getSelected()*-driverController.getLeftY() * MaxSpeed) // Drive forward with
+                drivetrain.applyRequest(() -> drive.withVelocityX(polarityChooser.getSelected()*-driverController.getLeftY() * MaxSpeed * drivetrain.turbo) // Drive forward with
                                                                                                   // negative Y
                                                                                                   // (forward)
-                        .withVelocityY(polarityChooser.getSelected()*-driverController.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+                        .withVelocityY(polarityChooser.getSelected()*-driverController.getLeftX() * MaxSpeed * drivetrain.turbo) // Drive left with negative X (left)
                         .withRotationalRate(-driverController.getRightX() * MaxAngularRate) // Drive counterclockwise with
                                                                                     // negative X (left)
 
@@ -104,29 +103,7 @@ public class RobotContainer {
         
         //DriverControls
         driverController.rightBumper().onTrue(superStructure.intakeBall());
-        // driverController.leftBumper()
-        //         .whileTrue(drivetrain.applyRequest(() -> 
-        //                 drive.withVelocityX(driverController.getLeftY() * MaxSpeed)                                                                            // (forward)
-        //                 .withVelocityY(-driverController.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-        //                 .withRotationalRate(drivetrain.rAlignment()) // Drive counterclockwise with negative X (left)
-        //         ));
-        // driverController.a().whileTrue(spindexer.setFasterSpindexerReceive()).onFalse(spindexer.stopSpindexer());
-        // driverController.b().whileTrue(shooter.setShootSpeed()).onFalse(shooter.stopShooter());
-        // driverController.x().whileTrue(superStructure.shootBall2()).onFalse(superStructure.stopShoot().andThen(spindexer.stopSpindexer()));
-        // driverController.povRight().whileTrue(turret.setAngle(10));
-        // driverController.povLeft().whileTrue(turret.setAngle(-10));
-        // //driverController.povDown().whileTrue(turret.testTurret(0));
-        // driverController.rightBumper().whileTrue(turret.turretAlignment());
-        // // driverController.y().whileTrue(shooter.setShootSpeed()).whileFalse(shooter.stopShooter());
-        // operatorController.povDown().whileTrue(superStructure.intakeBall());
-        // operatorController.povUp().whileTrue(superStructure.stopIntake());
-        // operatorController.b().whileTrue(shooter.setShootVelocity(-62)).onFalse(shooter.stopShooter());
-        // operatorController.a().whileTrue(intake.setIntakeSpeed()).onFalse(intake.stopIntake());
-        // driverController.x().whileTrue(spindexer.setSpindexerReceive()).whileFalse(spindexer.stopSpindexer());
-        // driverController.povUp().whileTrue(spindexer.setFasterSpindexerReceive()).whileFalse(spindexer.stopSpindexer());
-
-
-
+        driverController.rightTrigger().onTrue(drivetrain.setTurbo()).onFalse(drivetrain.setNormalSpeed());
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
         // driverController.back().and(driverController.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));

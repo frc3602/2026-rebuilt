@@ -64,7 +64,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
     public Command setShootVelocity(double rotationsPerSecond) {
         return run(() -> {
-            shootermotor1.setControl(m_request.withVelocity(rotationsPerSecond));
+            shootermotor1.setControl(m_request.withVelocity(-rotationsPerSecond));
             shootermotor2.setControl(m_request.withVelocity(rotationsPerSecond));
         });
     }
@@ -130,6 +130,7 @@ public class ShooterSubsystem extends SubsystemBase {
         motionMagicConfigs.MotionMagicJerk = 6000; // Targ  et jerk of 4000 rps/s/s (0.1 seconds)
 
         shootermotor1.getConfigurator().apply(talonFXConfigs);
+        shootermotor2.getConfigurator().apply(talonFXConfigs);
         // Interpolation table config
         shootLerp.put(2.0, 0.57);
         shootLerp.put(3.0, 0.61);
