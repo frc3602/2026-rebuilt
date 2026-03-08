@@ -64,15 +64,15 @@ public class ShooterSubsystem extends SubsystemBase {
 
     public Command setShootVelocity(double rotationsPerSecond) {
         return run(() -> {
-            shootermotor1.setControl(m_request.withVelocity(-rotationsPerSecond));
-            shootermotor2.setControl(m_request.withVelocity(rotationsPerSecond));
+            shootermotor1.setControl(m_request.withVelocity(rotationsPerSecond));
+            shootermotor2.setControl(m_request.withVelocity(-rotationsPerSecond));
         });
     }
 
     public Command setShootVoltage(double shootVoltz) {
         return runOnce(() -> {
-            shootermotor1.setVoltage(-shootVoltz);
-            shootermotor2.setVoltage(shootVoltz);
+            shootermotor1.setVoltage(shootVoltz);
+            shootermotor2.setVoltage(-shootVoltz);
         });
     }
 
@@ -128,6 +128,13 @@ public class ShooterSubsystem extends SubsystemBase {
         var motionMagicConfigs = talonFXConfigs.MotionMagic;
         motionMagicConfigs.MotionMagicAcceleration = 600; // Target acceleration of 400 rps/s (0.25 seconds to max)
         motionMagicConfigs.MotionMagicJerk = 6000; // Targ  et jerk of 4000 rps/s/s (0.1 seconds)
+
+        // Set motor current limits
+        var currentLimitConfigs = talonFXConfigs.CurrentLimits;
+        currentLimitConfigs.StatorCurrentLimitEnable = true;
+        currentLimitConfigs.SupplyCurrentLimitEnable = true;
+        currentLimitConfigs.StatorCurrentLimit = 40;
+        currentLimitConfigs.SupplyCurrentLimit = 60;
 
         shootermotor1.getConfigurator().apply(talonFXConfigs);
         shootermotor2.getConfigurator().apply(talonFXConfigs);

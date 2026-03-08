@@ -45,8 +45,8 @@ public class Superstructure {
                 turretSubsys.track(),
                 Commands.sequence(
 
-                        shooterSubsys.setShootVelocity(-62.5).withTimeout(1.7)
-                // .andThen(spindexerSubsys.setSpindexerReceive())
+                        shooterSubsys.setShootVelocity(-62.5).withTimeout(1.7),
+                        spindexerSubsys.setFeedVelocity(-62.5)
                 ));
     }
 
@@ -67,8 +67,8 @@ public class Superstructure {
     }
 
     // Intake
-    public Command intakeBall() {
-        return pivotSubsys.smartDropPivot().alongWith(intakeSubsys.setIntakeSpeed().withTimeout(0.2));
+    public Command dropPivot() {
+        return pivotSubsys.smartDropPivot();
     }
 
     public Command stopIntake() {

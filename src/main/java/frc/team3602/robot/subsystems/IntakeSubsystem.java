@@ -2,6 +2,7 @@ package frc.team3602.robot.subsystems;
 
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
@@ -21,7 +22,7 @@ public class IntakeSubsystem extends SubsystemBase{
     
     //constructor
     public IntakeSubsystem(){
-
+        configIntakeSubsys();
     }
 
     private final PIDController pivotPID = new PIDController(0.15, 0.0,0.0);
@@ -48,6 +49,20 @@ public class IntakeSubsystem extends SubsystemBase{
 
     @Override
     public void periodic() {
+
+    }
+
+    private void configIntakeSubsys() {
+        TalonFXConfiguration talonFXConfigs = new TalonFXConfiguration();
+
+                 // Set motor current limits
+        var currentLimitConfigs = talonFXConfigs.CurrentLimits;
+        currentLimitConfigs.StatorCurrentLimitEnable = true;
+        currentLimitConfigs.SupplyCurrentLimitEnable = true;
+        currentLimitConfigs.StatorCurrentLimit = 20;
+        currentLimitConfigs.SupplyCurrentLimit = 40;
+
+        intakeMotor.getConfigurator().apply(talonFXConfigs);
 
     }
 }
