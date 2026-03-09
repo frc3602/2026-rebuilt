@@ -43,10 +43,10 @@ public class Superstructure {
     /* Score Commands */
     public Command shootBall1() {
         return Commands.parallel(
-                turretSubsys.track(),
+                turretSubsys.aimCommand(),
                 Commands.sequence(
 
-                        shooterSubsys.setShootVelocity(-62.5).withTimeout(1.7),
+                        shooterSubsys.setShootVelocity(-62.5).withTimeout(2),
                         spindexerSubsys.setFeedVelocity(-62.5)
                 ));
     }

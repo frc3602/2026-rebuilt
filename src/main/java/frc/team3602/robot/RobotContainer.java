@@ -97,7 +97,7 @@ public class RobotContainer {
                 drivetrain.applyRequest(() -> idle).ignoringDisable(true));
         //Operator Controls
         operatorController.x().whileTrue(spindexer.setReverseSpindexerReceive()).whileFalse(spindexer.stopSpindexer());
-        operatorController.rightTrigger().onTrue(shooter.setShootVelocity(-57.5)).whileFalse(superStructure.stopShoot());
+        operatorController.rightTrigger().onTrue(superStructure.shootBall1()).whileFalse(superStructure.stopShoot());
         operatorController.b().whileTrue(spindexer.setSpindexerReceive()).onFalse(spindexer.stopSpindexer());
         operatorController.povUp().onTrue(superStructure.stopIntake());
         operatorController.a().onTrue(turret.passMode());

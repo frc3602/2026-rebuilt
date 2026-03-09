@@ -14,6 +14,7 @@ import com.ctre.phoenix6.configs.MotionMagicConfigs;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -146,11 +147,6 @@ public double calculateDesiredAngle() {
     return clampAngle(fieldAngle - robotHeading);
 }
 
-public void setTurretAngle() {
-    // implement PID or motor set here
-    turretMotor.setPosition(calculateDesiredAngle());
-}
-
 
 /**
  * Normalize angle to [-180, 180) degrees
@@ -198,35 +194,45 @@ public double calculateBallTimeOfFlight() {
 }
 
 public double calculateTurretOffset() {
-    // Pull Robot Velocity m/s (positive = moving forward)
+
+    // Get robot pose
+    Pose2d robotPose = drivetrainSubsys.getState().Pose;
+
+    // Target position on field (meters)
+    Translation2d targetPosition = new Translation2d(8.27, 4.10); // TODO change to real field location
+
+    // Robot position
+    Translation2d robotPosition = robotPose.getTranslation();
+
+    // Vector from robot to target
+    Translation2d robotToTarget = targetPosition.minus(robotPosition);
+
+    // Distance to target
+    double distanceToTarget = robotToTarget.getNorm();
+
+    // Angle to target (field relative)
+    Rotation2d angleToTarget = robotToTarget.getAngle();
+
+    // Convert to robot-relative angle
+    double robotHeading = robotPose.getRotation().getRadians();
+    double targetYawRelative = angleToTarget.getRadians() - robotHeading;
+
+    // Robot velocity
     double robotVelocity = drivetrainSubsys.getState().Speeds.vxMetersPerSecond;
-    
-    // Pull Time of Flight Calculation (seconds)
-    double timeOfFlight = this.calculateBallTimeOfFlight();
-    
-    // Get distance to target (meters)
-    double angle = Math.toRadians(vision.getTY() + vision.getTurretIMUPitch());
-    double distanceToTag = distance =(44.21875 - 15.625) / Math.tan(angle);
-    
-    // Get the current angle to the tag relative to robot forward (degrees)
-    double tagYawDegrees = vision.getTY();
-    
-    // Lateral movement = how far the robot moves sideways during flight
-    double lateralMovement = robotVelocity * timeOfFlight; // meters
-    
-    // Calculate angular offset using arctan
-    double leadRadians = Math.atan2(lateralMovement, distanceToTag);
-    
-    // Convert lead to degrees
-    double leadDegrees = Math.toDegrees(leadRadians);
-    
-    // Calculate where the turret should point relative to robot forward
-    double desiredTurretAngle = tagYawDegrees + leadDegrees;
-    
-    // The difference is our offset from the tag
-    double turretYawRelativeToTag = desiredTurretAngle - tagYawDegrees;
-    
-    return turretYawRelativeToTag;
+
+    // Time of flight
+    double timeOfFlight = calculateBallTimeOfFlight();
+
+    // Lateral movement during shot
+    double lateralMovement = robotVelocity * timeOfFlight;
+
+    // Lead angle
+    double leadRadians = Math.atan2(lateralMovement, distanceToTarget);
+
+    // Final turret offset
+    double turretOffsetRadians = targetYawRelative + leadRadians;
+
+    return Math.toDegrees(turretOffsetRadians);
 }
 
 
@@ -235,6 +241,13 @@ public double calculateTurretOffset() {
     double aimOutput;
 
     public boolean atTarget;
+
+    public Command aimCommand() {
+        return run(() -> {
+            setAngle = setAngle - calculateDesiredAngle() + calculateTurretOffset();
+        }
+        );
+    }
 
     public Command track() {
         return run(() -> {
