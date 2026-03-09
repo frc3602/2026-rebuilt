@@ -20,6 +20,7 @@ import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -36,6 +37,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.team3602.robot.LimelightHelpers;
 import frc.team3602.robot.Vision;
 import frc.team3602.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 
@@ -296,8 +298,29 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         }
     }
 
+
+    private void updatePoseFromVision() {
+    for (String cam : new String[]{"limelight-right","limelight-left"}) {
+        var est = LimelightHelpers
+            .getBotPoseEstimate_wpiBlue_MegaTag2(cam);
+        if (est == null || est.tagCount == 0) continue;
+        if (est.pose.getTranslation().getDistance(
+                this.getState().Pose
+                .getTranslation()) > 1.5) continue; // reject teleports
+        this.addVisionMeasurement(
+            est.pose, est.timestampSeconds,
+            VecBuilder.fill(0.4, 0.4, 9999.0)); // trust gyro for heading
+    }
+}
+
     @Override
     public void periodic() {
+        double headingDeg = this.getPigeon2().getYaw().getValueAsDouble();
+        double headingRate  = this.getPigeon2().getAngularVelocityZWorld().getValueAsDouble();
+        LimelightHelpers.SetRobotOrientation("limelight-right", headingDeg, headingRate, 0, 0, 0, 0);
+        LimelightHelpers.SetRobotOrientation("limelight-left", headingDeg, headingRate, 0, 0, 0, 0);
+        updatePoseFromVision();
+        
         SmartDashboard.putNumber("Rotation Speed", this.rotationSpeed);
         SmartDashboard.putNumber("my heading", vision.getTX());
         SmartDashboard.putNumber("turret angle", turret.getEncoder());

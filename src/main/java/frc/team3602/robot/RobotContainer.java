@@ -107,8 +107,8 @@ public class RobotContainer {
         driverController.rightBumper().whileTrue(pivot.dumbDropIntake());
         driverController.leftBumper().whileTrue(intake.setIntakeSpeed()).whileFalse(intake.stopIntake());
         driverController.rightTrigger().onTrue(drivetrain.setTurbo()).onFalse(drivetrain.setNormalSpeed());
-        driverController.povUp().onTrue(superStructure.raiseClimber());
-        driverController.povDown().onTrue(superStructure.lowerClimber());
+        // driverController.povUp().onTrue(superStructure.raiseClimber());
+        // driverController.povDown().onTrue(superStructure.lowerClimber());
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
         // driverController.back().and(driverController.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));

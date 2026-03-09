@@ -1,5 +1,7 @@
 package frc.team3602.robot.subsystems;
 
+import java.util.Optional;
+
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
@@ -11,9 +13,13 @@ import com.ctre.phoenix6.configs.MotionMagicConfigs;
 
 
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 
 import frc.team3602.robot.Constants.*;
 import frc.team3602.robot.LimelightHelpers;
@@ -98,6 +104,65 @@ public class TurretSubsystem extends SubsystemBase {
             setAngle = setAngle + vision.getTurretTX();
         });
     }
+
+//Pose Aiming
+public Translation2d getTargetPose() {
+    Optional<Alliance> allianceOpt = DriverStation.getAlliance();
+
+    // Check if an alliance is present
+    if (allianceOpt.isPresent()) {
+        Alliance alliance = allianceOpt.get(); // unwrap the Optional
+
+        if (alliance == Alliance.Blue) {
+            return new Translation2d(0.0, 0.0); // example blue alliance target
+        } else if (alliance == Alliance.Red) {
+            return new Translation2d(1.0, 1.0); // example red alliance target
+        }
+    }
+
+    // Fallback if alliance not present or invalid
+    return new Translation2d(0.0, 0.0);
+}
+private final Translation2d TARGET = getTargetPose();
+
+public double getTurretAngleDeg() {
+    // Get rotor position in motor rotations
+    double motorRot = turretMotor.getRotorPosition().getValueAsDouble();
+
+    // Convert motor rotations to turret degrees
+    // Assume 30 motor rotations = 360 degrees turret rotation
+    double turretDeg = motorRot * (360.0 / 30.0);
+
+    // Clamp or normalize angle to -180° to +180° (or use 0-360 if you prefer)
+    return clampAngle(turretDeg);
+}
+
+public double calculateDesiredAngle() {
+    Pose2d robot = drivetrainSubsys.getState().Pose;
+    double dx = TARGET.getX() - robot.getX();
+    double dy = TARGET.getY() - robot.getY();
+    double fieldAngle   = Math.toDegrees(Math.atan2(dy, dx));
+    double robotHeading = robot.getRotation().getDegrees();
+    return clampAngle(fieldAngle - robotHeading);
+}
+
+public void setTurretAngle() {
+    // implement PID or motor set here
+    turretMotor.setPosition(calculateDesiredAngle());
+}
+
+
+/**
+ * Normalize angle to [-180, 180) degrees
+ */
+private double clampAngle(double angleDeg) {
+    angleDeg = angleDeg % 360.0;   // wrap around
+    if (angleDeg > 180.0) angleDeg -= 360.0;
+    if (angleDeg <= -180.0) angleDeg += 360.0;
+    return angleDeg;
+}
+
+
 
 public double calculateBallTimeOfFlight() {
     //Ball Velocity m/s TODO: Must Change
