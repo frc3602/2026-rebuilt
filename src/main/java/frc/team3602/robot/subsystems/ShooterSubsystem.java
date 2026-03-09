@@ -66,18 +66,27 @@ public class ShooterSubsystem extends SubsystemBase {
     }
 
     // Go
-    public Command setShootSpeed() {
-        return run(() -> {
-            shootermotor1.set(-shootLerpSpeed);
-            // shootermotor2.set(shootLerpSpeed); //shootLerpSpeed
-        });
-    }
+    // public Command setShootSpeed() {
+    //     return run(() -> {
+    //         shootermotor1.set(-shootLerpSpeed);
+    //         // shootermotor2.set(shootLerpSpeed); //shootLerpSpeed
+    //     });
+    // }`
 
     public Command setShootVelocity(double rotationsPerSecond) {
         return run(() -> {
             shootermotor1.setControl(m_request.withVelocity(rotationsPerSecond));
             // shootermotor2.setControl(m_request.withVelocity(-rotationsPerSecond));
         });
+    }
+
+    public Command setShootVLerp() {
+        return run(() -> {
+            shootermotor1.setControl(m_request.withVelocity(shootLerpSpeed));
+        }
+
+        );
+
     }
 
     // public Command setShootVoltage(double shootVoltz) {
@@ -154,22 +163,22 @@ public class ShooterSubsystem extends SubsystemBase {
         shootermotor1.getConfigurator().apply(talonFXConfigs);
         shootermotor2.getConfigurator().apply(talonFXConfigs);
         // Interpolation table config
-        shootLerp.put(2.0, 0.57);
-        shootLerp.put(3.0, 0.61);
-        shootLerp.put(4.0, 0.63);
-        shootLerp.put(5.0, 0.65);
-        shootLerp.put(6.0, 0.67);
-        shootLerp.put(7.0, 0.69);
-        shootLerp.put(8.0, 0.71);
-        shootLerp.put(9.0, 0.682);
-        shootLerp.put(10.0, 0.80);
-        shootLerp.put(11.0, 0.77);
-        shootLerp.put(12.0, 0.79);
-        shootLerp.put(13.0, 0.81);
-        shootLerp.put(14.0, 0.83);
-        shootLerp.put(15.0, 0.85);
-        shootLerp.put(16.0, 0.87);
-        shootLerp.put(17.0, 0.89);
+        shootLerp.put(2.0, 31.0);
+        shootLerp.put(3.0, 33.0);
+        shootLerp.put(4.0, 35.0);
+        shootLerp.put(5.0, 37.0);
+        shootLerp.put(6.0, 39.0);
+        shootLerp.put(7.0, 41.0);
+        shootLerp.put(8.0, 43.0);
+        shootLerp.put(9.0, 45.0);
+        shootLerp.put(10.0, 47.0);
+        shootLerp.put(11.0, 49.0);
+        shootLerp.put(12.0, 51.0);
+        shootLerp.put(13.0, 54.0);
+        shootLerp.put(14.0, 56.0);
+        shootLerp.put(15.0, 58.0);
+        shootLerp.put(16.0, 60.0);
+        shootLerp.put(17.0, 62.5);
         shootLerp.put(18.0, 0.9);
 
 

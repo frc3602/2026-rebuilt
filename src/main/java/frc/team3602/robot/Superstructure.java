@@ -50,17 +50,7 @@ public class Superstructure {
                         spindexerSubsys.setFeedVelocity(-62.5)
                 ));
     }
-
-    public Command shootBall2() {
-        return Commands.parallel(
-                turretSubsys.track(),
-                Commands.sequence(
-                        shooterSubsys.setShootVelocity(-57.5).withTimeout(2).andThen(
-                                spindexerSubsys.setFeedVelocity(-57.5))
-
-                ));
-    }
-
+    
     public Command shootFailsafe() {
         return Commands.sequence(
             turretSubsys.setAngle(0),
