@@ -3,6 +3,7 @@ package frc.team3602.robot.subsystems;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.RelativeEncoder;
 
 import edu.wpi.first.math.controller.ArmFeedforward;
@@ -24,6 +25,11 @@ public class ClimberSubsystem extends SubsystemBase {
     public ClimberSubsystem() {
         var ClimbMotorConfig = new MotorOutputConfigs();
         var ClimbLimitConfig = new CurrentLimitsConfigs();
+
+        climberMotor.getConfigurator().apply(ClimbLimitConfig);
+
+        ClimbMotorConfig.NeutralMode = NeutralModeValue.Brake;
+        climberMotor.getConfigurator().apply(ClimbMotorConfig);
     }
 
     public double climberPosition() {
@@ -61,6 +67,8 @@ public class ClimberSubsystem extends SubsystemBase {
         });
     }
 
+    
+
     @Override
     public void periodic() {
         SmartDashboard.putNumber("PID Effort", ffEffort);
@@ -69,5 +77,7 @@ public class ClimberSubsystem extends SubsystemBase {
 
         SmartDashboard.putNumber("Climber Setpoint", pivotSetPoint);
         SmartDashboard.putNumber("Climber Measurement", climberPosition());
+
     }
+
 }
