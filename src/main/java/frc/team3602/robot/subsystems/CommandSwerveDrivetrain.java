@@ -321,11 +321,14 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 .getBotPoseEstimate_wpiBlue_MegaTag2("limelight-right");
 
         poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(0.7, 0.7, 9999999));
-        if (megaTagLeft!= null) {
+        if (megaTagLeft != null) {
         poseEstimator.addVisionMeasurement(megaTagLeft.pose, megaTagLeft.timestampSeconds);
-        poseEstimator.addVisionMeasurement(megaTagRight.pose, megaTagRight.timestampSeconds);
+        }
+        if (megaTagRight != null) {
+         poseEstimator.addVisionMeasurement(megaTagRight.pose, megaTagRight.timestampSeconds);
         }
     }
+           
 
     public Translation2d getTargetPose() {
         Optional<Alliance> allianceOpt = DriverStation.getAlliance();
@@ -364,6 +367,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         return distanceFeet;
     }
 
+    private final Field2d field = new Field2d();
+
     @Override
     public void periodic() {
         double headingDeg = this.getPigeon2().getYaw().getValueAsDouble();
@@ -377,11 +382,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         SmartDashboard.putNumber("Rotation Speed", this.rotationSpeed);
         SmartDashboard.putNumber("my heading", vision.getTX());
         SmartDashboard.putNumber("turret angle", turret.getEncoder());
-        SmartDashboard.putNumber("Robot X", this.getState().Pose.getX());
-        SmartDashboard.putNumber("Robot Y", this.getState().Pose.getY());
-        SmartDashboard.putNumber("Robot X", this.getState().Pose.getRotation().getDegrees());
         
-        var field = new Field2d();
         field.setRobotPose(poseEstimator.getEstimatedPosition());
 
         SmartDashboard.putData("PoseVisionAbe", field);
