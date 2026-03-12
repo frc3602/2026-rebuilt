@@ -80,7 +80,7 @@ public class ShooterSubsystem extends SubsystemBase {
     public Command setShootVelocity(double rotationsPerSecond) {
         return run(() -> {
             shootermotor1.setControl(m_request.withVelocity(rotationsPerSecond));
-            // shootermotor2.setControl(m_request.withVelocity(-rotationsPerSecond));
+            shootermotor2.setControl(m_request.withVelocity(-rotationsPerSecond));
         });
     }
 
@@ -110,7 +110,7 @@ public class ShooterSubsystem extends SubsystemBase {
     public Command stopShooter() {
         return run(() -> {
             shootermotor1.set(0);
-            // shootermotor2.set(0);
+            shootermotor2.set(0);
         });
     }
 

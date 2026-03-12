@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.team3602.robot.Vision;
+import frc.team3602.robot.Constants.ShooterConstants;
 import frc.team3602.robot.generated.TunerConstants;
 import frc.team3602.robot.subsystems.ClimberSubsystem;
 import frc.team3602.robot.subsystems.CommandSwerveDrivetrain;
@@ -111,7 +112,7 @@ public class RobotContainer {
                                 .whileFalse(spindexer.stopSpindexer());
                 operatorController.rightTrigger().onTrue(superStructure.shootBall1())
                                 .whileFalse(superStructure.stopShoot());
-                operatorController.b().whileTrue(spindexer.setSpindexerReceive()).onFalse(spindexer.stopSpindexer());
+                operatorController.b().whileTrue(spindexer.setFeedVelocity(-40.0)).onFalse(spindexer.stopSpindexer());
                 operatorController.povUp().onTrue(superStructure.stopIntake());
                 operatorController.a().onTrue(turret.passMode());
                 operatorController.leftTrigger().onTrue(superStructure.shootFailsafe())

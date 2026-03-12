@@ -379,6 +379,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         poseEstimator.update(getPigeon2().getRotation2d(), this.getState().ModulePositions);
         poseEstimator.getEstimatedPosition();
 
+        SmartDashboard.putNumber("Pigeon Gyro", headingDeg);
         SmartDashboard.putNumber("Rotation Speed", this.rotationSpeed);
         SmartDashboard.putNumber("my heading", vision.getTX());
         SmartDashboard.putNumber("turret angle", turret.getEncoder());
