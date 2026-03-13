@@ -27,6 +27,7 @@ import frc.team3602.robot.generated.TunerConstants;
 import frc.team3602.robot.subsystems.ClimberSubsystem;
 import frc.team3602.robot.subsystems.CommandSwerveDrivetrain;
 import frc.team3602.robot.subsystems.IntakeSubsystem;
+import frc.team3602.robot.subsystems.Limelight_Pose;
 import frc.team3602.robot.subsystems.PivotSubsystem;
 import frc.team3602.robot.subsystems.ShooterSubsystem;
 import frc.team3602.robot.subsystems.SpindexerSubsystem;
@@ -64,6 +65,7 @@ public class RobotContainer {
         public final SpindexerSubsystem spindexer = new SpindexerSubsystem();
         public final PivotSubsystem pivot = new PivotSubsystem();
         private final ClimberSubsystem climberSubsys = new ClimberSubsystem();
+        public final Limelight_Pose Limelight_Pose = new Limelight_Pose().getInstance();
         public final Superstructure superStructure = new Superstructure(intake, shooter, spindexer, turret, drivetrain,
                         pivot);
 

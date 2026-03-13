@@ -309,27 +309,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         }
     }
 
-    private void updatePoseFromVision() {
-        LimelightHelpers.SetRobotOrientation("limelight-left",
-                poseEstimator.getEstimatedPosition().getRotation().getDegrees(), 0, 0, 0, 0, 0);
-        LimelightHelpers.SetRobotOrientation("limelight-right",
-                poseEstimator.getEstimatedPosition().getRotation().getDegrees(), 0, 0, 0, 0, 0);
-
-        LimelightHelpers.PoseEstimate megaTagLeft = LimelightHelpers
-                .getBotPoseEstimate_wpiBlue_MegaTag2("limelight-left");
-        LimelightHelpers.PoseEstimate megaTagRight = LimelightHelpers
-                .getBotPoseEstimate_wpiBlue_MegaTag2("limelight-right");
-
-        poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(0.7, 0.7, 9999999));
-        if (megaTagLeft != null) {
-        poseEstimator.addVisionMeasurement(megaTagLeft.pose, megaTagLeft.timestampSeconds);
-        }
-        if (megaTagRight != null) {
-         poseEstimator.addVisionMeasurement(megaTagRight.pose, megaTagRight.timestampSeconds);
-        }
-    }
-           
-
     public Translation2d getTargetPose() {
         Optional<Alliance> allianceOpt = DriverStation.getAlliance();
 
@@ -371,15 +350,25 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
     @Override
     public void periodic() {
-        double headingDeg = this.getPigeon2().getYaw().getValueAsDouble();
-        double headingRate = this.getPigeon2().getAngularVelocityZWorld().getValueAsDouble();
-        LimelightHelpers.SetRobotOrientation("limelight-right", headingDeg, headingRate, 0, 0, 0, 0);
-        LimelightHelpers.SetRobotOrientation("limelight-left", headingDeg, headingRate, 0, 0, 0, 0);
-        updatePoseFromVision();
+
         poseEstimator.update(getPigeon2().getRotation2d(), this.getState().ModulePositions);
         poseEstimator.getEstimatedPosition();
 
-        SmartDashboard.putNumber("Pigeon Gyro", headingDeg);
+        // Pass curent theta over to the limelight subsystem
+        Limelight_Pose.getInstance().CollectDriveThetaValue(poseEstimator.getEstimatedPosition().getRotation().getDegrees());
+
+        if (Limelight_Pose.getInstance().poseUpdateAvailable){
+            poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(Limelight_Pose.getInstance().poseUpdateXYTrustFactor, 
+                Limelight_Pose.getInstance().poseUpdateXYTrustFactor,Limelight_Pose.getInstance().poseUpdateRotTrustFactor));
+            poseEstimator.addVisionMeasurement(Limelight_Pose.getInstance().poseCamEstimate.pose, Limelight_Pose.getInstance().poseCamEstimate.timestampSeconds);
+            Limelight_Pose.getInstance().UpdateVisionCorrectionAdded();
+        }
+
+        SmartDashboard.putNumber("Robot X", poseEstimator.getEstimatedPosition().getX());
+        SmartDashboard.putNumber("Robot Y", poseEstimator.getEstimatedPosition().getY());
+        SmartDashboard.putNumber("Robot Angle", poseEstimator.getEstimatedPosition().getRotation().getDegrees());
+        SmartDashboard.putNumber("Pigeon Angle", getPigeon2().getYaw().getValueAsDouble());
+  
         SmartDashboard.putNumber("Rotation Speed", this.rotationSpeed);
         SmartDashboard.putNumber("my heading", vision.getTX());
         SmartDashboard.putNumber("turret angle", turret.getEncoder());

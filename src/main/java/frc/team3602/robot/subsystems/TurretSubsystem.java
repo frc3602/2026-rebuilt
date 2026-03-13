@@ -24,7 +24,6 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 
 import frc.team3602.robot.Constants.*;
-import frc.team3602.robot.LimelightHelpers;
 import frc.team3602.robot.Vision;
 import frc.team3602.robot.subsystems.ShooterSubsystem;
 
