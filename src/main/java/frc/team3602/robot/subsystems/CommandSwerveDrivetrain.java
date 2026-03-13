@@ -317,9 +317,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             Alliance alliance = allianceOpt.get(); // unwrap the Optional
 
             if (alliance == Alliance.Blue) {
-                return new Translation2d(0.0, 0.0); // example blue alliance target
+                return new Translation2d(4.634, 4.024); // example blue alliance target
             } else if (alliance == Alliance.Red) {
-                return new Translation2d(1.0, 1.0); // example red alliance target
+                return new Translation2d(11.920, 4.024); // example red alliance target
             }
         }
 
@@ -327,24 +327,31 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         return new Translation2d(0.0, 0.0);
     }
 
-    public double getDistanceToTarget() {
+public double getDistanceToTarget() {
 
-        // Robot pose from odometry
-        Pose2d robotPose = this.getState().Pose;
+    // Robot pose from odometry
+    Pose2d robotPose = poseEstimator.getEstimatedPosition();
 
-        // Target field location (meters)
-        Translation2d targetPosition = this.getTargetPose(); // TODO set correct field coordinates
+    // Target field location
+    Translation2d targetPosition = this.getTargetPose();
 
-        // Robot position
-        Translation2d robotPosition = robotPose.getTranslation();
+    // Turret offset from robot center (inches -> meters)
+    double turretOffsetX = Units.inchesToMeters(11.28);  // forward/back offset
+    double turretOffsetY = Units.inchesToMeters(0);  // left/right offset
 
-        // Distance between the two
-        double distance = robotPosition.getDistance(targetPosition);
+    Translation2d turretOffset = new Translation2d(turretOffsetX, turretOffsetY);
 
-        double distanceFeet = Units.metersToFeet(distance);
+    // Rotate offset by robot heading
+    Translation2d rotatedOffset = turretOffset.rotateBy(robotPose.getRotation());
 
-        return distanceFeet;
-    }
+    // Turret field position
+    Translation2d turretPosition = robotPose.getTranslation().plus(rotatedOffset);
+
+    // Distance from turret to target
+    double distanceMeters = turretPosition.getDistance(targetPosition);
+
+    return Units.metersToFeet(distanceMeters);
+}
 
     private final Field2d field = new Field2d();
 
@@ -372,6 +379,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         SmartDashboard.putNumber("Rotation Speed", this.rotationSpeed);
         SmartDashboard.putNumber("my heading", vision.getTX());
         SmartDashboard.putNumber("turret angle", turret.getEncoder());
+        SmartDashboard.putNumber("Pose Distance", this.getDistanceToTarget());
         
         field.setRobotPose(poseEstimator.getEstimatedPosition());
 

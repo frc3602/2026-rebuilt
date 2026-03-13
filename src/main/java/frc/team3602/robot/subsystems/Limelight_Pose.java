@@ -21,23 +21,35 @@ public class Limelight_Pose extends SubsystemBase{
     }
 
   public boolean poseUpdatesFromCameraActive = true;
-
+  
   public LimelightHelpers.PoseEstimate poseCamEstimate;
   private LimelightHelpers.PoseEstimate poseCam1Estimate;
+  private LimelightHelpers.PoseEstimate poseCam2Estimate;
   private LimelightHelpers.PoseEstimate poseCam1MT1Estimate;
+  private LimelightHelpers.PoseEstimate poseCam2MT1Estimate;
   private LimelightHelpers.PoseEstimate poseCam1MT2Estimate;
+  private LimelightHelpers.PoseEstimate poseCam2MT2Estimate;
+
   private int tagsFoundAtPoseEstimateCam1 = 0;
+  private int tagsFoundAtPoseEstimateCam2 = 0;
   private double tagAreaAtPoseEstimateCam1 = 0;
+  private double tagAreaAtPoseEstimateCam2 = 0;
   public double poseUpdateXYTrustFactor = 0;
   private double poseUpdateXYTrustFactorCam1 = 0;
+  private double poseUpdateXYTrustFactorCam2 = 0;
   public double poseUpdateRotTrustFactor = 999999999;
   private double poseUpdateRotTrustFactorCam1 = 999999999;
+  private double poseUpdateRotTrustFactorCam2 = 999999999;
   public boolean poseUpdateAvailable = false;
   private boolean poseUpdateAvailableCam1 = false;
+  private boolean poseUpdateAvailableCam2 = false;
 
   private boolean usingCam1MT1 = false;
+  private boolean usingCam2MT1 = false;
   private boolean usingCam1MT2 = false;
+  private boolean usingCam2MT2 = false;
   private double timestampCam1Previous = 0.0;
+  private double timestampCam2Previous = 0.0;
 
   public double currentDriveTheta;
 
@@ -113,29 +125,105 @@ public class Limelight_Pose extends SubsystemBase{
       }  
   }
 
-  public void SetPoseEstimateForDrive(){
+    public void SetPoseEstimateInfoCam2(){
 
-    // Checking if either camera has a valid pose estimate available and we don't already have data ready
-    if (!poseUpdateAvailable && poseUpdateAvailableCam1){
+    try{
+    poseCam2MT1Estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-left");
+    poseCam2MT2Estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight-left");
 
-// Only using MT1 estimates for now until we find out what is up with MT2
+      // Collect all the vision update information if seeing a tag with a newer timestamp than previous iteration.
+      if ((poseCam2MT2Estimate.tagCount > 0) && (poseCam2MT2Estimate.timestampSeconds > timestampCam2Previous)){
 
-      if (usingCam1MT1){
+        // Begin by collecting the MT2 Pose Estimate (Will end up essentially ignoring the rotation value when adding to Pose Estimator)
+        poseCam2Estimate = poseCam2MT2Estimate;
 
-        poseCamEstimate = poseCam1Estimate;
-        poseUpdateXYTrustFactor = poseUpdateXYTrustFactorCam1;
-        poseUpdateRotTrustFactor = poseUpdateRotTrustFactorCam1;
-          
-        poseUpdateAvailable = true;
+        // Save the timestamp to previous to prevent duplicate updating
+        timestampCam2Previous = poseCam2MT2Estimate.timestampSeconds;
 
-      }
+        // Collect miscellaneous info to help determine trust factor
+        tagsFoundAtPoseEstimateCam2 = poseCam2MT2Estimate.tagCount;
+        tagAreaAtPoseEstimateCam2 = poseCam2MT2Estimate.avgTagArea;
+
+        //  starting with a high trust factor (small number) and adding to it as needed
+        poseUpdateXYTrustFactorCam2 = 0.7;
+
+        }
+
+
+
+
+        // a whole bunch of code would go here if adjusting the trust factor based on various measurements
+
+
+
+
+        // Using MT1 if conditions are ideal, multiple tags seen, and tag area greater than determined value
+        if ((poseUpdateXYTrustFactorCam2 == 0.7) && (tagsFoundAtPoseEstimateCam2 > 1) 
+          && (tagAreaAtPoseEstimateCam2 > 0.2)){
+          usingCam2MT1 = true;
+          usingCam2MT2 = false;
+          poseCam2Estimate = poseCam2MT1Estimate;
+          poseUpdateRotTrustFactorCam2 = 0.5;
+          poseUpdateAvailableCam2 = true;
+        }
+        else{
+          usingCam2MT2 = true;
+          usingCam2MT1 = false;
+          poseCam2Estimate = poseCam2MT2Estimate;
+          poseUpdateRotTrustFactorCam2 = 999999999;
+          poseUpdateAvailableCam2 = true;
+          }
       
-      else{
-        poseUpdateAvailable = false;
+      // Only clear out pose available data if no tags were found
+      if (poseCam2MT2Estimate.tagCount < 1){
+        usingCam2MT1 = false;
+        usingCam2MT2 = false;
+        poseUpdateAvailableCam2 = false;
       }
-      
+
+    } catch (Exception e) {
+        DriverStation.reportError("Camera 1 Data Not Present" + e.getMessage(), e.getStackTrace());
+      }  
+  }
+
+
+public void SetPoseEstimateForDrive(){
+
+  // Camera 1
+  if (!poseUpdateAvailable && poseUpdateAvailableCam1){
+
+    // Only using MT1 estimates for now until we find out what is up with MT2
+    if (usingCam1MT1){
+
+      poseCamEstimate = poseCam1Estimate;
+      poseUpdateXYTrustFactor = poseUpdateXYTrustFactorCam1;
+      poseUpdateRotTrustFactor = poseUpdateRotTrustFactorCam1;
+
+      poseUpdateAvailable = true;
+    }
+    else{
+      poseUpdateAvailable = false;
     }
   }
+
+  // Camera 2
+  if (!poseUpdateAvailable && poseUpdateAvailableCam2){
+
+    if (usingCam2MT1){
+
+      poseCamEstimate = poseCam2Estimate;
+      poseUpdateXYTrustFactor = poseUpdateXYTrustFactorCam2;
+      poseUpdateRotTrustFactor = poseUpdateRotTrustFactorCam2;
+
+      poseUpdateAvailable = true;
+    }
+    else{
+      poseUpdateAvailable = false;
+    }
+  }
+}
+
+  
   
   // This method clears out the pose update available flag to help prevent multiple offsets of same data.
   // This method also checks if we're in a "Was Tipped" state and using super aggressive correction.  If so
@@ -145,6 +233,7 @@ public class Limelight_Pose extends SubsystemBase{
     // Clear out the "Pose Update Available" flags
     poseUpdateAvailable = false; 
     poseUpdateAvailableCam1 = false;
+    poseUpdateAvailableCam2 = false;
 
 }
 
@@ -157,6 +246,9 @@ public void CollectDriveThetaValue(double driveTheta){
     SmartDashboard.putBoolean("Using MT1", usingCam1MT1);
     SmartDashboard.putBoolean("Using MT2", usingCam1MT2);
 
+    SmartDashboard.putBoolean("Using MT1", usingCam2MT1);
+    SmartDashboard.putBoolean("Using MT2", usingCam2MT2);
+
 
   }
 
@@ -167,18 +259,27 @@ public void CollectDriveThetaValue(double driveTheta){
     // Sending the robot's current angle to the camera all the time
     LimelightHelpers.SetRobotOrientation("limelight-right", currentDriveTheta, 0, 0, 0, 0, 0);
     LimelightHelpers.SetIMUMode("limelight-right", 0);
+    LimelightHelpers.SetRobotOrientation("limelight-left", currentDriveTheta, 0, 0, 0, 0, 0);
+    LimelightHelpers.SetIMUMode("limelight-left", 0);
 
     // Looking for pose updates if activated
-    if (poseUpdatesFromCameraActive){
-      SetPoseEstimateInfoCam1();
-      SetPoseEstimateForDrive();
-    }
-    else {
-      poseUpdateAvailable = false;
-      poseUpdateAvailableCam1 = false;
-      usingCam1MT1 = false;
-      usingCam1MT2 = false;
-    }  
+if (poseUpdatesFromCameraActive){
+  SetPoseEstimateInfoCam1();
+  SetPoseEstimateInfoCam2();
+  SetPoseEstimateForDrive();
+}
+else {
+  poseUpdateAvailable = false;
+
+  poseUpdateAvailableCam1 = false;
+  poseUpdateAvailableCam2 = false;
+
+  usingCam1MT1 = false;
+  usingCam1MT2 = false;
+
+  usingCam2MT1 = false;
+  usingCam2MT2 = false;
+}
 
     updateShuffleboard();
   }  

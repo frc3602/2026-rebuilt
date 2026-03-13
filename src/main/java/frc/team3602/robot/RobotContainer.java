@@ -114,7 +114,7 @@ public class RobotContainer {
                                 .whileFalse(spindexer.stopSpindexer());
                 operatorController.rightTrigger().onTrue(superStructure.shootBall1())
                                 .whileFalse(superStructure.stopShoot());
-                operatorController.b().whileTrue(spindexer.setFeedVelocity(-40.0)).onFalse(spindexer.stopSpindexer());
+                operatorController.b().whileTrue(spindexer.setFeedVelocity(-35.0)).onFalse(spindexer.stopSpindexer());
                 operatorController.povUp().onTrue(superStructure.stopIntake());
                 operatorController.a().onTrue(turret.passMode());
                 operatorController.leftTrigger().onTrue(superStructure.shootFailsafe())

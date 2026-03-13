@@ -67,7 +67,7 @@ public class Superstructure {
         return Commands.sequence(
             turretSubsys.setAngle(0),
             shooterSubsys.setShootVelocity(ShooterConstants.kShooterFailsafeSpeed),
-            Commands.waitUntil(() -> shooterSubsys.atSpeed() && turretSubsys.atTarget),
+            Commands.waitSeconds(4),
             spindexerSubsys.setFeedVelocity(-62.5)
         );
     }
@@ -89,6 +89,14 @@ public class Superstructure {
 
     public Command outakeBall() {
         return intakeSubsys.reverseIntake().withTimeout(.2);
+    }
+
+    //Auton
+    public Command autonIntake() {
+        return Commands.parallel(
+            pivotSubsys.dumbDropIntake(),
+            intakeSubsys.setIntakeSpeed()
+        );
     }
 
 
