@@ -353,30 +353,25 @@ public double getDistanceToTarget() {
 }
 
     private final Field2d field = new Field2d();
-    double getYawDegrees = getPigeon2().getRotation2d().getDegrees();
-    double getYawDegreesPerSecond = getPigeon2().getAngularVelocityZWorld().getValueAsDouble();
-
     @Override
     public void periodic() {
 
         poseEstimator.update(getPigeon2().getRotation2d(), this.getState().ModulePositions);
         poseEstimator.getEstimatedPosition();
 
+        // TODO(Codex-MT2): Read fresh gyro values every loop so MegaTag2 orientation updates are current.
+        double currentYawDegrees = getPigeon2().getRotation2d().getDegrees();
+        double currentYawDegreesPerSecond = getPigeon2().getAngularVelocityZWorld().getValueAsDouble();
+
         // Pass curent theta over to the limelight subsystem
-        Limelight_Pose.getInstance().CollectDriveThetaValue(poseEstimator.getEstimatedPosition().getRotation().getDegrees());
+        // TODO(Codex-MT2): Pass both yaw and yaw rate to Limelight_Pose before it reads MegaTag2 estimates.
+        Limelight_Pose.getInstance().CollectDriveThetaValue(currentYawDegrees, currentYawDegreesPerSecond);
 
         if (Limelight_Pose.getInstance().poseUpdateAvailable){
             poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(Limelight_Pose.getInstance().poseUpdateXYTrustFactor, 
                 Limelight_Pose.getInstance().poseUpdateXYTrustFactor,Limelight_Pose.getInstance().poseUpdateRotTrustFactor));
             poseEstimator.addVisionMeasurement(Limelight_Pose.getInstance().poseCamEstimate.pose, Limelight_Pose.getInstance().poseCamEstimate.timestampSeconds);
             Limelight_Pose.getInstance().UpdateVisionCorrectionAdded();
-
-                // Sending the robot's current angle to the camera all the time
-                    // Sending the robot's current angle to the camera all the time
-    LimelightHelpers.SetRobotOrientation("limelight-right", getYawDegrees, getYawDegreesPerSecond, 0, 0, 0, 0);
-    LimelightHelpers.SetIMUMode("limelight-right", 0);
-    LimelightHelpers.SetRobotOrientation("limelight-left", getYawDegrees, getYawDegreesPerSecond, 0, 0, 0, 0);
-    LimelightHelpers.SetIMUMode("limelight-left", 0);
         }
 
         SmartDashboard.putNumber("Robot X", poseEstimator.getEstimatedPosition().getX());
