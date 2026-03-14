@@ -54,6 +54,8 @@ public class Limelight_Pose extends SubsystemBase{
   private double timestampCam2Previous = 0.0;
 
   public double currentDriveTheta;
+  // TODO(Codex-MT2): Store live drivetrain yaw rate so MegaTag2 gets fresh orientation data before each read.
+  public double currentDriveYawRate;
 
 
   public Limelight_Pose(){}
@@ -239,8 +241,18 @@ public void SetPoseEstimateForDrive(){
 
 }
 
-public void CollectDriveThetaValue(double driveTheta){
+// TODO(Codex-MT2): Collect both yaw and yaw rate from the drivetrain for MegaTag2 orientation updates.
+public void CollectDriveThetaValue(double driveTheta, double driveYawRate){
   currentDriveTheta = driveTheta;
+  currentDriveYawRate = driveYawRate;
+}
+
+  // TODO(Codex-MT2): Push fresh robot orientation to both Limelights before reading MegaTag2 pose estimates.
+  private void updateMegaTag2Orientation() {
+    LimelightHelpers.SetRobotOrientation("limelight-right", currentDriveTheta, currentDriveYawRate, 0, 0, 0, 0);
+    LimelightHelpers.SetIMUMode("limelight-right", 0);
+    LimelightHelpers.SetRobotOrientation("limelight-left", currentDriveTheta, currentDriveYawRate, 0, 0, 0, 0);
+    LimelightHelpers.SetIMUMode("limelight-left", 0);
 }
 
   private void updateShuffleboard() {
@@ -266,6 +278,8 @@ public void CollectDriveThetaValue(double driveTheta){
 
     // Looking for pose updates if activated
 if (poseUpdatesFromCameraActive){
+  // TODO(Codex-MT2): Update Limelight orientation first so MegaTag2 uses the latest drivetrain heading input.
+  updateMegaTag2Orientation();
   SetPoseEstimateInfoCam1();
   SetPoseEstimateInfoCam2();
   SetPoseEstimateForDrive();
