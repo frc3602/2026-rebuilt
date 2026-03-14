@@ -128,7 +128,7 @@ public class TurretSubsystem extends SubsystemBase {
 
     public Command autonToTeleop() {
         return runOnce(() -> {
-            this.setAngle(-90);
+            this.setAngle(270);
         });
     }
 
@@ -313,6 +313,43 @@ public class TurretSubsystem extends SubsystemBase {
         });
     }
 
+        public Command setAngleAuto() {
+        return  runOnce(() -> {
+            setAngle = 90;
+        });
+    }
+
+    public Command setAngleLeftCorner() {
+        return  runOnce(() -> {
+            setAngle = -55;
+        });
+    }
+
+    public Command setAngleRightCorner() {
+        return  runOnce(() -> {
+            setAngle = 240;
+        });
+    }
+
+    public Command setAngleNeutral() {
+        return  runOnce(() -> {
+            setAngle = 270;
+        });
+    }
+
+    public Command setAngleZero() {
+        return  runOnce(() -> {
+            setAngle = 0;
+        });
+    }
+
+    public Command basicAuton() {
+        return  runOnce(() -> {
+            setAngle = 5;
+        });
+    }
+
+
     // public Command track() {
     // return run(() -> {
     // if (vision.getTurretHasTarget()) {
@@ -359,7 +396,7 @@ public class TurretSubsystem extends SubsystemBase {
 
     public Command setPosition() {
         return run(() -> {
-            var pidEffort = turretController.calculate(getTurretAngleDeg(), setAngle);
+            var pidEffort = turretController.calculate(getTurretAngleDeg(), clampAngle(setAngle));
 
             turretMotor.setVoltage(pidEffort);
         });

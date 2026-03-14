@@ -84,12 +84,13 @@ public class RobotContainer {
                 NamedCommands.registerCommand("autonShootBeta", superStructure.autonShootBeta());
                 NamedCommands.registerCommand("autonIntake", superStructure.autonIntake());
                 NamedCommands.registerCommand("setTurretTeleop", turret.autonToTeleop());
+                NamedCommands.registerCommand("setAngleAuto", turret.setAngleAuto());
               
 
                 // named commands for pathplanner go here
                 pivot.setDefaultCommand(pivot.holdPivot());
                 climberSubsys.setDefaultCommand(climberSubsys.setPosition());
-                // turret.setDefaultCommand(turret.setPosition());
+                turret.setDefaultCommand(turret.setPosition());
                 configureBindings();
                 polarityChooser.setDefaultOption("Positive", 1.0);
                 polarityChooser.addOption("Negative", -1.0);
@@ -130,13 +131,17 @@ public class RobotContainer {
                 // operatorController.rightTrigger().onTrue(superStructure.shootBall1())
                 // .whileFalse(superStructure.stopShoot());
                 operatorController.y().whileTrue(spindexer.setFeedVelocity(-35.0)).onFalse(spindexer.stopSpindexer());
-                operatorController.povUp().onTrue(superStructure.stopIntake());
                 operatorController.leftTrigger().onTrue(superStructure.shootFailsafe())
                                 .onFalse(superStructure.stopShoot()); // FAILSAFE
                 operatorController.b().onTrue(shooter.setShootVelocity(-55.0)).onFalse(shooter.stopShooter());
                 operatorController.a().onTrue(shooter.setShootVelocity(-41.5)).onFalse(shooter.stopShooter());
                 operatorController.x().onTrue(shooter.setShootVelocity(-44)).onFalse(shooter.stopShooter());
-                operatorController.povDown().onTrue(turret.setAngle(0));
+                operatorController.leftBumper().onTrue(superStructure.stopIntake());
+                operatorController.povUp().onTrue(turret.setAngleZero());
+                operatorController.povDown().onTrue(turret.setAngleNeutral());
+                operatorController.povLeft().onTrue(turret.setAngleLeftCorner());
+                operatorController.povRight().onTrue(turret.setAngleRightCorner());
+
 
                 // DriverControls
                 driverController.rightBumper().whileTrue(pivot.dumbDropIntake());

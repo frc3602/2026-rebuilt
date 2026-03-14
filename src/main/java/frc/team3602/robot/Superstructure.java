@@ -105,14 +105,17 @@ public class Superstructure {
     // }
 
     public Command autonShootBeta() {
-        return Commands.parallel(
-                shooterSubsys.setShootVelocity(-41.25).andThen(Commands.waitUntil(() -> shooterSubsys.getVelocity() >= -41.25)).withTimeout(5).andThen(shooterSubsys.stopShooter()),  
-                spindexerSubsys.setFeedVelocity(-30.0)).withTimeout(5).andThen(spindexerSubsys.setFeedVelocity(0));               
+        return Commands.sequence(
+            shooterSubsys.setShootVelocity(-41.5),
+            Commands.waitUntil(() -> shooterSubsys.getVelocity() <= -41.25).withTimeout(2.0),
+            turretSubsys.basicAuton(),
+            spindexerSubsys.setFeedVelocity(-30.0).withTimeout(2.0),
+            spindexerSubsys.stopSpindexer(),
+            shooterSubsys.stopShooter()
+        );          
     }
 
-    public Command setAngleAuto() {
-        return Commands.sequence(turretSubsys.setAngle(-5));
-    }
+
 
 
 
