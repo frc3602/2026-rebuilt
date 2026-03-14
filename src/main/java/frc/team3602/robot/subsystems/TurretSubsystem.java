@@ -393,19 +393,19 @@ public Command aimToDesiredAngle() {
     // Periodic
     @Override
     public void periodic() {
-        SmartDashboard.putNumber("Turret Encoder", getEncoder());
-        SmartDashboard.putNumber("Turret Voltage", voltage);
-        SmartDashboard.putNumber("Set Angle", setAngle);
-        SmartDashboard.putNumber("Turret Set Angle", vision.getTurretTX());
-        SmartDashboard.putNumber("Aim PID", aimController.calculate(vision.getTurretTX(), 0));
-        SmartDashboard.putNumber("GetTy", vision.getTY());
+        // SmartDashboard.putNumber("Turret Encoder", getEncoder());
+        // SmartDashboard.putNumber("Turret Voltage", voltage);
+        // SmartDashboard.putNumber("Set Angle", setAngle);
+        // SmartDashboard.putNumber("Turret Set Angle", vision.getTurretTX());
+        // SmartDashboard.putNumber("Aim PID", aimController.calculate(vision.getTurretTX(), 0));
+        // SmartDashboard.putNumber("GetTy", vision.getTY());
         // turretFeedForward = turnFeedforward();
-        SmartDashboard.putNumber("Turret Feedforward", turretFeedForward); // Bruh
-        SmartDashboard.putNumber("Turret IMUPitch", vision.getTurretIMUPitch());
+        // SmartDashboard.putNumber("Turret Feedforward", turretFeedForward); // Bruh
+        // SmartDashboard.putNumber("Turret IMUPitch", vision.getTurretIMUPitch());
         angle = Math.toRadians(vision.getTY() + vision.getTurretIMUPitch());
         distance =(44.21875 - 15.625) / Math.tan(angle);
-        SmartDashboard.putNumber("counculatedDist", distance);
-        SmartDashboard.putNumber("Aim Output", aimOutput);
+        // SmartDashboard.putNumber("counculatedDist", distance);
+        // SmartDashboard.putNumber("Aim Output", aimOutput);
     }
 
     // Config

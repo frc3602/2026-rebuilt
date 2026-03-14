@@ -49,27 +49,25 @@ public class Superstructure {
                 Commands.sequence(
 
                         shooterSubsys.setShootVelocity(-62.5).withTimeout(1.7),
-                        spindexerSubsys.setFeedVelocity(-62.5)
-                ));
+                        spindexerSubsys.setFeedVelocity(-62.5)));
     }
 
     // public Command shootBall2() {
-    //     return Commands.parallel(
-    //             turretSubsys.track(),
-    //             Commands.sequence(
-    //                     shooterSubsys.setShootVelocity(-57.5).withTimeout(2).andThen(
-    //                             spindexerSubsys.setFeedVelocity(-57.5))
+    // return Commands.parallel(
+    // turretSubsys.track(),
+    // Commands.sequence(
+    // shooterSubsys.setShootVelocity(-57.5).withTimeout(2).andThen(
+    // spindexerSubsys.setFeedVelocity(-57.5))
 
-    //             ));
+    // ));
     // }
 
     public Command shootFailsafe() {
         return Commands.sequence(
-            turretSubsys.setAngle(0),
-            shooterSubsys.setShootVelocity(ShooterConstants.kShooterFailsafeSpeed),
-            Commands.waitSeconds(4),
-            spindexerSubsys.setFeedVelocity(-62.5)
-        );
+                turretSubsys.setAngle(0),
+                shooterSubsys.setShootVelocity(ShooterConstants.kShooterFailsafeSpeed),
+                Commands.waitSeconds(4),
+                spindexerSubsys.setFeedVelocity(-62.5));
     }
 
     public Command stopShoot() {
@@ -91,21 +89,25 @@ public class Superstructure {
         return intakeSubsys.reverseIntake().withTimeout(.2);
     }
 
-    //Auton
+    // Auton
     public Command autonIntake() {
-        return Commands.parallel(
-            pivotSubsys.dumbDropIntake(),
-            intakeSubsys.setIntakeSpeed()
+        return Commands.sequence(
+            pivotSubsys.dumbDropIntake()
         );
     }
 
-public Command autonShoot() {
-    return Commands.sequence(
-        shooterSubsys.setShootVelocity(ShooterConstants.kShooterFailsafeSpeed),
-        Commands.waitSeconds(0.2),
-        spindexerSubsys.setFeedVelocity(-30)
-    );
-}
+    // public Command autonShoot() {
+    //     return Commands.sequence(
+    //             shooterSubsys.setShootVelocity(ShooterConstants.kShooterFailsafeSpeed),
+    //             spindexerSubsys.setFeedVelocity(-30));
+    // }
+
+    public Command autonShootBeta() {
+        return Commands.parallel(
+                shooterSubsys.setShootVelocity(-41.25).andThen(Commands.waitUntil(() -> shooterSubsys.getVelocity() >= -41.25)).withTimeout(5).andThen(shooterSubsys.stopShooter()),  
+                spindexerSubsys.setFeedVelocity(-30.0)).withTimeout(5).andThen(spindexerSubsys.setFeedVelocity(0));               
+    }
+
 
 
 

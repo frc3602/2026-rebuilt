@@ -9,6 +9,8 @@ package frc.team3602.robot;
 import static edu.wpi.first.units.Units.*;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -61,10 +63,9 @@ public class RobotContainer {
         public final CommandXboxController driverController = new CommandXboxController(0);
         public final CommandXboxController operatorController = new CommandXboxController(1);
 
-
         /* Subsystems */
         public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-                public final Vision vision = new Vision();
+        public final Vision vision = new Vision();
         public final IntakeSubsystem intake = new IntakeSubsystem();
         public final ShooterSubsystem shooter = new ShooterSubsystem(vision, drivetrain);
         public final TurretSubsystem turret = new TurretSubsystem(drivetrain);
@@ -78,16 +79,24 @@ public class RobotContainer {
         private Boolean intakeUp = (pivot.getPivotEncoder < 0);
         private Boolean intakeDown = (pivot.getPivotEncoder > 90);
 
-    public RobotContainer() {
-        // named commands for pathplanner go here
-        pivot.setDefaultCommand(pivot.holdPivot());
-        climberSubsys.setDefaultCommand(climberSubsys.setPosition());
-        // turret.setDefaultCommand(turret.setPosition());
-        configureBindings();
-        polarityChooser.setDefaultOption("Positive", 1.0);
-        polarityChooser.addOption("Negative", -1.0);
-        SmartDashboard.putData( "Polarity Chooser", polarityChooser);
-    }
+        public RobotContainer() {
+                // Registered Commands
+                NamedCommands.registerCommand("autonShootBeta", superStructure.autonShootBeta());
+                NamedCommands.registerCommand("autonIntake", superStructure.autonIntake());
+              
+
+                // named commands for pathplanner go here
+                pivot.setDefaultCommand(pivot.holdPivot());
+                climberSubsys.setDefaultCommand(climberSubsys.setPosition());
+                // turret.setDefaultCommand(turret.setPosition());
+                configureBindings();
+                polarityChooser.setDefaultOption("Positive", 1.0);
+                polarityChooser.addOption("Negative", -1.0);
+                SmartDashboard.putData("Polarity Chooser", polarityChooser);
+                drivetrain.configPathplanner();
+                updatePose();
+                configAutonomous();
+        }
 
         private void configureBindings() {
                 // Note that X is defined as forward according to WPILib convention,
@@ -118,7 +127,7 @@ public class RobotContainer {
                 // Operator Controls
 
                 // operatorController.rightTrigger().onTrue(superStructure.shootBall1())
-                //                 .whileFalse(superStructure.stopShoot());
+                // .whileFalse(superStructure.stopShoot());
                 operatorController.y().whileTrue(spindexer.setFeedVelocity(-35.0)).onFalse(spindexer.stopSpindexer());
                 operatorController.povUp().onTrue(superStructure.stopIntake());
                 operatorController.leftTrigger().onTrue(superStructure.shootFailsafe())
@@ -126,8 +135,6 @@ public class RobotContainer {
                 operatorController.b().onTrue(shooter.setShootVelocity(-55.0)).onFalse(shooter.stopShooter());
                 operatorController.a().onTrue(shooter.setShootVelocity(-41.5)).onFalse(shooter.stopShooter());
                 operatorController.x().onTrue(shooter.setShootVelocity(-44)).onFalse(shooter.stopShooter());
-                
-
 
                 // DriverControls
                 driverController.rightBumper().whileTrue(pivot.dumbDropIntake());
@@ -144,25 +151,23 @@ public class RobotContainer {
 
                 // Reset the field-centric heading on left bumper press.
                 // driverController.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
-                drivetrain.registerTelemetry(logger::telemeterize);
+                // drivetrain.registerTelemetry(logger::telemeterize);
         }
 
         public Command getAutonomousCommand() {
                 return autoChooser.getSelected();
         }
+
         private void configAutonomous() {
+                autoChooser = AutoBuilder.buildAutoChooser();
                 SmartDashboard.putData(autoChooser);
         }
 
         public void updatePose() {
-    // puts the drivetrain pose on our dashboards
-    SmartDashboard.putNumber("estimated drive pose x", drivetrain.getState().Pose.getX());
-    SmartDashboard.putNumber("estimated drive pose y", drivetrain.getState().Pose.getY());
-    SmartDashboard.putNumber("estimated drive pose rotation",
-        drivetrain.getState().Pose.getRotation().getDegrees());
-
+                // puts the drivetrain pose on our dashboards
+                SmartDashboard.putNumber("estimated drive pose x", drivetrain.getState().Pose.getX());
+                SmartDashboard.putNumber("estimated drive pose y", drivetrain.getState().Pose.getY());
+                SmartDashboard.putNumber("estimated drive pose rotation",
+                                drivetrain.getState().Pose.getRotation().getDegrees());
+        }
 }
-
-}
-
-

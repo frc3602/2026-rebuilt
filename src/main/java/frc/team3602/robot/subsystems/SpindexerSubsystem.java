@@ -49,7 +49,7 @@ public class SpindexerSubsystem extends SubsystemBase {
 
     public Command setFeedVelocity(double rotationsPerSecond) {
         return run(() -> {
-            receiveMotor.setControl(m_request.withVelocity(rotationsPerSecond));
+            receiveMotor.setControl(m_request.withVelocity(rotationsPerSecond / .25));
             spindexerMotor.setControl(m_request.withVelocity(rotationsPerSecond));
         });
 

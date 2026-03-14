@@ -70,7 +70,7 @@ public class PivotSubsystem extends SubsystemBase {
     }
 
     public Command dumbDropIntake() {
-        return run(() -> pivotSetPoint = 104);
+        return runOnce(() -> pivotSetPoint = 104);
     }
 
     public Command dumbRaiseIntake() {
@@ -105,13 +105,13 @@ public class PivotSubsystem extends SubsystemBase {
     public void periodic() {
         getPivotEncoder = getRightPosition();
 
-        SmartDashboard.putNumber("Inake Angle", getRightPosition());
-        SmartDashboard.putBoolean("Intake Boolean", isRightDown());
-        SmartDashboard.putNumber("Pivot Setpoint", pivotSetPoint);
-        SmartDashboard.putNumber("Pivot Voltage", intakePivot.getMotorVoltage().getValueAsDouble());
-        SmartDashboard.putNumber("Pivot Follower Voltage", intakePivotFollow.getMotorVoltage().getValueAsDouble());
-        SmartDashboard.putNumber("Right Pivot Position", getRightPosition());
-        SmartDashboard.putNumber("Left Pivot Position", getLeftPosition());
+        // SmartDashboard.putNumber("Inake Angle", getRightPosition());
+        // SmartDashboard.putBoolean("Intake Boolean", isRightDown());
+        // SmartDashboard.putNumber("Pivot Setpoint", pivotSetPoint);
+        // SmartDashboard.putNumber("Pivot Voltage", intakePivot.getMotorVoltage().getValueAsDouble());
+        // SmartDashboard.putNumber("Pivot Follower Voltage", intakePivotFollow.getMotorVoltage().getValueAsDouble());
+        // SmartDashboard.putNumber("Right Pivot Position", getRightPosition());
+        // SmartDashboard.putNumber("Left Pivot Position", getLeftPosition());
     }
 
 }

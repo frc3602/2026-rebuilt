@@ -108,7 +108,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
     // Stop
     public Command stopShooter() {
-        return run(() -> {
+        return runOnce(() -> {
             shootermotor1.set(0);
             shootermotor2.set(0);
         });
@@ -130,14 +130,14 @@ public class ShooterSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        SmartDashboard.putNumber("Shooter1 Speed", ShooterConstants.kShooterSpeed);
+        // SmartDashboard.putNumber("Shooter1 Speed", ShooterConstants.kShooterSpeed);
         // SmartDashboard.putNumber("Shooter2 Speed", ShooterConstants.kShooterSpeed);
         // SmartDashboard.putNumber("Feeder Speed", ShooterConstants.kFeederMotorSpeed);
         distance = drivetrain.getDistanceToTarget();
         shootLerpSpeed = shootLerp.get(distance);
-        SmartDashboard.putNumber("Lerp Shoot Speed", shootLerpSpeed);
-        SmartDashboard.putNumber("Dist in side of shootSubsys", distance / 12);
-        SmartDashboard.getNumber("ShootSpeedInput", shootShuffleSpeed);
+        // SmartDashboard.putNumber("Lerp Shoot Speed", shootLerpSpeed);
+        // SmartDashboard.putNumber("Dist in side of shootSubsys", distance / 12);
+        // SmartDashboard.getNumber("ShootSpeedInput", shootShuffleSpeed);
 
     }
 

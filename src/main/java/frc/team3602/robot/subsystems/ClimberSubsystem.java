@@ -14,7 +14,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.team3602.robot.Constants.ClimberConstants;
 
 public class ClimberSubsystem extends SubsystemBase {
-    private final TalonFX climberMotor = new TalonFX(ClimberConstants.kClimberMotorID);
+    private final TalonFX climberMotor = new TalonFX(/*ClimberConstants.kClimberMotorID*/20);
 
     private double pivotSetPoint = 0.0;
     public double pidEffort;
@@ -63,11 +63,11 @@ public class ClimberSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        SmartDashboard.putNumber("PID Effort", ffEffort);
-        SmartDashboard.putNumber("Feedforward Effort", ffEffort);
-        SmartDashboard.putNumber("Total Effort", totalEffort);
+        // SmartDashboard.putNumber("PID Effort", ffEffort);
+        // SmartDashboard.putNumber("Feedforward Effort", ffEffort);
+        // SmartDashboard.putNumber("Total Effort", totalEffort);
 
-        SmartDashboard.putNumber("Climber Setpoint", pivotSetPoint);
-        SmartDashboard.putNumber("Climber Measurement", climberPosition());
+        // SmartDashboard.putNumber("Climber Setpoint", pivotSetPoint);
+        // SmartDashboard.putNumber("Climber Measurement", climberPosition());
     }
 }
