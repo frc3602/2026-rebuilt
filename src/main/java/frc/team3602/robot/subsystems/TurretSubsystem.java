@@ -24,6 +24,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 
 import frc.team3602.robot.Constants.*;
+import frc.team3602.robot.LimelightHelpers.PoseEstimate;
 import frc.team3602.robot.Vision;
 import frc.team3602.robot.subsystems.ShooterSubsystem;
 
@@ -60,7 +61,7 @@ public class TurretSubsystem extends SubsystemBase {
     public double setAngle = 0;
 
     // Controllers *These PID values need to be changed*
-    private final PIDController turretController = new PIDController(.1, 0.0, 0.0026);
+    private final PIDController turretController = new PIDController(.04, 0.0, 0.0);
     private final PIDController aimController = new PIDController(.04, 0.0, 0);
 
     private final Feedforwards aimFf = new Feedforwards(0);
@@ -160,11 +161,15 @@ public double getTurretAngleDeg() {
 }
 
 public double calculateDesiredAngle() {
-    Pose2d robot = drivetrainSubsys.getState().Pose;
-    double dx = TARGET.getX() - robot.getX();
-    double dy = TARGET.getY() - robot.getY();
+
+    Pose2d calcRobot = drivetrainSubsys.robotPose ;
+
+    Translation2d target = getTargetPose(); 
+
+    double dx = TARGET.getX() - calcRobot.getX();
+    double dy = TARGET.getY() - calcRobot.getY();
     double fieldAngle   = Math.toDegrees(Math.atan2(dy, dx));
-    double robotHeading = robot.getRotation().getDegrees();
+    double robotHeading = calcRobot.getRotation().getDegrees();
     return clampAngle(fieldAngle - robotHeading);
 }
 
@@ -286,25 +291,35 @@ public double calculateTurretOffset() {
         );
     }
 
-    public Command track() {
-        return run(() -> {
-            if (vision.getTurretHasTarget()) {
-                aimOutput = aimController.calculate(vision.getTurretTX(),5);//setpoint is the offset of the turret(temp)
-                setAngle = setAngle - aimOutput + calculateTurretOffset() ;
-            }
-            setAngle = turnFeedforward() + setAngle; // Adds rotational feedforward
-            atTarget = (Math.abs(setAngle - getEncoder())<0.5);
-            voltage = turretController.calculate(getEncoder(), setAngle);
-            if (voltage > 4) {  //TODO: create constant for 2, do not go higher than 2
-                voltage = 4;
-            } else if (voltage < -4) {
-                voltage = -4;
-            }            turretMotor.setVoltage(voltage);
-        }
+    // public Command track() {
+    //     return run(() -> {
+    //         if (vision.getTurretHasTarget()) {
+    //             aimOutput = aimController.calculate(vision.getTurretTX(),5);//setpoint is the offset of the turret(temp)
+    //             setAngle = setAngle - aimOutput + calculateTurretOffset() ;
+    //         }
+    //         setAngle = turnFeedforward() + setAngle; // Adds rotational feedforward
+    //         atTarget = (Math.abs(setAngle - getEncoder())<0.5);
+    //         voltage = turretController.calculate(getEncoder(), setAngle);
+    //         if (voltage > 4) {  //TODO: create constant for 2, do not go higher than 2
+    //             voltage = 4;
+    //         } else if (voltage < -4) {
+    //             voltage = -4;
+    //         }            turretMotor.setVoltage(voltage);
+    //     }
 
-        );
+    //     );
 
-    }
+    // }
+
+public Command aimToDesiredAngle() {
+    return run(() -> {
+
+        // setAngle = aimToDesiredAngle();
+    });
+}
+
+
+
     // THIS IS IN PROGRESS DO NOT HATE HATER ABE
     public Command passMode() {
         return run(() -> {

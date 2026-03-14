@@ -5,6 +5,8 @@
 package frc.team3602.robot.subsystems;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
+import com.ctre.phoenix6.hardware.Pigeon2;
+
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.team3602.robot.LimelightHelpers;
@@ -256,11 +258,11 @@ public void CollectDriveThetaValue(double driveTheta){
   public void periodic() {
     // This method will be called once per scheduler run
 
-    // Sending the robot's current angle to the camera all the time
-    LimelightHelpers.SetRobotOrientation("limelight-right", currentDriveTheta, 0, 0, 0, 0, 0);
-    LimelightHelpers.SetIMUMode("limelight-right", 0);
-    LimelightHelpers.SetRobotOrientation("limelight-left", currentDriveTheta, 0, 0, 0, 0, 0);
-    LimelightHelpers.SetIMUMode("limelight-left", 0);
+    // // Sending the robot's current angle to the camera all the time
+    // LimelightHelpers.SetRobotOrientation("limelight-right", currentDriveTheta, 0, 0, 0, 0, 0);
+    // LimelightHelpers.SetIMUMode("limelight-right", 0);
+    // LimelightHelpers.SetRobotOrientation("limelight-left", currentDriveTheta, 0, 0, 0, 0, 0);
+    // LimelightHelpers.SetIMUMode("limelight-left", 0);
 
     // Looking for pose updates if activated
 if (poseUpdatesFromCameraActive){

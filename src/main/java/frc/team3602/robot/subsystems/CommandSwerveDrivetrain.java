@@ -56,6 +56,7 @@ import frc.team3602.robot.generated.TunerConstants.TunerSwerveDrivetrain;
  * https://v6.docs.ctr-electronics.com/en/stable/docs/tuner/tuner-swerve/index.html
  */
 public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Subsystem {
+
     private SwerveRequest.ApplyRobotSpeeds autoRobotDrive = new SwerveRequest.ApplyRobotSpeeds(); // Only for autons
     private static final double kSimLoopPeriod = 0.004; // 4 ms
     private final SwerveRequest.FieldCentric fcDrive = new SwerveRequest.FieldCentric();
@@ -327,11 +328,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         return new Translation2d(0.0, 0.0);
     }
 
+public Pose2d robotPose = poseEstimator.getEstimatedPosition();
+
 public double getDistanceToTarget() {
-
-    // Robot pose from odometry
-    Pose2d robotPose = poseEstimator.getEstimatedPosition();
-
     // Target field location
     Translation2d targetPosition = this.getTargetPose();
 
@@ -354,6 +353,8 @@ public double getDistanceToTarget() {
 }
 
     private final Field2d field = new Field2d();
+    double getYawDegrees = getPigeon2().getRotation2d().getDegrees();
+    double getYawDegreesPerSecond = getPigeon2().getAngularVelocityZWorld().getValueAsDouble();
 
     @Override
     public void periodic() {
@@ -369,6 +370,13 @@ public double getDistanceToTarget() {
                 Limelight_Pose.getInstance().poseUpdateXYTrustFactor,Limelight_Pose.getInstance().poseUpdateRotTrustFactor));
             poseEstimator.addVisionMeasurement(Limelight_Pose.getInstance().poseCamEstimate.pose, Limelight_Pose.getInstance().poseCamEstimate.timestampSeconds);
             Limelight_Pose.getInstance().UpdateVisionCorrectionAdded();
+
+                // Sending the robot's current angle to the camera all the time
+                    // Sending the robot's current angle to the camera all the time
+    LimelightHelpers.SetRobotOrientation("limelight-right", getYawDegrees, getYawDegreesPerSecond, 0, 0, 0, 0);
+    LimelightHelpers.SetIMUMode("limelight-right", 0);
+    LimelightHelpers.SetRobotOrientation("limelight-left", getYawDegrees, getYawDegreesPerSecond, 0, 0, 0, 0);
+    LimelightHelpers.SetIMUMode("limelight-left", 0);
         }
 
         SmartDashboard.putNumber("Robot X", poseEstimator.getEstimatedPosition().getX());

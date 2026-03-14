@@ -53,15 +53,15 @@ public class Superstructure {
                 ));
     }
 
-    public Command shootBall2() {
-        return Commands.parallel(
-                turretSubsys.track(),
-                Commands.sequence(
-                        shooterSubsys.setShootVelocity(-57.5).withTimeout(2).andThen(
-                                spindexerSubsys.setFeedVelocity(-57.5))
+    // public Command shootBall2() {
+    //     return Commands.parallel(
+    //             turretSubsys.track(),
+    //             Commands.sequence(
+    //                     shooterSubsys.setShootVelocity(-57.5).withTimeout(2).andThen(
+    //                             spindexerSubsys.setFeedVelocity(-57.5))
 
-                ));
-    }
+    //             ));
+    // }
 
     public Command shootFailsafe() {
         return Commands.sequence(
@@ -98,6 +98,14 @@ public class Superstructure {
             intakeSubsys.setIntakeSpeed()
         );
     }
+
+public Command autonShoot() {
+    return Commands.sequence(
+        shooterSubsys.setShootVelocity(ShooterConstants.kShooterFailsafeSpeed),
+        Commands.waitSeconds(0.2),
+        spindexerSubsys.setFeedVelocity(-30)
+    );
+}
 
 
 
