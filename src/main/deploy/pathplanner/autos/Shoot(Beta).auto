@@ -11,6 +11,12 @@
           }
         },
         {
+          "type": "named",
+          "data": {
+            "name": "setAngleAuto"
+          }
+        },
+        {
           "type": "wait",
           "data": {
             "waitTime": 2.0
@@ -20,6 +26,12 @@
           "type": "named",
           "data": {
             "name": "autonShootBeta"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "setTurretTeleop"
           }
         }
       ]

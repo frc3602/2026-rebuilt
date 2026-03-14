@@ -6,6 +6,8 @@
 
 package frc.team3602.robot;
 
+import javax.sound.midi.Sequence;
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
@@ -106,6 +108,10 @@ public class Superstructure {
         return Commands.parallel(
                 shooterSubsys.setShootVelocity(-41.25).andThen(Commands.waitUntil(() -> shooterSubsys.getVelocity() >= -41.25)).withTimeout(5).andThen(shooterSubsys.stopShooter()),  
                 spindexerSubsys.setFeedVelocity(-30.0)).withTimeout(5).andThen(spindexerSubsys.setFeedVelocity(0));               
+    }
+
+    public Command setAngleAuto() {
+        return Commands.sequence(turretSubsys.setAngle(-5));
     }
 
 

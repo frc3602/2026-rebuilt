@@ -83,6 +83,7 @@ public class RobotContainer {
                 // Registered Commands
                 NamedCommands.registerCommand("autonShootBeta", superStructure.autonShootBeta());
                 NamedCommands.registerCommand("autonIntake", superStructure.autonIntake());
+                NamedCommands.registerCommand("setTurretTeleop", turret.autonToTeleop());
               
 
                 // named commands for pathplanner go here
@@ -135,6 +136,7 @@ public class RobotContainer {
                 operatorController.b().onTrue(shooter.setShootVelocity(-55.0)).onFalse(shooter.stopShooter());
                 operatorController.a().onTrue(shooter.setShootVelocity(-41.5)).onFalse(shooter.stopShooter());
                 operatorController.x().onTrue(shooter.setShootVelocity(-44)).onFalse(shooter.stopShooter());
+                operatorController.povDown().onTrue(turret.setAngle(0));
 
                 // DriverControls
                 driverController.rightBumper().whileTrue(pivot.dumbDropIntake());

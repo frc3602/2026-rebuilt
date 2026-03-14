@@ -138,6 +138,7 @@ public class ShooterSubsystem extends SubsystemBase {
         // SmartDashboard.putNumber("Lerp Shoot Speed", shootLerpSpeed);
         // SmartDashboard.putNumber("Dist in side of shootSubsys", distance / 12);
         // SmartDashboard.getNumber("ShootSpeedInput", shootShuffleSpeed);
+        SmartDashboard.putNumber("turretAngle", angle);
 
     }
 
