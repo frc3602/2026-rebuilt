@@ -92,6 +92,8 @@ public class Superstructure {
     }
 
     // Intake
+    // Review note 2026-03-15 10:15:26 -04:00: this method may be unused in the
+    // current codebase.
     public Command dropPivot() {
         return pivotSubsys.smartDropPivot();
     }
@@ -100,6 +102,8 @@ public class Superstructure {
         return pivotSubsys.dumbRaiseIntake().alongWith(intakeSubsys.stopIntake());
     }
 
+    // Review note 2026-03-15 10:15:26 -04:00: this method may be unused in the
+    // current codebase.
     public Command outakeBall() {
         return intakeSubsys.reverseIntake().withTimeout(.2);
     }

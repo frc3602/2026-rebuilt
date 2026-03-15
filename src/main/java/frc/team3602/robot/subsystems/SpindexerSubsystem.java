@@ -63,6 +63,8 @@ public class SpindexerSubsystem extends SubsystemBase {
      * We keep this as a simple percent-output command because reverse is used as a
      * short manual recovery action rather than a carefully metered scoring feed.
      */
+    // Review note 2026-03-15 10:15:26 -04:00: this method may be unused in the
+    // current codebase.
     public Command setReverseSpindexerReceive() {
         return runOnce(() -> {
             receiveMotor.set(spindexerConstants.kRecieveFuelSpeed);

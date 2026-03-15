@@ -74,6 +74,8 @@ public class TurretSubsystem extends SubsystemBase {
         configTurretHardware();
     }
 
+    // Review note 2026-03-15 10:15:26 -04:00: this method may be unused in the
+    // current codebase.
     public double getsetAnlge() {
         return startChooser.getSelected();
     }
@@ -84,6 +86,8 @@ public class TurretSubsystem extends SubsystemBase {
     private double turretFeedForward = 0.0;
 
     // Encoder
+    // Review note 2026-03-15 10:15:26 -04:00: this method may be unused in the
+    // current codebase.
     public Double getEncoder() {
         return (turretMotor.getRotorPosition().getValueAsDouble() * 12); // every revolution is 12 degrees because it is
                                                                          // a 30:1 gear ratio 10:1 from gear, 3:1 from
@@ -99,6 +103,8 @@ public class TurretSubsystem extends SubsystemBase {
 
     // Commands
 
+    // Review note 2026-03-15 10:15:26 -04:00: this method may be unused in the
+    // current codebase.
     public Command changeSetAngle(double newSetpoint) {
         return runOnce(() -> {
             setRequestedAngle(setAngle + newSetpoint);
@@ -111,6 +117,8 @@ public class TurretSubsystem extends SubsystemBase {
         });
     }
 
+    // Review note 2026-03-15 10:15:26 -04:00: this method may be unused in the
+    // current codebase.
     public Command testTurret(double voltage) {
         return runOnce(() -> {
             turretMotor.setVoltage(voltage);
@@ -118,6 +126,8 @@ public class TurretSubsystem extends SubsystemBase {
 
     }
 
+    // Review note 2026-03-15 10:15:26 -04:00: this method may be unused in the
+    // current codebase.
     public Command stopTurret() {
         return runOnce(() -> {
             turretMotor.stopMotor();
@@ -157,6 +167,8 @@ public class TurretSubsystem extends SubsystemBase {
      * We read the drivetrain's shared estimated pose so turret calculations stay in
      * sync with the same pose used by autonomous and Limelight vision correction.
      */
+    // Review note 2026-03-15 10:15:26 -04:00: this method may be unused in the
+    // current codebase.
     public double getDistanceToTarget() {
 
         // Robot pose from the drivetrain's shared estimate.
@@ -195,6 +207,8 @@ public class TurretSubsystem extends SubsystemBase {
      * field coordinates. This lets vision-based pose corrections improve aiming
      * immediately instead of waiting for a separate odometry-only estimate.
      */
+    // Review note 2026-03-15 10:15:26 -04:00: this method may be unused in the
+    // current codebase.
     public double calculateDesiredAngle() {
 
         Pose2d robotPose = drivetrainSubsys.getEstimatedPose();
@@ -419,6 +433,8 @@ public class TurretSubsystem extends SubsystemBase {
         });
     }
 
+    // Review note 2026-03-15 10:15:26 -04:00: this method may be unused in the
+    // current codebase.
     public Command basicAuton() {
         return  runOnce(() -> {
             // Point at the live alliance tower target instead of using a magic angle.
@@ -434,6 +450,8 @@ public class TurretSubsystem extends SubsystemBase {
      * The command does not finish on its own, so it should be used as a parallel
      * command, a PathPlanner event command, or with a timeout.
      */
+    // Review note 2026-03-15 10:15:26 -04:00: this method may be unused in the
+    // current codebase.
     public Command trackFieldPoint(Translation2d fieldPoint) {
         return run(() -> {
             setRequestedAngle(calculateTurretAngleForFieldPoint(fieldPoint));
@@ -513,6 +531,8 @@ public class TurretSubsystem extends SubsystemBase {
         turretMotor.setVoltage(pidEffort);
     }
 
+    // Review note 2026-03-15 10:15:26 -04:00: this method may be unused in the
+    // current codebase.
     public double turnFeedforward() {
         turretFeedForward = (Math.toDegrees(drivetrainSubsys.getChassisSpeeds().omegaRadiansPerSecond)) / 50;
         return turretFeedForward;

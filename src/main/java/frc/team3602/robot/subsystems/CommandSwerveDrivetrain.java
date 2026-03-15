@@ -287,6 +287,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
     double rotationSpeed;
 
+    // Review note 2026-03-15 10:15:26 -04:00: this method may be unused in the
+    // current codebase.
     public double rAlignment() {
         boolean hasTarget = vision.getHasTarget();
 

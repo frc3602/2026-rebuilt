@@ -88,6 +88,8 @@ public class ShooterSubsystem extends SubsystemBase {
      * We command only the leader motor here because motor 2 is configured to follow
      * it. Keeping one control path avoids the two motors fighting each other.
      */
+    // Review note 2026-03-15 10:15:26 -04:00: this method may be unused in the
+    // current codebase.
     public Command setShootVLerp() {
         return runOnce(() -> {
             shootermotor1.setControl(m_request.withVelocity(shootLerpSpeed));
@@ -125,6 +127,8 @@ public class ShooterSubsystem extends SubsystemBase {
     double distance;
 
      //If at speed
+    // Review note 2026-03-15 10:15:26 -04:00: this method may be unused in the
+    // current codebase.
     public boolean atSpeed() {
         return shootermotor1.getMotionMagicAtTarget().getValue();
     }
