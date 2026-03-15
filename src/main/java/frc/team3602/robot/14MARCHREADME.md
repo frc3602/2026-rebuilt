@@ -72,7 +72,7 @@ Useful dashboard values include:
 
 - `shootFailsafe()` now advances correctly instead of getting stuck on the
   shooter spin-up step.
-- `autonShootBeta()` now advances correctly instead of hanging on the initial
+- `autonRunBetaShot()` now advances correctly instead of hanging on the initial
   shooter command.
 - `shootBall1()` now spins up, waits, and then feeds in a more readable way.
 
@@ -124,26 +124,26 @@ Useful dashboard values include:
 
 These are registered for PathPlanner:
 
-- `autonShootBeta`
+- `autonRunBetaShot`
   - Spins shooter to `-41.5`, waits for speed, moves turret to basic auton angle,
     feeds briefly, then stops shooter and spindexer.
 
-- `autonIntake`
+- `autonLowerIntake`
   - Drops the intake pivot for autonomous intake setup.
 
-- `autonTrackTurretPoint55`
+- `autonTrackTower`
   - Continuously tracks the current alliance tower with the turret.
   - This is best used in parallel with path following or another auton step.
 
-- `autonTrackTurretPoint55Short`
+- `autonTrackTowerShort`
   - Tracks the current alliance tower for `2.0` seconds, then ends.
   - This is the easier version to use in a normal sequential auton.
 
-- `setTurretTeleop`
+- `moveTurretToTeleopHandoff`
   - Sends the turret to the teleop handoff position.
 
-- `setAngleAuto`
-  - Sends the turret to the autonomous preset angle.
+- `moveTurretToAutoStartAngle`
+  - Sends the turret to the autonomous starting angle.
 
 ## Important Notes For The Team
 
@@ -236,12 +236,12 @@ Use this checklist when the robot is on blocks first, then again on the carpet.
 
 ### Autonomous Commands
 
-- `autonShootBeta` spins up, waits for speed, feeds, and then stops as expected
-- `autonIntake` drops the intake pivot
-- `autonTrackTurretPoint55` works when run in parallel with movement
-- `autonTrackTurretPoint55Short` runs for about 2 seconds and then ends
-- `setTurretTeleop` sends turret to the handoff position
-- `setAngleAuto` sends turret to the autonomous preset
+- `autonRunBetaShot` spins up, waits for speed, feeds, and then stops as expected
+- `autonLowerIntake` drops the intake pivot
+- `autonTrackTower` works when run in parallel with movement
+- `autonTrackTowerShort` runs for about 2 seconds and then ends
+- `moveTurretToTeleopHandoff` sends turret to the handoff position
+- `moveTurretToAutoStartAngle` sends turret to the autonomous starting angle
 
 ### Climber Disabled State
 

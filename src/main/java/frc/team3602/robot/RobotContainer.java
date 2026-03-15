@@ -85,19 +85,35 @@ public class RobotContainer {
 
         public RobotContainer() {
                 // Registered Commands
-                NamedCommands.registerCommand("autonShootBeta", superStructure.autonShootBeta());
-                NamedCommands.registerCommand("autonIntake", superStructure.autonIntake());
+                NamedCommands.registerCommand("autonRunBetaShot", superStructure.autonRunBetaShot());
+                NamedCommands.registerCommand("autonLowerIntake", superStructure.autonLowerIntake());
+                // Start the shooter for the simple beta autonomous shot without
+                // feeding yet. This is useful while finishing a short path or aiming
+                // step.
+                NamedCommands.registerCommand("autonSpinUpBetaShot", superStructure.autonSpinUpBetaShot());
+                // Wait until the shooter is near the beta autonomous target speed.
+                // The command times out so the auto cannot hang forever.
+                NamedCommands.registerCommand("autonWaitForBetaShotReady",
+                                superStructure.autonWaitForBetaShotReady());
+                // Prepare the basic autonomous shot by spinning up the shooter while
+                // the turret tracks the alliance tower.
+                NamedCommands.registerCommand("autonPrepareBetaShot", superStructure.autonPrepareBetaShot());
+                // Feed the note for the current beta autonomous shot, then stop the
+                // spindexer so the command finishes cleanly.
+                NamedCommands.registerCommand("autonFeedBetaShot", superStructure.autonFeedBetaShot());
+                // Stop the shooter and spindexer after an autonomous shot so later
+                // actions begin from a known safe state.
+                NamedCommands.registerCommand("autonStopShooting", superStructure.autonStopShooting());
                 // Track the current alliance tower with the turret during
                 // autonomous. This command is designed to run in parallel with path
                 // following or another auton action rather than as a one-shot
                 // command.
-                NamedCommands.registerCommand("autonTrackTurretPoint55", superStructure.autonTrackTurretPoint55());
+                NamedCommands.registerCommand("autonTrackTower", superStructure.autonTrackTower());
                 // Short self-ending version of the turret tracking command for
                 // sequential autos that need a simple "aim here briefly" step.
-                NamedCommands.registerCommand("autonTrackTurretPoint55Short",
-                                superStructure.autonTrackTurretPoint55Short());
-                NamedCommands.registerCommand("setTurretTeleop", turret.autonToTeleop());
-                NamedCommands.registerCommand("setAngleAuto", turret.setAngleAuto());
+                NamedCommands.registerCommand("autonTrackTowerShort", superStructure.autonTrackTowerShort());
+                NamedCommands.registerCommand("moveTurretToTeleopHandoff", turret.moveToTeleopHandoff());
+                NamedCommands.registerCommand("moveTurretToAutoStartAngle", turret.moveToAutoStartAngle());
               
 
                 // named commands for pathplanner go here

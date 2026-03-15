@@ -124,7 +124,7 @@ public class TurretSubsystem extends SubsystemBase {
         });
     }
 
-    public Command autonToTeleop() {
+    public Command moveToTeleopHandoff() {
         return runOnce(() -> {
             // Use the same handoff angle that the mechanism is expected to start at.
             setRequestedAngle(STARTING_TURRET_ANGLE_DEGREES);
@@ -390,7 +390,7 @@ public class TurretSubsystem extends SubsystemBase {
         });
     }
 
-        public Command setAngleAuto() {
+        public Command moveToAutoStartAngle() {
         return  runOnce(() -> {
             setRequestedAngle(STARTING_TURRET_ANGLE_DEGREES);
         });
