@@ -102,7 +102,8 @@ Useful dashboard values include:
 ### Operator Controller 1
 
 - Right trigger: hold to track the current alliance tower with the turret
-- Left trigger: run failsafe shooting routine, release to stop shooter and feed
+- Left trigger: run the timed failsafe shooting routine, release early to stop
+  shooter and feed
 - `Y`: run spindexer feed at `-35.0` while held
 - `B`: set shooter velocity to `-55.0`, release to stop
 - `A`: set shooter velocity to `-41.5`, release to stop
@@ -221,7 +222,8 @@ Use this checklist when the robot is on blocks first, then again on the carpet.
 
 - Operator `Y` runs the spindexer feed while held
 - Releasing operator `Y` stops the spindexer
-- `shootFailsafe()` feeds only after the shooter spin-up delay
+- `shootFailsafe()` feeds only after the shooter spin-up delay and now ends on
+  its own after the fixed feed window
 
 ### Vision / Limelight
 

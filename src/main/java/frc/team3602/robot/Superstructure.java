@@ -27,6 +27,10 @@ public class Superstructure {
     private static final double AUTON_BETA_READY_TIMEOUT_SECONDS = 2.0;
     private static final double AUTON_BETA_FEED_TIME_SECONDS = 2.0;
     private static final double AUTON_TURRET_TRACK_SETTLE_SECONDS = 2.0;
+    private static final double FAILSAFE_TURRET_ANGLE_DEGREES = 0.0;
+    private static final double FAILSAFE_SHOOTER_SPINUP_SECONDS = 4.0;
+    private static final double FAILSAFE_FEED_RPS = -62.5;
+    private static final double FAILSAFE_FEED_TIME_SECONDS = 1.0;
 
 
     public IntakeSubsystem intakeSubsys;
@@ -77,12 +81,17 @@ public class Superstructure {
 
     public Command shootFailsafe() {
         return Commands.sequence(
-                turretSubsys.setAngle(0),
+                turretSubsys.setAngle(FAILSAFE_TURRET_ANGLE_DEGREES),
                 // Set the shooter target once, then wait for the flywheel spin-up
-                // time before feeding. This keeps the command sequence moving.
+                // time before feeding.
+                //
+                // We give the feed step its own timeout and cleanup so this routine
+                // can safely be reused in teleop or autonomous without hanging
+                // forever at the final command.
                 shooterSubsys.setShootVelocity(ShooterConstants.kShooterFailsafeSpeed),
-                Commands.waitSeconds(4),
-                spindexerSubsys.setFeedVelocity(-62.5));
+                Commands.waitSeconds(FAILSAFE_SHOOTER_SPINUP_SECONDS),
+                spindexerSubsys.setFeedVelocity(FAILSAFE_FEED_RPS).withTimeout(FAILSAFE_FEED_TIME_SECONDS),
+                stopShoot());
     }
 
     public Command stopShoot() {

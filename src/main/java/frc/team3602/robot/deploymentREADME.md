@@ -103,7 +103,8 @@ Watch for:
 - Confirm the turret moves to the failsafe angle.
 - Confirm the shooter spins up.
 - Confirm feeding starts only after the built-in delay.
-- Release the trigger and confirm shooter and feed stop.
+- Confirm the routine stops the shooter and feed on its own after the fixed feed window.
+- Release the trigger early during one test run and confirm shooter and feed stop immediately.
 
 ## Phase 9: Autonomous Command Check Without Fuel
 
