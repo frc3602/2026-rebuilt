@@ -4,15 +4,15 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 
-import edu.wpi.first.util.sendable.Sendable;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.team3602.robot.Constants.spindexerConstants;
 
 public class SpindexerSubsystem extends SubsystemBase {
-
-    //Added stuff for receiving motor incase we use two
+    // The spindexer wheel is about 4 inches in diameter while the transfer/X44
+    // wheel is about 1 inch in diameter. To keep their surface speeds matched,
+    // the smaller transfer wheel needs to spin about 4x faster than the spindexer.
+    private static final double TRANSFER_TO_SPINDEXER_DIAMETER_RATIO = 0.25;
 
     /* Motors */
 
@@ -40,28 +40,29 @@ public class SpindexerSubsystem extends SubsystemBase {
         });
     }
 
-    public Command setSpindexerReceive() {
-        return runOnce(() -> {
-            receiveMotor.set(-spindexerConstants.kRecieveFuelSpeed);
-            spindexerMotor.set(spindexerConstants.kSpindexerMotorSpeed);
-        });
-    }
-
+    /**
+     * Runs the spindexer and transfer motor together in closed-loop velocity mode.
+     *
+     * This is the preferred way to move fuel through the spindexer system because
+     * both motors hold a requested velocity instead of relying on battery-dependent
+     * percent output. The receive motor is automatically scaled so the small X44
+     * transfer wheel stays close to the same surface speed as the larger spindexer
+     * wheel.
+     */
     public Command setFeedVelocity(double rotationsPerSecond) {
         return run(() -> {
-            receiveMotor.setControl(m_request.withVelocity(rotationsPerSecond / .25));
+            receiveMotor.setControl(
+                    m_request.withVelocity(rotationsPerSecond / TRANSFER_TO_SPINDEXER_DIAMETER_RATIO));
             spindexerMotor.setControl(m_request.withVelocity(rotationsPerSecond));
         });
-
     }
 
-    public Command setFasterSpindexerReceive() {
-        return runOnce(() -> {
-            receiveMotor.set(-spindexerConstants.kRecieveFuelSpeed);
-            spindexerMotor.set(spindexerConstants.kSpindexerMotorSpeed);
-        });
-    }
-
+    /**
+     * Reverses the spindexer path to help clear jams.
+     *
+     * We keep this as a simple percent-output command because reverse is used as a
+     * short manual recovery action rather than a carefully metered scoring feed.
+     */
     public Command setReverseSpindexerReceive() {
         return runOnce(() -> {
             receiveMotor.set(spindexerConstants.kRecieveFuelSpeed);
