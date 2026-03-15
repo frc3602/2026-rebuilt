@@ -287,19 +287,32 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
     double rotationSpeed;
 
+    /**
+     * Returns a simple Limelight-based rotation command that tries to center the
+     * target in view.
+     *
+     * This helper is a small vision-alignment utility: if the target is visible, we
+     * run a PID controller on Limelight TX. If the target is not visible, the
+     * method currently returns a small fallback turn command instead of zero.
+     */
     // Review note 2026-03-15 10:15:26 -04:00: this method may be unused in the
     // current codebase.
     public double rAlignment() {
         boolean hasTarget = vision.getHasTarget();
 
         if (!hasTarget) {
+            // Preserve the current fallback behavior for "no target seen."
             return 0.3;
         } else {
 
+            // TX is the horizontal Limelight error in degrees.
             double tx = vision.getTX();
 
+            // Positive output means "rotate until the target error approaches 0."
             rotationSpeed = rotationController.calculate(tx, 0);
 
+            // Ignore tiny outputs so the drivetrain does not hunt back and forth
+            // because of small camera noise.
             if (Math.abs(rotationSpeed) < 0.5) {
                 rotationSpeed = 0;
             }
@@ -546,18 +559,35 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         return super.samplePoseAt(Utils.fpgaToCurrentTime(timestampSeconds));
     }
 
+    /**
+     * Connects the drivetrain to PathPlanner's AutoBuilder.
+     *
+     * This tells PathPlanner how to read the robot pose, how to reset the robot at
+     * the start of an autonomous routine, how to command chassis motion, and when a
+     * path should be mirrored for the red alliance.
+     */
     public void configPathplanner() {
         try {
-            AutoBuilder.configure(this::getEstimatedPose, this::resetPose, () -> getState().Speeds,
+            AutoBuilder.configure(
+                    this::getEstimatedPose, // Current robot pose supplier.
+                    this::resetPose, // Lets an auto reset odometry to its starting pose.
+                    () -> getState().Speeds, // Current robot-relative chassis speeds.
                     (speeds, feedforwards) -> setControl(
+                            // Apply the requested robot-relative chassis speeds and
+                            // the wheel-force feedforwards computed by PathPlanner.
                             autoRobotDrive.withSpeeds(speeds)
                                     .withWheelForceFeedforwardsX(feedforwards.robotRelativeForcesXNewtons())
                                     .withWheelForceFeedforwardsY(feedforwards.robotRelativeForcesYNewtons())),
-                    new PPHolonomicDriveController(new PIDConstants(10), new PIDConstants(7)),
-                    RobotConfig.fromGUISettings(),
-                    () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red, this);
+                    new PPHolonomicDriveController(
+                            new PIDConstants(10), // Translation controller gains.
+                            new PIDConstants(7)), // Rotation controller gains.
+                    RobotConfig.fromGUISettings(), // Robot geometry from the PathPlanner GUI.
+                    () -> DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red, // Mirror for red.
+                    this); // Drivetrain subsystem requirement.
 
         } catch (Exception ex) {
+            // If PathPlanner config fails, print the existing debug art so students
+            // immediately know auto setup did not initialize correctly.
             System.out.println("Pathplanner no be work :( /n ");
             System.out.println("//               Y.                      _   /n");
             System.out.println("//                 YiL                   .```.  /n");

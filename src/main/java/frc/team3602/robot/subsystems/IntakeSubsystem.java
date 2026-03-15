@@ -17,10 +17,13 @@ import frc.team3602.robot.Constants.IntakeConstants;
 import frc.team3602.robot.Constants.ShooterConstants;
 
 public class IntakeSubsystem extends SubsystemBase{
-    //variables
+    // The intake subsystem currently controls only the roller that pulls notes in
+    // and pushes them back out. Pivot control lives in PivotSubsystem.
     private final TalonFX intakeMotor = new TalonFX(IntakeConstants.kIntakeMotorID, "rio");
     
-    //constructor
+    /**
+     * Creates the intake subsystem and applies the roller motor config.
+     */
     public IntakeSubsystem(){
         configIntakeSubsys();
     }
@@ -28,20 +31,35 @@ public class IntakeSubsystem extends SubsystemBase{
     private final PIDController pivotPID = new PIDController(0.15, 0.0,0.0);
     private final PIDController pivotFollowerPID = new PIDController(0.15,0.0, 0.0);
 
-    //EAT
+    /**
+     * Starts the intake roller in the normal "collect note" direction.
+     *
+     * This is a one-shot command because RobotContainer handles the press/release
+     * behavior and leaves the motor running until a later stop command.
+     */
     public Command setIntakeSpeed() {
         return runOnce(() -> 
             intakeMotor.set(IntakeConstants.kIntakeMotorSpeed));
     
     }
 
-    //STOP
+    /**
+     * Stops the intake roller.
+     *
+     * We use this on button release so the roller does not keep running after the
+     * driver lets go.
+     */
     public Command stopIntake() {
         return runOnce(() ->
         intakeMotor.set(0));
     }
 
-    //VOMIT
+    /**
+     * Reverses the intake roller to eject a note.
+     *
+     * This is useful for clearing a bad pickup or backing a note out during
+     * testing.
+     */
     public Command reverseIntake() {
         return runOnce(() ->
         intakeMotor.set(-IntakeConstants.kIntakeMotorSpeed));
@@ -52,10 +70,18 @@ public class IntakeSubsystem extends SubsystemBase{
 
     }
 
+    /**
+     * Applies the current safety configuration for the intake roller motor.
+     *
+     * Right now this is intentionally simple: we create one TalonFX config object,
+     * enable current-limit support, and apply it to the intake motor so future
+     * tuning happens in one obvious place.
+     */
     private void configIntakeSubsys() {
         TalonFXConfiguration talonFXConfigs = new TalonFXConfiguration();
 
-                 // Set motor current limits
+        // Enable current-limit handling even though the exact limit values are not
+        // finalized here yet. This keeps the setup path ready for future tuning.
         var currentLimitConfigs = talonFXConfigs.CurrentLimits;
         currentLimitConfigs.StatorCurrentLimitEnable = true;
         currentLimitConfigs.SupplyCurrentLimitEnable = true;

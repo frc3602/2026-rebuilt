@@ -23,6 +23,12 @@ public class SpindexerSubsystem extends SubsystemBase {
 
     /* Constructor */
 
+    /**
+     * Creates both feed motors and applies the shared closed-loop config.
+     *
+     * The spindexer and receive motor always work as a pair, so we configure them
+     * together in one place.
+     */
     public SpindexerSubsystem() {
 
         spindexerMotor = new TalonFX(spindexerConstants.kSpindexerMotorID, "rio");
@@ -54,6 +60,11 @@ public class SpindexerSubsystem extends SubsystemBase {
         receiveMotor.set(0);
     }
 
+    /**
+     * Stops the spindexer path with a one-shot command.
+     *
+     * This is used as cleanup after timed feeds and on button release in teleop.
+     */
     public Command stopSpindexer() {
         return runOnce(() -> {
             stopFeedMotors();
@@ -115,9 +126,17 @@ public class SpindexerSubsystem extends SubsystemBase {
         // SmartDashboard.putData("spindexer speed", (Sendable) spindexerMotor.getMotorVoltage());
     }
 
+    /**
+     * Applies the current closed-loop config shared by the spindexer and receive
+     * motors.
+     *
+     * Both motors use Motion Magic velocity control so feed speed stays more
+     * consistent as battery voltage changes during a match.
+     */
     private void configSpindexerSubsys() {
-                TalonFXConfiguration talonFXConfigs = new TalonFXConfiguration();
+        TalonFXConfiguration talonFXConfigs = new TalonFXConfiguration();
         
+        // Slot0 holds the basic feedforward and PID gains for velocity control.
         var slot0Configs = talonFXConfigs.Slot0;
         slot0Configs.kS = 0.25; // Add 0.25 V output to overcome static friction
         slot0Configs.kV = 0.12; // A velocity target of 1 rps results in 0.12 V output
@@ -131,13 +150,17 @@ public class SpindexerSubsystem extends SubsystemBase {
         motionMagicConfigs.MotionMagicAcceleration = 400; // Target acceleration of 400 rps/s (0.25 seconds to max)
         motionMagicConfigs.MotionMagicJerk = 6000; // Targ  et jerk of 4000 rps/s/s (0.1 seconds)
 
-                // Set motor current limits
+        // Protect both motors with the same current limits so the feed path behaves
+        // predictably and is easier to tune.
         var currentLimitConfigs = talonFXConfigs.CurrentLimits;
         currentLimitConfigs.StatorCurrentLimitEnable = true;
         currentLimitConfigs.SupplyCurrentLimitEnable = true;
         currentLimitConfigs.StatorCurrentLimit = 40;
         currentLimitConfigs.SupplyCurrentLimit = 60;
 
+        // Apply the same velocity-control setup to both motors. Their requested
+        // speeds differ later in applyFeedVelocityRequest(), but the control style is
+        // shared.
         spindexerMotor.getConfigurator().apply(talonFXConfigs);
         receiveMotor.getConfigurator().apply(talonFXConfigs);
     }

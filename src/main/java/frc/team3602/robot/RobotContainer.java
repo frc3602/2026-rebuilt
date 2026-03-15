@@ -94,8 +94,17 @@ public class RobotContainer {
         private Boolean intakeUp = (pivot.getPivotEncoder < 0);
         private Boolean intakeDown = (pivot.getPivotEncoder > 90);
 
+        /**
+         * Builds the robot's shared subsystems, registers autonomous helper commands,
+         * and wires up the default commands and control bindings.
+         *
+         * RobotContainer is the "main wiring panel" for command-based code. Students
+         * can usually start here to answer "which button runs what?" or "which
+         * subsystem owns this default behavior?"
+         */
         public RobotContainer() {
-                // Registered Commands
+                // Register the named commands that PathPlanner autos can call by
+                // name from the GUI.
                 NamedCommands.registerCommand("autonRunBetaShot", superStructure.autonRunBetaShot());
                 NamedCommands.registerCommand("autonLowerIntake", superStructure.autonLowerIntake());
                 NamedCommands.registerCommand("autonStartIntake", superStructure.autonStartIntake());
@@ -128,15 +137,20 @@ public class RobotContainer {
                 NamedCommands.registerCommand("moveTurretToStartAngle", turret.moveToStartAngle());
               
 
-                // named commands for pathplanner go here
                 // Share the real shooter subsystem with the turret so any lead-angle
                 // calculations use live shooter velocity instead of a null reference.
                 turret.setShooterSubsystem(shooter);
+
+                // Default commands define what each subsystem does when no other
+                // command is using it.
                 pivot.setDefaultCommand(pivot.holdPivot());
                 if (ClimberConstants.kClimberEnabled) {
                         climberSubsys.setDefaultCommand(climberSubsys.setPosition());
                 }
                 turret.setDefaultCommand(turret.setPosition());
+
+                // Button bindings and dashboard helpers are configured after the
+                // subsystem relationships are in place.
                 configureBindings();
                 polarityChooser.setDefaultOption("Positive", 1.0);
                 polarityChooser.addOption("Negative", -1.0);
@@ -147,6 +161,7 @@ public class RobotContainer {
         }
 
         private void configureBindings() {
+                // ---------------- Drive Default Behavior ----------------
                 // Note that X is defined as forward according to WPILib convention,
                 // and Y is defined as to the left according to WPILib convention.
                 drivetrain.setDefaultCommand(
@@ -172,14 +187,24 @@ public class RobotContainer {
                 final var idle = new SwerveRequest.Idle();
                 RobotModeTriggers.disabled().whileTrue(
                                 drivetrain.applyRequest(() -> idle).ignoringDisable(true));
-                // Operator Controls
+
+                // ---------------- Operator Shot-Mode Gating ----------------
+                // B is the fully automatic tracked shot. We build both the positive
+                // trigger and its negation so the manual shot controls can be
+                // disabled while the automatic shot is active.
                 Trigger trackedShotHeld = operatorController.b();
                 Trigger trackedShotNotHeld = trackedShotHeld.negate();
 
+                // ---------------- Operator Controls ----------------
                 // operatorController.rightTrigger().onTrue(superStructure.shootBall1())
                 // .whileFalse(superStructure.stopShoot());
+                // Manual feed for testing or recovery when the tracked shot is not
+                // active.
                 operatorController.y().and(trackedShotNotHeld).whileTrue(spindexer.setFeedVelocity(-35.0))
                                 .onFalse(spindexer.stopSpindexer());
+                // Fixed fallback shot with a known turret angle and fixed shooter
+                // speed. This gives the team a simple backup when vision/tracking is
+                // not the desired strategy.
                 operatorController.leftTrigger().onTrue(superStructure.shootFailsafe())
                                 .onFalse(superStructure.stopShoot()); // FAILSAFE
                 // While the operator holds the right trigger, keep the turret pointed
@@ -191,11 +216,16 @@ public class RobotContainer {
                 // automatically once the shot is ready.
                 trackedShotHeld.whileTrue(superStructure.shootTrackedLerpShot())
                                 .onFalse(superStructure.stopShoot());
+                // A and X are quick fixed-speed shooter test buttons. They are gated
+                // off while the tracked shot is active so two shooter commands do
+                // not fight each other.
                 operatorController.a().and(trackedShotNotHeld).onTrue(shooter.setShootVelocity(-41.5))
                                 .onFalse(shooter.stopShooter());
                 operatorController.x().and(trackedShotNotHeld).onTrue(shooter.setShootVelocity(-44))
                                 .onFalse(shooter.stopShooter());
+                // Left bumper raises/stows the intake path through the superstructure.
                 operatorController.leftBumper().onTrue(superStructure.stopIntake());
+                // POV buttons are turret presets for common manual aiming positions.
                 operatorController.povUp().and(trackedShotNotHeld).onTrue(turret.setAngleZero());
                 operatorController.povDown().and(trackedShotNotHeld).onTrue(turret.setAngleRight());
                 operatorController.povLeft().and(trackedShotNotHeld).onTrue(turret.setAngleLeftCorner());
@@ -209,7 +239,7 @@ public class RobotContainer {
                                 .whileTrue(driverShotReadyRumble());
 
 
-                // DriverControls
+                // ---------------- Driver Controls ----------------
                 // The pivot drop command is a one-time setpoint change, so bind it as
                 // a button press instead of a held command. That matches how the
                 // command actually behaves and makes the control flow easier for
@@ -219,7 +249,11 @@ public class RobotContainer {
                 // onTrue/onFalse matches the fact that the subsystem commands are
                 // one-shot motor state changes rather than long-running hold commands.
                 driverController.leftBumper().onTrue(intake.setIntakeSpeed()).onFalse(intake.stopIntake());
+                // The right trigger temporarily removes the normal speed cap for a
+                // "turbo" driving mode while the driver holds it.
                 driverController.rightTrigger().onTrue(drivetrain.setTurbo()).onFalse(drivetrain.setNormalSpeed());
+
+                // ---------------- Optional Climber Controls ----------------
                 if (ClimberConstants.kClimberEnabled) {
                         driverController.povUp().onTrue(climberSubsys.raiseClimber());
                         driverController.povDown().onTrue(climberSubsys.lowerClimber());
@@ -253,11 +287,24 @@ public class RobotContainer {
                 return autoChooser.getSelected();
         }
 
+        /**
+         * Builds the dashboard chooser used to select the autonomous routine.
+         *
+         * PathPlanner populates this chooser from the autos available in the
+         * deployed project.
+         */
         private void configAutonomous() {
                 autoChooser = AutoBuilder.buildAutoChooser();
                 SmartDashboard.putData(autoChooser);
         }
 
+        /**
+         * Publishes the drivetrain's current estimated pose under the team's
+         * preferred dashboard keys.
+         *
+         * This duplicates some drivetrain telemetry on purpose so the values appear
+         * under the names used in the team's debugging notes and driver workflow.
+         */
         public void updatePose() {
                 // Put the drivetrain's shared estimated pose on the dashboard.
                 // This is the same pose used by autonomous and by Limelight vision
