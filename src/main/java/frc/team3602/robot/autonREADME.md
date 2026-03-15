@@ -23,6 +23,118 @@ Most of the autonomous sequence logic lives in:
 - `Superstructure.java`
 - `TurretSubsystem.java`
 
+## How PathPlanner Builds An Auto
+
+PathPlanner is not where the robot behavior itself is written.
+
+Instead, PathPlanner is where we describe the order of events:
+
+- drive this path
+- wait here
+- run this named command
+- run two things in parallel
+
+The actual robot actions are still defined in Java.
+
+Here is the normal flow:
+
+1. A `.auto` file in PathPlanner defines the order of paths and named commands.
+2. `RobotContainer.java` registers named commands with `NamedCommands`.
+3. `Superstructure.java` and subsystem classes define what those commands do.
+4. During autonomous, PathPlanner plays the sequence and calls the matching Java
+   commands at the correct time.
+
+That means PathPlanner should usually answer:
+
+- When should this happen?
+- In what order should things happen?
+- Which actions happen at the same time?
+
+And the Java code should usually answer:
+
+- What does this action actually do?
+- Which motors or subsystems does it control?
+- When should this action end?
+
+## How To Structure Autonomous Commands
+
+The easiest autos to build usually come from using layers of commands instead of
+putting everything into one giant command.
+
+### 1. Small Commands
+
+These do one job only.
+
+Examples:
+
+- `autonSpinUpBetaShot`
+- `autonFeedBetaShot`
+- `autonStopShooting`
+- `autonTrackTower`
+- `autonLowerIntake`
+
+Why these are useful:
+
+- They are easy to reuse.
+- They are easy to test.
+- They are easy to rename and understand.
+- They keep PathPlanner flexible.
+
+### 2. Setup Commands
+
+These combine a few small actions into one useful step.
+
+Example:
+
+- `autonPrepareBetaShot`
+
+This command is a good setup command because it:
+
+- starts the shooter
+- tracks the tower
+- waits for the shooter to be ready
+
+but it still does not feed the note yet.
+
+That is a good balance between:
+
+- being simple enough to reuse
+- being big enough to save time in PathPlanner
+
+### 3. Full Macro Commands
+
+These run an entire behavior from start to finish.
+
+Example:
+
+- `autonRunBetaShot`
+
+Macro commands are useful when:
+
+- you want fast testing
+- you want one simple block for a very common action
+- the full sequence is unlikely to change often
+
+Macro commands become less useful when:
+
+- different autos need slightly different timing
+- you want to move and shoot in different ways
+- you need to tune only one part of the sequence
+
+Because of that, macro commands are best treated as convenience commands, not as
+the only way to build autonomous routines.
+
+## Recommended Design Rule
+
+When adding new auton logic, try to build it in this order:
+
+1. Write the smallest useful command first.
+2. Combine those into a setup command if that makes PathPlanner easier to read.
+3. Add a full macro command only if the team uses that exact sequence often.
+
+This keeps the robot code flexible without making students drag around a huge
+number of tiny one-line commands in every auto.
+
 ## Current Named Commands
 
 ### `autonRunBetaShot`
@@ -187,6 +299,23 @@ Best use:
 - At the beginning of an auto
 - Before a predictable opening shot
 
+## How To Decide Between A Macro And Smaller Steps
+
+Use a macro command like `autonRunBetaShot` when:
+
+- the whole sequence is always used together
+- the timing is already known and stable
+- the team wants the fastest possible setup for a simple auto
+
+Use smaller steps like `autonPrepareBetaShot` and `autonFeedBetaShot` when:
+
+- you want to tune the shot timing
+- you may want to add a wait or another path in between
+- you want the auto to be easier to read in PathPlanner
+- you expect different autos to reuse the same pieces in different ways
+
+For most competition autos, smaller steps are usually the better default.
+
 ## Recommended Basic Shot Sequence
 
 For the team's current simplest scoring auto, use this order:
@@ -214,6 +343,49 @@ Example simple autonomous sequence:
 3. `named: autonFeedBetaShot`
 4. `named: autonStopShooting`
 5. `named: moveTurretToTeleopHandoff`
+
+## Example Of A Good Thought Process
+
+If the robot must:
+
+- move slightly
+- aim at the tower
+- spin up the shooter
+- feed the note
+
+then a good way to build that auto is:
+
+1. Let PathPlanner handle the short drive path.
+2. Use a setup command like `autonPrepareBetaShot` for aiming and flywheel prep.
+3. Use `autonFeedBetaShot` only when the robot is ready to release the note.
+4. Use `autonStopShooting` so the robot ends in a known state.
+
+This is usually better than forcing all of those decisions into one giant
+command because:
+
+- the order is easier to see
+- timing is easier to tune
+- future autos can reuse the same shot steps
+- problems are easier to debug
+
+## Common Mistakes To Avoid
+
+- Do not put every autonomous behavior into one giant command.
+- Do not create too many tiny commands that are too specific to one auto.
+- Do not use unclear names that depend on temporary tuning numbers.
+- Do not rely on long fixed waits when a command can end from a real condition.
+- Do not hide important shot timing inside a macro if you know that timing will
+  probably need to change later.
+
+## Checklist For A New Auto
+
+Before adding a new autonomous routine, ask:
+
+- What should be controlled by PathPlanner order?
+- What should be controlled by Java command logic?
+- Do I need one small command, one setup command, or one macro command?
+- Will another auto probably reuse this behavior later?
+- Is the command name clear enough that a student can understand it quickly?
 
 ## Suggested Future Commands
 
