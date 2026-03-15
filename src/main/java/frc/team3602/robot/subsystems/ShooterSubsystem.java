@@ -56,6 +56,30 @@ public class ShooterSubsystem extends SubsystemBase {
 
     final MotionMagicVelocityVoltage m_request = new MotionMagicVelocityVoltage(0);
 
+    /**
+     * Sends one closed-loop velocity target to the shooter leader and restores the
+     * follower state on motor 2.
+     *
+     * Keeping this in one helper makes all shooter command paths use the same safe
+     * control behavior.
+     */
+    private void applyVelocityTarget(double rotationsPerSecond) {
+        restoreFollowerControl();
+        shootermotor1.setControl(m_request.withVelocity(rotationsPerSecond));
+    }
+
+    /**
+     * Stops the shooter leader and immediately restores the follower state on motor
+     * 2.
+     *
+     * This is used by both explicit stop commands and by hold-type commands that
+     * need to clean up if they are interrupted.
+     */
+    private void stopShooterMotors() {
+        shootermotor1.setControl(m_request.withVelocity(0));
+        restoreFollowerControl();
+    }
+
 
     public double getVelocity() {
         return shootermotor1.getVelocity().getValueAsDouble();
@@ -89,8 +113,7 @@ public class ShooterSubsystem extends SubsystemBase {
      */
     public Command setShootVelocity(double rotationsPerSecond) {
         return runOnce(() -> {
-            restoreFollowerControl();
-            shootermotor1.setControl(m_request.withVelocity(rotationsPerSecond));
+            applyVelocityTarget(rotationsPerSecond);
         });
     }
 
@@ -102,8 +125,7 @@ public class ShooterSubsystem extends SubsystemBase {
      */
     public Command setShootVLerp() {
         return runOnce(() -> {
-            restoreFollowerControl();
-            shootermotor1.setControl(m_request.withVelocity(getLerpVelocityTarget()));
+            applyVelocityTarget(getLerpVelocityTarget());
         });
     }
 
@@ -114,10 +136,9 @@ public class ShooterSubsystem extends SubsystemBase {
      * the flywheel target while distance updates during driving or aiming.
      */
     public Command holdShootVLerp() {
-        return run(() -> {
-            restoreFollowerControl();
-            shootermotor1.setControl(m_request.withVelocity(getLerpVelocityTarget()));
-        });
+        return runEnd(
+                () -> applyVelocityTarget(getLerpVelocityTarget()),
+                this::stopShooterMotors);
     }
 
     // public Command setShootVoltage(double shootVoltz) {
@@ -135,15 +156,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
     // Stop
     public Command stopShooter() {
-        return runOnce(() -> {
-            // Stop the leader using the same closed-loop path we use for normal
-            // shooting, then immediately re-apply the follower request.
-            //
-            // This avoids sending a direct percent-output command to motor 2, which
-            // could leave it no longer following the leader on the next shot.
-            shootermotor1.setControl(m_request.withVelocity(0));
-            restoreFollowerControl();
-        });
+        return runOnce(this::stopShooterMotors);
     }
 
     // public Command stopFeeder(double feedStop) {

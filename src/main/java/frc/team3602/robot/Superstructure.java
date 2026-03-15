@@ -6,6 +6,7 @@
 
 package frc.team3602.robot;
 
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.team3602.robot.Constants.ShooterConstants;
@@ -33,6 +34,7 @@ public class Superstructure {
     private static final double FAILSAFE_FEED_TIME_SECONDS = 1.0;
     private static final double TRACKED_LERP_FEED_RPS = -35.0;
     private static final double TRACKED_LERP_READY_TOLERANCE_RPS = 1.0;
+    private static final double TRACKED_LERP_READY_DEBOUNCE_SECONDS = 0.10;
 
 
     public IntakeSubsystem intakeSubsys;
@@ -43,6 +45,8 @@ public class Superstructure {
     public Vision vision;
     public PivotSubsystem pivotSubsys;
     public ClimberSubsystem climberSubsys;
+    private final Debouncer trackedLerpReadyDebouncer = new Debouncer(TRACKED_LERP_READY_DEBOUNCE_SECONDS);
+    private boolean trackedLerpShotReadyLatched = false;
 
     public Superstructure(IntakeSubsystem intakeSubsys, ShooterSubsystem shooterSubsys,
             SpindexerSubsystem spindexerSubsys,
@@ -106,9 +110,47 @@ public class Superstructure {
      * This prevents the single-button shot from feeding immediately when the button
      * is first pressed.
      */
-    public boolean isTrackedLerpShotReady() {
+    private boolean isTrackedLerpShotRawReady() {
         return shooterSubsys.isNearLerpVelocity(TRACKED_LERP_READY_TOLERANCE_RPS)
                 && turretSubsys.isAtRequestedAngle();
+    }
+
+    /**
+     * Resets the latched readiness state used by the combined tracked shot.
+     *
+     * We call this when the command starts and when it ends so each new shot has to
+     * earn readiness again instead of inheriting a stale state from the previous
+     * button press.
+     */
+    private void resetTrackedLerpShotState() {
+        trackedLerpShotReadyLatched = false;
+        trackedLerpReadyDebouncer.calculate(false);
+    }
+
+    /**
+     * Updates the tracked-shot readiness latch.
+     *
+     * The debouncer filters out tiny readiness spikes, and the latch keeps the feed
+     * path running once the robot has committed to the shot. This avoids the feed
+     * and driver rumble chattering on and off if flywheel speed dips briefly when
+     * fuel first enters the shooter.
+     */
+    private boolean updateTrackedLerpShotReadyState() {
+        if (!trackedLerpShotReadyLatched && trackedLerpReadyDebouncer.calculate(isTrackedLerpShotRawReady())) {
+            trackedLerpShotReadyLatched = true;
+        }
+
+        return trackedLerpShotReadyLatched;
+    }
+
+    /**
+     * Returns the public latched readiness state for the tracked shot.
+     *
+     * Driver rumble and any future dashboard indicator should follow the same
+     * latched state that actually controls feeding.
+     */
+    public boolean isTrackedLerpShotReady() {
+        return trackedLerpShotReadyLatched;
     }
 
     /**
@@ -124,7 +166,9 @@ public class Superstructure {
         return Commands.parallel(
                 turretSubsys.trackAllianceTower(),
                 shooterSubsys.holdShootVLerp(),
-                spindexerSubsys.setFeedVelocityWhen(this::isTrackedLerpShotReady, TRACKED_LERP_FEED_RPS));
+                spindexerSubsys.setFeedVelocityWhen(this::updateTrackedLerpShotReadyState, TRACKED_LERP_FEED_RPS))
+                .beforeStarting(this::resetTrackedLerpShotState)
+                .finallyDo(interrupted -> resetTrackedLerpShotState());
     }
 
     public Command stopShoot() {

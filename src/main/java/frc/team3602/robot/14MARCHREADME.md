@@ -77,6 +77,12 @@ Useful dashboard values include:
   number.
 - Operator `B` can now run one combined tracked lerp shot instead of splitting
   aiming, flywheel spin-up, and feed across multiple buttons.
+- The combined tracked `B` shot now debounces and latches its ready-to-fire
+  state so feed and rumble do not chatter if flywheel speed dips briefly during
+  a shot.
+- While operator `B` is held, overlapping operator turret and shooter commands
+  are intentionally blocked so the combined shot cannot be interrupted by
+  another scoring input.
 
 ### 4. Autonomous / Command Flow Fixes
 
@@ -131,13 +137,15 @@ Turret:
 Shooting:
 
 - `B`: hold for the full tracked lerp shot
-- Right bumper: run shooter at the current lerp-table speed, release to stop
+- Right bumper: sample the current lerp-table speed once, release to stop
 - `A`: set shooter velocity to `-41.5`, release to stop
 - `X`: set shooter velocity to `-44.0`, release to stop
 - `Y`: run spindexer feed at `-35.0` while held
 - Left trigger: run the timed failsafe shooting routine, release early to stop
   shooter and feed
 - Driver controller 0 should rumble when the tracked `B` shot becomes ready
+- While `B` is held, the other operator shooter and turret controls are paused
+  so the combined shot keeps control until the button is released
 
 Intake / Pivot Support:
 
@@ -166,7 +174,8 @@ Turret Aiming / Position:
 Shooting / Feeding:
 
 - Operator `B` runs the combined tracked lerp shot
-- Operator right bumper runs only the lerp-table shooter speed
+- Operator right bumper runs only a snapshot of the current lerp-table shooter
+  speed
 - Operator `A` and `X` run fixed shooter presets
 - Operator `Y` manually runs the spindexer / transfer feed
 - Operator left trigger runs the timed failsafe shot
@@ -299,7 +308,9 @@ Use this checklist when the robot is on blocks first, then again on the carpet.
 ### Shooter
 
 - Operator right bumper spins the shooter to the current lerp-table speed
-- Operator `B` runs the full tracked lerp shot while held
+  sampled when the button is pressed
+- Operator `B` runs the full tracked lerp shot while held and keeps updating
+  turret aim plus lerp-table flywheel speed while the button stays down
 - Driver controller 0 should rumble when the tracked lerp shot becomes ready
 - Operator `A` spins the shooter to `-41.5`
 - Operator `X` spins the shooter to `-44.0`
@@ -313,6 +324,8 @@ Use this checklist when the robot is on blocks first, then again on the carpet.
 - Releasing operator `Y` stops the spindexer
 - Operator `B` should wait to feed until the turret and shooter are ready, then
   start feeding automatically while still held
+- Once operator `B` has latched ready and started feeding, the feed should not
+  chatter on and off from small momentary readiness dips
 - When that tracked shot becomes ready, driver controller 0 should vibrate as a
   cue that the robot is ready to fire
 - `shootFailsafe()` feeds only after the shooter spin-up delay and now ends on

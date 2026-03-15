@@ -164,32 +164,38 @@ public class RobotContainer {
                 RobotModeTriggers.disabled().whileTrue(
                                 drivetrain.applyRequest(() -> idle).ignoringDisable(true));
                 // Operator Controls
+                Trigger trackedShotHeld = operatorController.b();
+                Trigger trackedShotNotHeld = trackedShotHeld.negate();
 
                 // operatorController.rightTrigger().onTrue(superStructure.shootBall1())
                 // .whileFalse(superStructure.stopShoot());
-                operatorController.y().whileTrue(spindexer.setFeedVelocity(-35.0)).onFalse(spindexer.stopSpindexer());
+                operatorController.y().and(trackedShotNotHeld).whileTrue(spindexer.setFeedVelocity(-35.0))
+                                .onFalse(spindexer.stopSpindexer());
                 operatorController.leftTrigger().onTrue(superStructure.shootFailsafe())
                                 .onFalse(superStructure.stopShoot()); // FAILSAFE
                 // While the operator holds the right trigger, keep the turret pointed
                 // at the current alliance tower. Releasing the trigger returns
                 // control to the turret's default hold-position command.
-                operatorController.rightTrigger().whileTrue(turret.trackOperatorFieldPoint());
+                operatorController.rightTrigger().and(trackedShotNotHeld).whileTrue(turret.trackOperatorFieldPoint());
                 // Hold B for the full tracked lerp shot. This keeps the turret on the
                 // tower, updates the shooter from the lerp table, and feeds
                 // automatically once the shot is ready.
-                operatorController.b().whileTrue(superStructure.shootTrackedLerpShot())
+                trackedShotHeld.whileTrue(superStructure.shootTrackedLerpShot())
                                 .onFalse(superStructure.stopShoot());
-                operatorController.a().onTrue(shooter.setShootVelocity(-41.5)).onFalse(shooter.stopShooter());
-                operatorController.x().onTrue(shooter.setShootVelocity(-44)).onFalse(shooter.stopShooter());
+                operatorController.a().and(trackedShotNotHeld).onTrue(shooter.setShootVelocity(-41.5))
+                                .onFalse(shooter.stopShooter());
+                operatorController.x().and(trackedShotNotHeld).onTrue(shooter.setShootVelocity(-44))
+                                .onFalse(shooter.stopShooter());
                 // Use the live distance-based interpolation table while this button is
                 // held so the operator can test or use the current lerp shot without
                 // changing the fixed preset buttons.
-                operatorController.rightBumper().onTrue(shooter.setShootVLerp()).onFalse(shooter.stopShooter());
+                operatorController.rightBumper().and(trackedShotNotHeld).onTrue(shooter.setShootVLerp())
+                                .onFalse(shooter.stopShooter());
                 operatorController.leftBumper().onTrue(superStructure.stopIntake());
-                operatorController.povUp().onTrue(turret.setAngleZero());
-                operatorController.povDown().onTrue(turret.setAngleRight());
-                operatorController.povLeft().onTrue(turret.setAngleLeftCorner());
-                operatorController.povRight().onTrue(turret.setAngleRightCorner());
+                operatorController.povUp().and(trackedShotNotHeld).onTrue(turret.setAngleZero());
+                operatorController.povDown().and(trackedShotNotHeld).onTrue(turret.setAngleRight());
+                operatorController.povLeft().and(trackedShotNotHeld).onTrue(turret.setAngleLeftCorner());
+                operatorController.povRight().and(trackedShotNotHeld).onTrue(turret.setAngleRightCorner());
 
                 // Let driver controller 0 rumble only when the operator's tracked
                 // lerp-shot button is held and the robot is actually ready to fire.

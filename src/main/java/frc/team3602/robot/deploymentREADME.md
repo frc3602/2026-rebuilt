@@ -65,7 +65,7 @@ Turret:
 Shooting:
 
 - `B` = combined tracked lerp shot
-- Right bumper = lerp-table shooter speed only
+- Right bumper = snapshot lerp-table shooter speed only
 - `A` = fixed `-41.5` shooter preset
 - `X` = fixed `-44.0` shooter preset
 - `Y` = manual spindexer / transfer feed
@@ -109,11 +109,13 @@ Intake / Pivot Support:
 - Confirm the shooter follows the current interpolated lerp speed.
 - Confirm the spindexer and transfer stay off at first, then begin feeding only
   after the shooter and turret are ready.
+- Once the shot becomes ready, confirm feed stays on smoothly instead of
+  chattering on and off during the shot.
 - Confirm driver controller 0 begins rumbling when the shot becomes ready.
 - Release operator `B` and confirm the shooter and feed stop cleanly.
 - Confirm the rumble stops when operator `B` is released.
 - Press operator right bumper and confirm the shooter uses the current
-  interpolated lerp speed.
+  interpolated lerp speed sampled at the moment the button is pressed.
 - Release operator right bumper and confirm the shooter stops.
 - Press operator `A` and confirm both shooter motors spin up together.
 - Release operator `A` and confirm both shooter motors stop.
@@ -158,6 +160,15 @@ blocked:
 - Press driver left bumper and confirm the intake can still turn on and off.
 - Press driver right bumper and confirm the intake can still drop.
 - Press operator left bumper and confirm the intake can still stop and raise.
+
+Also verify the protected combined-shot controls:
+
+- While operator `B` is held, press operator `A`, `X`, right bumper, and POV
+  presets one at a time.
+- Confirm those overlapping operator shooter / turret controls do not steal the
+  shot away while `B` is still held.
+- Release operator `B` and confirm the normal operator shooter / turret controls
+  work again immediately.
 
 Then also verify the older split workflow still works:
 

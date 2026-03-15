@@ -70,9 +70,9 @@ public class SpindexerSubsystem extends SubsystemBase {
      * wheel.
      */
     public Command setFeedVelocity(double rotationsPerSecond) {
-        return run(() -> {
-            applyFeedVelocityRequest(rotationsPerSecond);
-        });
+        return runEnd(
+                () -> applyFeedVelocityRequest(rotationsPerSecond),
+                this::stopFeedMotors);
     }
 
     /**
@@ -83,13 +83,13 @@ public class SpindexerSubsystem extends SubsystemBase {
      * ready.
      */
     public Command setFeedVelocityWhen(BooleanSupplier shouldFeed, double rotationsPerSecond) {
-        return run(() -> {
+        return runEnd(() -> {
             if (shouldFeed.getAsBoolean()) {
                 applyFeedVelocityRequest(rotationsPerSecond);
             } else {
                 stopFeedMotors();
             }
-        });
+        }, this::stopFeedMotors);
     }
 
     /**
