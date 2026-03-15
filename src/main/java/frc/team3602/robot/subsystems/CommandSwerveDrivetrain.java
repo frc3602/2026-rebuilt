@@ -370,13 +370,19 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     public void periodic() {
         // Read fresh gyro values every loop so MegaTag2 can use the latest drivetrain
         // heading information before we ask the Limelights for a pose estimate.
-        double currentYawDegrees = getPigeon2().getRotation2d().getDegrees();
+        Pose2d currentEstimatedPose = getEstimatedPose();
+        double currentLinearSpeedMetersPerSecond = Math.hypot(
+                getState().Speeds.vxMetersPerSecond,
+                getState().Speeds.vyMetersPerSecond);
         double currentYawDegreesPerSecond = getPigeon2().getAngularVelocityZWorld().getValueAsDouble();
 
-        // Pass the current drivetrain orientation to the Limelight pose subsystem.
-        // MegaTag2 uses this information to improve translation estimates when the
-        // robot is turning.
-        Limelight_Pose.getInstance().CollectDriveThetaValue(currentYawDegrees, currentYawDegreesPerSecond);
+        // Pass the current drivetrain state to the Limelight pose subsystem.
+        // MegaTag2 uses the heading data directly, and the reliability filters use
+        // the robot's current pose and speed to reject stale or unreasonable frames.
+        Limelight_Pose.getInstance().CollectDriveState(
+                currentEstimatedPose,
+                currentYawDegreesPerSecond,
+                currentLinearSpeedMetersPerSecond);
 
         if (Limelight_Pose.getInstance().poseUpdateAvailable){
             // Feed the accepted Limelight measurement into the drivetrain's built-in

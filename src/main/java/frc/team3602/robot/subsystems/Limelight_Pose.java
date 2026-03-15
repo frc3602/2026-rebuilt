@@ -4,6 +4,8 @@
 
 package frc.team3602.robot.subsystems;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -20,6 +22,7 @@ public class Limelight_Pose extends SubsystemBase {
    * much we trust that pose update.
    */
   private static class CameraMeasurementDecision {
+    public String cameraName = "Unknown";
     public boolean processedFreshFrame = false;
     public boolean acceptedMeasurement = false;
     public boolean usingMegaTag1 = false;
@@ -34,6 +37,9 @@ public class Limelight_Pose extends SubsystemBase {
     public double maxAmbiguity = 0.0;
     public double qualityScore = Double.NEGATIVE_INFINITY;
     public double timestampSeconds = 0.0;
+    public double measurementAgeSeconds = 0.0;
+    public double translationErrorMeters = 0.0;
+    public double headingErrorDegrees = 0.0;
     public String statusMessage = "No measurement processed yet";
   }
 
@@ -50,6 +56,12 @@ public class Limelight_Pose extends SubsystemBase {
   private static final double MAX_MT1_TAG_DISTANCE_METERS = 5.0;
   private static final double MAX_MT2_AMBIGUITY = 0.60;
   private static final double MAX_MT1_AMBIGUITY = 0.35;
+  private static final double MAX_LATENCY_MILLISECONDS = 90.0;
+  private static final double MAX_MEASUREMENT_AGE_SECONDS = 0.20;
+  private static final double MAX_MT1_TRANSLATION_JUMP_METERS = 2.0;
+  private static final double MAX_MT2_TRANSLATION_JUMP_METERS = 1.5;
+  private static final double MAX_MT1_HEADING_JUMP_DEGREES = 50.0;
+  private static final double CAMERA_SWITCH_QUALITY_MARGIN = 1.50;
 
   /** Creates a new Limelight pose subsystem. */
 
@@ -86,8 +98,12 @@ public class Limelight_Pose extends SubsystemBase {
   private double timestampCam1Previous = 0.0;
   private double timestampCam2Previous = 0.0;
 
+  private Pose2d currentDrivePose = Pose2d.kZero;
+  private boolean driveStateAvailable = false;
   public double currentDriveTheta;
   public double currentDriveYawRate;
+  public double currentDriveLinearSpeedMetersPerSecond;
+  private String preferredCameraName = "None";
 
   private CameraMeasurementDecision cam1Decision = new CameraMeasurementDecision();
   private CameraMeasurementDecision cam2Decision = new CameraMeasurementDecision();
@@ -165,23 +181,14 @@ public class Limelight_Pose extends SubsystemBase {
     poseUpdateXYTrustFactor = 0.0;
     poseUpdateRotTrustFactor = LARGE_ROTATION_STD_DEV;
 
-    CameraMeasurementDecision selectedDecision = null;
-
-    if (poseUpdateAvailableCam1) {
-      selectedDecision = cam1Decision;
-    }
-
-    if (poseUpdateAvailableCam2) {
-      if (selectedDecision == null || cam2Decision.qualityScore > selectedDecision.qualityScore) {
-        selectedDecision = cam2Decision;
-      }
-    }
+    CameraMeasurementDecision selectedDecision = choosePreferredDecision();
 
     if (selectedDecision != null) {
       poseCamEstimate = selectedDecision.selectedEstimate;
       poseUpdateXYTrustFactor = selectedDecision.xyStdDev;
       poseUpdateRotTrustFactor = selectedDecision.thetaStdDev;
       poseUpdateAvailable = true;
+      preferredCameraName = selectedDecision.cameraName;
     }
   }
 
@@ -198,14 +205,19 @@ public class Limelight_Pose extends SubsystemBase {
   }
 
   /**
-   * Stores the drivetrain heading and yaw rate for MegaTag2.
+   * Stores the drivetrain pose and motion state used to validate vision updates.
    *
-   * MegaTag2 expects fresh robot orientation information, so we pass the current
-   * gyro heading and turn rate into this subsystem once per loop.
+   * MegaTag2 expects fresh robot orientation information, and our reliability
+   * checks also compare incoming vision poses against the drivetrain's current
+   * estimate. Passing the full drive state in here once per loop lets us reject
+   * late or unreasonable camera frames more safely.
    */
-  public void CollectDriveThetaValue(double driveTheta, double driveYawRate) {
-    currentDriveTheta = driveTheta;
+  public void CollectDriveState(Pose2d drivePose, double driveYawRate, double driveLinearSpeedMetersPerSecond) {
+    currentDrivePose = drivePose;
+    driveStateAvailable = true;
+    currentDriveTheta = drivePose.getRotation().getDegrees();
     currentDriveYawRate = driveYawRate;
+    currentDriveLinearSpeedMetersPerSecond = driveLinearSpeedMetersPerSecond;
   }
 
   /**
@@ -230,6 +242,7 @@ public class Limelight_Pose extends SubsystemBase {
    */
   private CameraMeasurementDecision evaluateCameraMeasurement(String cameraName, double previousTimestamp) {
     CameraMeasurementDecision decision = new CameraMeasurementDecision();
+    decision.cameraName = cameraName;
 
     try {
       PoseEstimate megaTag1Estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(cameraName);
@@ -242,28 +255,47 @@ public class Limelight_Pose extends SubsystemBase {
       }
 
       decision.timestampSeconds = freshestEstimate.timestampSeconds;
+      decision.measurementAgeSeconds = Math.max(0.0, Timer.getFPGATimestamp() - freshestEstimate.timestampSeconds);
 
       if (freshestEstimate.tagCount < 1) {
+        fillRejectedFrameDetails(decision, freshestEstimate);
         decision.statusMessage = "Camera sees no AprilTags";
         return decision;
       }
 
       if (freshestEstimate.timestampSeconds <= previousTimestamp) {
+        fillRejectedFrameDetails(decision, freshestEstimate);
         decision.statusMessage = "Camera frame is stale and was already processed";
         return decision;
       }
 
       decision.processedFreshFrame = true;
 
-      if (isMegaTag1Reliable(megaTag1Estimate)) {
+      if (freshestEstimate.latency > MAX_LATENCY_MILLISECONDS) {
+        fillRejectedFrameDetails(decision, freshestEstimate);
+        decision.statusMessage = "Rejected fresh frame because latency was too high";
+        return decision;
+      }
+
+      if (decision.measurementAgeSeconds > MAX_MEASUREMENT_AGE_SECONDS) {
+        fillRejectedFrameDetails(decision, freshestEstimate);
+        decision.statusMessage = "Rejected fresh frame because it was too old";
+        return decision;
+      }
+
+      if (isMegaTag1Reliable(megaTag1Estimate)
+          && passesDriveStateValidation(megaTag1Estimate, true, decision)) {
         fillDecisionFromEstimate(decision, megaTag1Estimate, true);
         decision.statusMessage = "Accepted fresh MegaTag1 frame";
-      } else if (isMegaTag2Reliable(megaTag2Estimate)) {
+      } else if (isMegaTag2Reliable(megaTag2Estimate)
+          && passesDriveStateValidation(megaTag2Estimate, false, decision)) {
         fillDecisionFromEstimate(decision, megaTag2Estimate, false);
         decision.statusMessage = "Accepted fresh MegaTag2 translation update";
       } else {
         fillRejectedFrameDetails(decision, freshestEstimate);
-        decision.statusMessage = "Rejected fresh frame because tag geometry was too weak";
+        if (decision.statusMessage.equals("No measurement processed yet")) {
+          decision.statusMessage = "Rejected fresh frame because tag geometry was too weak";
+        }
       }
     } catch (Exception e) {
       decision.statusMessage = "Failed to read Limelight data: " + e.getMessage();
@@ -294,6 +326,43 @@ public class Limelight_Pose extends SubsystemBase {
     }
 
     return megaTag1Estimate;
+  }
+
+  /**
+   * Chooses which accepted camera update should be fused this loop.
+   *
+   * If both cameras look good, we use a small hysteresis margin before switching
+   * away from the previously preferred camera. This helps prevent the robot from
+   * bouncing between left and right camera updates when they are nearly equal.
+   */
+  private CameraMeasurementDecision choosePreferredDecision() {
+    if (!poseUpdateAvailableCam1 && !poseUpdateAvailableCam2) {
+      return null;
+    }
+
+    if (poseUpdateAvailableCam1 && !poseUpdateAvailableCam2) {
+      return cam1Decision;
+    }
+
+    if (!poseUpdateAvailableCam1 && poseUpdateAvailableCam2) {
+      return cam2Decision;
+    }
+
+    if (CAMERA_RIGHT.equals(preferredCameraName)
+        && cam2Decision.qualityScore <= cam1Decision.qualityScore + CAMERA_SWITCH_QUALITY_MARGIN) {
+      return cam1Decision;
+    }
+
+    if (CAMERA_LEFT.equals(preferredCameraName)
+        && cam1Decision.qualityScore <= cam2Decision.qualityScore + CAMERA_SWITCH_QUALITY_MARGIN) {
+      return cam2Decision;
+    }
+
+    if (cam2Decision.qualityScore > cam1Decision.qualityScore) {
+      return cam2Decision;
+    }
+
+    return cam1Decision;
   }
 
   /**
@@ -358,6 +427,7 @@ public class Limelight_Pose extends SubsystemBase {
    */
   private void fillDecisionFromEstimate(CameraMeasurementDecision decision, PoseEstimate estimate,
       boolean usingMegaTag1) {
+    updateDecisionMetrics(decision, estimate);
     decision.acceptedMeasurement = true;
     decision.usingMegaTag1 = usingMegaTag1;
     decision.usingMegaTag2 = !usingMegaTag1;
@@ -379,13 +449,62 @@ public class Limelight_Pose extends SubsystemBase {
    * understand why the robot ignored that frame.
    */
   private void fillRejectedFrameDetails(CameraMeasurementDecision decision, PoseEstimate estimate) {
+    updateDecisionMetrics(decision, estimate);
     decision.selectedEstimate = estimate;
+    decision.qualityScore = calculateQualityScore(estimate, false);
+  }
+
+  /**
+   * Updates the diagnostic values we publish for a camera frame.
+   *
+   * This includes what the camera saw plus how far that pose is from the
+   * drivetrain's current estimate. Those extra values make it much easier to tune
+   * rejection thresholds on the practice field.
+   */
+  private void updateDecisionMetrics(CameraMeasurementDecision decision, PoseEstimate estimate) {
+    decision.selectedEstimate = estimate;
+    decision.timestampSeconds = estimate.timestampSeconds;
+    decision.measurementAgeSeconds = Math.max(0.0, Timer.getFPGATimestamp() - estimate.timestampSeconds);
     decision.tagCount = estimate.tagCount;
     decision.avgTagArea = estimate.avgTagArea;
     decision.avgTagDist = estimate.avgTagDist;
     decision.tagSpan = estimate.tagSpan;
     decision.maxAmbiguity = getMaxAmbiguity(estimate);
-    decision.qualityScore = calculateQualityScore(estimate, false);
+
+    if (driveStateAvailable) {
+      decision.translationErrorMeters = estimate.pose.getTranslation().getDistance(currentDrivePose.getTranslation());
+      decision.headingErrorDegrees = Math.abs(
+          estimate.pose.getRotation().minus(currentDrivePose.getRotation()).getDegrees());
+    }
+  }
+
+  /**
+   * Checks whether a camera frame is reasonably close to the drivetrain estimate.
+   *
+   * This protects the robot from one bad AprilTag solve causing a huge pose jump.
+   * MegaTag1 must agree in both translation and heading, while MegaTag2 only needs
+   * to agree in translation because we already treat its heading as untrusted.
+   */
+  private boolean passesDriveStateValidation(PoseEstimate estimate, boolean usingMegaTag1,
+      CameraMeasurementDecision decision) {
+    updateDecisionMetrics(decision, estimate);
+
+    if (!driveStateAvailable) {
+      return true;
+    }
+
+    double maxTranslationJumpMeters = usingMegaTag1 ? MAX_MT1_TRANSLATION_JUMP_METERS : MAX_MT2_TRANSLATION_JUMP_METERS;
+    if (decision.translationErrorMeters > maxTranslationJumpMeters) {
+      decision.statusMessage = "Rejected fresh frame because pose jump was too large";
+      return false;
+    }
+
+    if (usingMegaTag1 && decision.headingErrorDegrees > MAX_MT1_HEADING_JUMP_DEGREES) {
+      decision.statusMessage = "Rejected fresh frame because heading jump was too large";
+      return false;
+    }
+
+    return true;
   }
 
   /**
@@ -424,6 +543,11 @@ public class Limelight_Pose extends SubsystemBase {
       xyStdDev += 0.15;
     }
 
+    // Fast motion makes camera measurements less reliable, so we automatically
+    // trust them a little less when the drivetrain is moving aggressively.
+    xyStdDev += Math.abs(currentDriveYawRate) * 0.003;
+    xyStdDev += Math.abs(currentDriveLinearSpeedMetersPerSecond) * 0.12;
+
     return clamp(xyStdDev, 0.35, 2.50);
   }
 
@@ -452,6 +576,10 @@ public class Limelight_Pose extends SubsystemBase {
       thetaStdDev += 0.20;
     }
 
+    // When the robot is spinning quickly, it is safer to lean more heavily on the
+    // gyro for heading and be less aggressive with vision rotation corrections.
+    thetaStdDev += Math.abs(currentDriveYawRate) * 0.002;
+
     return clamp(thetaStdDev, 0.35, 1.50);
   }
 
@@ -464,12 +592,15 @@ public class Limelight_Pose extends SubsystemBase {
    */
   private double calculateQualityScore(PoseEstimate estimate, boolean usingMegaTag1) {
     double score = 0.0;
+    double measurementAgeSeconds = Math.max(0.0, Timer.getFPGATimestamp() - estimate.timestampSeconds);
 
     score += estimate.tagCount * 3.0;
     score += Math.min(estimate.avgTagArea, 1.0) * 4.0;
     score += Math.max(0.0, 4.0 - estimate.avgTagDist);
     score += Math.max(0.0, estimate.tagSpan);
     score -= getMaxAmbiguity(estimate) * 5.0;
+    score -= measurementAgeSeconds * 10.0;
+    score -= Math.abs(currentDriveYawRate) * 0.01;
 
     if (!usingMegaTag1) {
       score -= 0.5;
@@ -523,8 +654,11 @@ public class Limelight_Pose extends SubsystemBase {
 
     SmartDashboard.putBoolean("Vision/Selected/Available", poseUpdateAvailable);
     SmartDashboard.putString("Vision/Selected/Camera", getSelectedCameraLabel());
+    SmartDashboard.putString("Vision/Selected/PreferredCamera", preferredCameraName);
     SmartDashboard.putNumber("Vision/Selected/XYStdDev", poseUpdateXYTrustFactor);
     SmartDashboard.putNumber("Vision/Selected/ThetaStdDev", poseUpdateRotTrustFactor);
+    SmartDashboard.putNumber("Vision/Drive/YawRateDegPerSec", currentDriveYawRate);
+    SmartDashboard.putNumber("Vision/Drive/LinearSpeedMetersPerSecond", currentDriveLinearSpeedMetersPerSecond);
 
     SmartDashboard.putBoolean("Vision/Right/UsingMT1", usingCam1MT1);
     SmartDashboard.putBoolean("Vision/Right/UsingMT2", usingCam1MT2);
@@ -544,11 +678,14 @@ public class Limelight_Pose extends SubsystemBase {
     SmartDashboard.putString(dashboardPrefix + "/Mode", getModeLabel(decision));
     SmartDashboard.putString(dashboardPrefix + "/Status", decision.statusMessage);
     SmartDashboard.putNumber(dashboardPrefix + "/Timestamp", decision.timestampSeconds);
+    SmartDashboard.putNumber(dashboardPrefix + "/MeasurementAgeSeconds", decision.measurementAgeSeconds);
     SmartDashboard.putNumber(dashboardPrefix + "/TagCount", decision.tagCount);
     SmartDashboard.putNumber(dashboardPrefix + "/AvgTagArea", decision.avgTagArea);
     SmartDashboard.putNumber(dashboardPrefix + "/AvgTagDist", decision.avgTagDist);
     SmartDashboard.putNumber(dashboardPrefix + "/TagSpan", decision.tagSpan);
     SmartDashboard.putNumber(dashboardPrefix + "/MaxAmbiguity", decision.maxAmbiguity);
+    SmartDashboard.putNumber(dashboardPrefix + "/TranslationErrorMeters", decision.translationErrorMeters);
+    SmartDashboard.putNumber(dashboardPrefix + "/HeadingErrorDegrees", decision.headingErrorDegrees);
     SmartDashboard.putNumber(dashboardPrefix + "/QualityScore", decision.qualityScore);
     SmartDashboard.putNumber(dashboardPrefix + "/XYStdDev", decision.xyStdDev);
     SmartDashboard.putNumber(dashboardPrefix + "/ThetaStdDev", decision.thetaStdDev);
