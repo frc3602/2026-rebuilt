@@ -181,6 +181,44 @@ Shooting / Feeding:
 - Operator left trigger runs the timed failsafe shot
 - Driver controller 0 rumbles when the tracked `B` shot is ready to fire
 
+## Driver Cheat Sheet
+
+### Basic Fuel Cycle
+
+1. Driver drives to fuel with controller 0.
+2. Driver holds right bumper to drop the intake.
+3. Driver holds left bumper to run the intake and collect fuel.
+4. Driver moves to a safe shooting position.
+5. Operator holds `B` for the combined tracked lerp shot.
+6. Robot tracks the alliance tower, spins the shooter to the lerp-table speed,
+   waits until the shot is ready, then feeds automatically.
+7. Driver feels controller 0 rumble when the tracked shot is ready.
+8. Operator releases `B` when the shot is complete.
+
+### Quick Reminders
+
+- Driver right bumper = intake down
+- Driver left bumper = intake on
+- Operator `B` = full tracked shot
+- Operator left bumper = stop intake and raise pivot
+- Operator left trigger = failsafe shot if normal tracking is not working
+
+### Split-Shot Backup Workflow
+
+Use this if the team wants to control the shot in separate steps instead of the
+combined `B` shot:
+
+1. Operator holds right trigger to track the alliance tower.
+2. Operator starts the shooter with right bumper, `A`, or `X`.
+3. Operator holds `Y` to feed when ready.
+
+### Intake / Shot Coordination
+
+- The intake and pivot controls should still work while operator `B` is held.
+- Driver can still drop or run intake during the tracked shot if needed.
+- Operator left bumper can still stop intake and raise the pivot during the
+  tracked shot.
+
 ## Default Commands
 
 - Drivetrain: field-centric drive from driver controller sticks
