@@ -347,26 +347,66 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
      * shooter distance calculations immediately.
      */
     public double getDistanceToTarget() {
+        // Step 1:
+        // Read the robot's current field pose from the shared drivetrain estimator.
+        //
+        // This pose includes:
+        // - X position on the field
+        // - Y position on the field
+        // - robot heading
+        //
+        // We use the estimator's pose instead of raw wheel odometry so Limelight
+        // vision corrections can improve shooter distance immediately.
         Pose2d robotPose = getEstimatedPose();
 
-        // Target field location.
+        // Step 2:
+        // Look up the field position of the correct tower for the current alliance.
+        //
+        // This gives us the fixed goal location we want to measure to.
         Translation2d targetPosition = this.getTargetPose();
 
-        // Turret offset from robot center (inches -> meters).
+        // Step 3:
+        // Describe where the turret sits relative to the robot center.
+        //
+        // +X means forward from the robot center.
+        // +Y would mean left from the robot center.
+        //
+        // Right now the turret is modeled as 11.28 inches forward of center and
+        // centered left-to-right. If your measured shot distance seems consistently
+        // off, these are some of the first numbers to verify on the real robot.
         double turretOffsetX = Units.inchesToMeters(11.28);
         double turretOffsetY = Units.inchesToMeters(0);
 
+        // Build that robot-relative offset as a 2D translation.
         Translation2d turretOffset = new Translation2d(turretOffsetX, turretOffsetY);
 
-        // Rotate the turret offset into field coordinates using the robot heading.
+        // Step 4:
+        // Rotate the turret offset by the robot's current heading.
+        //
+        // This converts the turret offset from "robot coordinates" into "field
+        // coordinates." Without this step, the code would assume the robot is always
+        // facing the same direction and the distance would be wrong whenever the
+        // robot turns.
         Translation2d rotatedOffset = turretOffset.rotateBy(robotPose.getRotation());
 
-        // Add the rotated offset to find the turret's field position.
+        // Step 5:
+        // Add the rotated turret offset to the robot's field position.
+        //
+        // This gives the turret's actual position on the field, which is a better
+        // shooting reference point than using the center of the drivetrain.
         Translation2d turretPosition = robotPose.getTranslation().plus(rotatedOffset);
 
-        // Measure the turret-to-target distance in feet for the shooter code.
+        // Step 6:
+        // Measure the straight-line distance from the turret to the tower target.
+        //
+        // WPILib pose math works in meters, so this value starts in meters.
         double distanceMeters = turretPosition.getDistance(targetPosition);
 
+        // Step 7:
+        // Convert the distance to feet before returning it.
+        //
+        // The shooter interpolation table is currently tuned in feet, so this method
+        // returns feet to match the lookup table in ShooterSubsystem.
         return Units.metersToFeet(distanceMeters);
     }
 

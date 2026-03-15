@@ -203,7 +203,15 @@ public class ShooterSubsystem extends SubsystemBase {
         // SmartDashboard.putNumber("Shooter2 Speed", ShooterConstants.kShooterSpeed);
         // SmartDashboard.putNumber("Feeder Speed", ShooterConstants.kFeederMotorSpeed);
         distance = drivetrain.getDistanceToTarget();
+
+        // Look up the shooter speed that matches the current measured distance.
+        //
+        // The table below is stored in feet -> flywheel RPS. Because this is an
+        // InterpolatingDoubleTreeMap, the code can still return a useful speed for
+        // in-between distances. For example, if the robot is 6.5 feet away, WPILib
+        // will automatically blend between the 6 ft and 7 ft table entries.
         shootLerpSpeed = shootLerp.get(distance);
+
         // SmartDashboard.putNumber("Lerp Shoot Speed", shootLerpSpeed);
         // SmartDashboard.putNumber("Dist in side of shootSubsys", distance / 12);
         // SmartDashboard.getNumber("ShootSpeedInput", shootShuffleSpeed);
@@ -239,7 +247,40 @@ public class ShooterSubsystem extends SubsystemBase {
 
         restoreFollowerControl();
 
+        // EDIT THIS TABLE AFTER PRACTICE-FIELD SHOT TESTING.
+        //
         // Interpolation table config
+        //
+        // This is the team's distance-to-shooter-speed lookup table.
+        //
+        // Table format:
+        // - left number = distance from the turret to the target, in feet
+        // - right number = shooter flywheel speed, in RPS
+        //
+        // Example:
+        // - shootLerp.put(8.0, 43.0) means "when the robot is 8 feet away,
+        //   command about 43 RPS at the shooter."
+        //
+        // Why use a table?
+        // - It is much easier for students to tune from real testing than a big
+        //   physics equation.
+        // - The InterpolatingDoubleTreeMap fills in the speeds between listed
+        //   points, so we do not need an entry for every inch.
+        //
+        // Important tuning notes:
+        // - Distance keys are in feet because CommandSwerveDrivetrain returns feet.
+        // - Speed values are positive magnitudes for readability.
+        // - The shooter command code later applies the negative sign needed for the
+        //   motor direction.
+        // - Try to keep the table generally increasing as distance increases. A
+        //   hooded shooter usually needs more wheel speed for longer shots.
+        //
+        // A good tuning workflow is:
+        // 1. Place the robot at a known distance.
+        // 2. Shoot several notes.
+        // 3. Raise the RPS entry if shots land low/short.
+        // 4. Lower the RPS entry if shots land high/long.
+        // 5. Re-test nearby distances because one change can affect interpolation.
         shootLerp.put(2.0, 31.0);
         shootLerp.put(3.0, 33.0);
         shootLerp.put(4.0, 35.0);
@@ -256,6 +297,7 @@ public class ShooterSubsystem extends SubsystemBase {
         shootLerp.put(15.0, 58.0);
         shootLerp.put(16.0, 60.0);
         shootLerp.put(17.0, 62.5);
+
         // Keep the final point monotonic until the team measures a better long-shot
         // speed on the practice field. The old 0.9 value would nearly stop the
         // shooter at the far end of the table.
