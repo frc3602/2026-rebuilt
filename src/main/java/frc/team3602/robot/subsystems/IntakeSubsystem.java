@@ -18,7 +18,7 @@ import frc.team3602.robot.Constants.ShooterConstants;
 
 public class IntakeSubsystem extends SubsystemBase{
     //variables
-    private static TalonFX intakeMotor = new TalonFX(IntakeConstants.kIntakeMotorID, "rio");
+    private final TalonFX intakeMotor = new TalonFX(IntakeConstants.kIntakeMotorID, "rio");
     
     //constructor
     public IntakeSubsystem(){

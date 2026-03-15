@@ -47,15 +47,17 @@ public class Superstructure {
 
     /* Score Commands */
     public Command shootBall1() {
-        return Commands.parallel(
-                turretSubsys.aimCommand(),
+        return Commands.deadline(
                 Commands.sequence(
-                        // The shooter velocity command now sets a persistent target once.
-                        // We wait here before feeding so the flywheel still gets time to
-                        // spin up before the spindexer starts moving the ball.
+                        // Set the shooter target once and give the flywheel time to
+                        // spin up before feeding.
                         shooterSubsys.setShootVelocity(-62.5),
                         Commands.waitSeconds(1.7),
-                        spindexerSubsys.setFeedVelocity(-62.5)));
+                        // Feed for a short fixed window so this command can finish on
+                        // its own in teleop or autonomous.
+                        spindexerSubsys.setFeedVelocity(-62.5).withTimeout(1.0)),
+                turretSubsys.aimCommand())
+                .andThen(stopShoot());
     }
 
     // public Command shootBall2() {

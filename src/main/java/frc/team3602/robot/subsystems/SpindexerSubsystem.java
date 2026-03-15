@@ -16,8 +16,8 @@ public class SpindexerSubsystem extends SubsystemBase {
 
     /* Motors */
 
-    private static TalonFX spindexerMotor;
-    private static TalonFX receiveMotor;
+    private final TalonFX spindexerMotor;
+    private final TalonFX receiveMotor;
 
     /* Constructor */
 

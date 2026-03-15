@@ -12,8 +12,8 @@ import frc.team3602.robot.Constants.IntakeConstants;
 
 public class PivotSubsystem extends SubsystemBase {
 
-    private static TalonFX intakePivot = new TalonFX(IntakeConstants.kIntakePivotID, "rio");
-    private static TalonFX intakePivotFollow = new TalonFX(IntakeConstants.kIntakePivotFollowID, "rio");
+    private final TalonFX intakePivot = new TalonFX(IntakeConstants.kIntakePivotID, "rio");
+    private final TalonFX intakePivotFollow = new TalonFX(IntakeConstants.kIntakePivotFollowID, "rio");
 
     public double getPivotEncoder;
     private double pivotSetPoint = 0;

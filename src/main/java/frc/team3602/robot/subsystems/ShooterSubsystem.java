@@ -28,8 +28,8 @@ public class ShooterSubsystem extends SubsystemBase {
     public CommandSwerveDrivetrain drivetrain;
 
     // Shooter Motors
-    private static TalonFX shootermotor1;
-    private static TalonFX shootermotor2;
+    private final TalonFX shootermotor1;
+    private final TalonFX shootermotor2;
 
    
 

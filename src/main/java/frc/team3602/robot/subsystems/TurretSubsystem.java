@@ -15,6 +15,7 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -352,8 +353,16 @@ public class TurretSubsystem extends SubsystemBase {
         double robotHeading = robotPose.getRotation().getRadians();
         double targetYawRelative = angleToTarget.getRadians() - robotHeading;
 
-        // Robot velocity
-        double robotVelocity = drivetrainSubsys.getState().Speeds.vxMetersPerSecond;
+        // Get the robot's chassis speeds. CTRE reports these in robot-relative
+        // coordinates, so +X is forward relative to the robot and +Y is left.
+        ChassisSpeeds robotRelativeSpeeds = drivetrainSubsys.getState().Speeds;
+
+        // Rotate the robot-relative translation speeds into the field frame.
+        // This lets us measure the robot's motion relative to the tower target
+        // instead of only looking at "forward" speed from the robot's perspective.
+        Translation2d fieldRelativeVelocity = new Translation2d(
+                robotRelativeSpeeds.vxMetersPerSecond,
+                robotRelativeSpeeds.vyMetersPerSecond).rotateBy(robotPose.getRotation());
 
         // Time of flight
         double timeOfFlight = calculateBallTimeOfFlight();
@@ -362,8 +371,20 @@ public class TurretSubsystem extends SubsystemBase {
             return Math.toDegrees(targetYawRelative);
         }
 
-        // Lateral movement during shot
-        double lateralMovement = robotVelocity * timeOfFlight;
+        // Build a unit vector perpendicular to the shot line.
+        // Motion along this perpendicular direction is what makes us need lead.
+        Translation2d targetDirectionUnit = robotToTarget.div(distanceToTarget);
+        Translation2d lateralDirectionUnit = new Translation2d(
+                -targetDirectionUnit.getY(),
+                targetDirectionUnit.getX());
+
+        // Project the robot's field-relative velocity onto the lateral direction so
+        // diagonal and sideways motion both affect the lead angle correctly.
+        double lateralSpeedMetersPerSecond = (fieldRelativeVelocity.getX() * lateralDirectionUnit.getX())
+                + (fieldRelativeVelocity.getY() * lateralDirectionUnit.getY());
+
+        // Lateral movement during the shot.
+        double lateralMovement = lateralSpeedMetersPerSecond * timeOfFlight;
 
         // Lead angle
         double leadRadians = Math.atan2(lateralMovement, distanceToTarget);
@@ -528,13 +549,17 @@ public class TurretSubsystem extends SubsystemBase {
             if (vision.getTurretHasTarget()) {
                 aimOutput = aimController.calculate(vision.getTurretTX(), 5);// setpoint is the offset of the
                                                                              // turret(temp)
-                setRequestedAngle(setAngle - aimOutput + calculateTurretOffset());
+                // Start from the lead-adjusted tower angle, then apply the fine
+                // Limelight correction on top of it.
+                setRequestedAngle(calculateTurretOffset() - aimOutput);
 
             } else {
-                vision.getPose();
+                // If the turret camera loses the target, fall back to the drivetrain
+                // pose-based tower angle instead of freezing the turret math.
+                setRequestedAngle(calculateTurretOffset());
 
             }
-
+            applyTurretPositionControl();
         });
     }
 
