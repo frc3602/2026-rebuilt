@@ -133,8 +133,7 @@ Useful dashboard values include:
 These are registered for PathPlanner:
 
 - `autonRunBetaShot`
-  - Spins shooter to `-41.5`, waits for speed, moves turret to basic auton angle,
-    feeds briefly, then stops shooter and spindexer.
+  - Runs the full simple beta shot macro: prepare, feed, then stop.
 
 - `autonLowerIntake`
   - Drops the intake pivot for autonomous intake setup.
@@ -144,6 +143,24 @@ These are registered for PathPlanner:
 
 - `autonStopIntake`
   - Stops the intake roller without moving the pivot.
+
+- `autonSpinUpBetaShot`
+  - Starts the shooter for the beta auto shot without feeding yet.
+
+- `autonWaitForBetaShotReady`
+  - Waits for the shooter to reach the current beta ready threshold, with a
+    timeout so the auto cannot hang forever.
+
+- `autonPrepareBetaShot`
+  - Spins up the shooter and tracks the alliance tower at the same time.
+  - This is the main setup step for the current basic scoring auto.
+
+- `autonFeedBetaShot`
+  - Runs the spindexer / transfer feed for the beta shot for a fixed window,
+    then stops the spindexer.
+
+- `autonStopShooting`
+  - Stops the shooter and spindexer after an autonomous shot.
 
 - `autonTrackTower`
   - Continuously tracks the current alliance tower with the turret.
@@ -155,6 +172,9 @@ These are registered for PathPlanner:
 
 - `moveTurretToStartAngle`
   - Sends the turret to the shared starting / handoff angle.
+
+For the full explanation of how these auton commands are meant to be combined in
+PathPlanner, see `autonREADME.md`.
 
 ## Important Notes For The Team
 
@@ -261,6 +281,11 @@ Use this checklist when the robot is on blocks first, then again on the carpet.
 - `autonLowerIntake` drops the intake pivot
 - `autonStartIntake` starts the intake roller
 - `autonStopIntake` stops the intake roller
+- `autonSpinUpBetaShot` starts the shooter without feeding
+- `autonWaitForBetaShotReady` ends when the shooter is near speed or the timeout expires
+- `autonPrepareBetaShot` spins up and tracks before feeding
+- `autonFeedBetaShot` runs the feed window and then stops the spindexer
+- `autonStopShooting` stops both shooter and spindexer
 - `autonTrackTower` works when run in parallel with movement
 - `autonTrackTowerShort` runs for about 2 seconds and then ends
 - `moveTurretToStartAngle` sends turret to the shared starting / handoff angle
