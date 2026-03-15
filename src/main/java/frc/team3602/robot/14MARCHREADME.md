@@ -112,6 +112,7 @@ Useful dashboard values include:
 - Left trigger: run the timed failsafe shooting routine, release early to stop
   shooter and feed
 - `Y`: run spindexer feed at `-35.0` while held
+- Right bumper: run shooter at the current lerp-table speed, release to stop
 - `B`: set shooter velocity to `-55.0`, release to stop
 - `A`: set shooter velocity to `-41.5`, release to stop
 - `X`: set shooter velocity to `-44.0`, release to stop
@@ -247,6 +248,7 @@ Use this checklist when the robot is on blocks first, then again on the carpet.
 
 ### Shooter
 
+- Operator right bumper spins the shooter to the current lerp-table speed
 - Operator `B` spins the shooter to `-55.0`
 - Operator `A` spins the shooter to `-41.5`
 - Operator `X` spins the shooter to `-44.0`

@@ -64,6 +64,9 @@ full teleop or autonomous routines.
 
 ## Phase 4: Shooter Check
 
+- Press operator right bumper and confirm the shooter uses the current
+  interpolated lerp speed.
+- Release operator right bumper and confirm the shooter stops.
 - Press operator `A` and confirm both shooter motors spin up together.
 - Release operator `A` and confirm both shooter motors stop.
 - Press operator `A` again and confirm both shooter motors spin up together a second time.
