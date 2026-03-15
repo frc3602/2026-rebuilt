@@ -26,9 +26,11 @@ import frc.team3602.robot.Constants.FieldConstants;
 
 public class TurretSubsystem extends SubsystemBase {
     // The turret uses linear travel coordinates from 0 through 360 degrees.
-    // 0 degrees and 360 degrees point in the same direction on the robot, but they
-    // are different ends of the mechanism's legal travel. That means we must not
-    // use normal "shortest angle" wrapping when we command the turret.
+    // 0/360 degrees point to the rear of the robot, 90 points left, 180 points
+    // forward over the intake, and 270 points right. 0 degrees and 360 degrees
+    // are the same aiming direction, but they are different ends of the
+    // mechanism's legal travel. That means we must not use normal "shortest
+    // angle" wrapping when we command the turret.
     private static final double MIN_TRACKING_ANGLE_DEGREES = 0.0;
     private static final double MAX_TRACKING_ANGLE_DEGREES = 360.0;
     private static final double STARTING_TURRET_ANGLE_DEGREES = 90.0;
@@ -239,11 +241,13 @@ public class TurretSubsystem extends SubsystemBase {
         double dy = target.getY() - robotPose.getY();
         double fieldAngle = Math.toDegrees(Math.atan2(dy, dx));
         double robotHeading = robotPose.getRotation().getDegrees();
-        return normalizeToTravelAngle(fieldAngle - robotHeading);
+        double signedRobotRelativeAngle = normalizeSignedRobotRelativeAngle(fieldAngle - robotHeading);
+        return convertSignedAimToTravelAngle(signedRobotRelativeAngle);
     }
 
     /**
-     * Converts any angle description into the turret's linear 0-360 travel range.
+     * Converts any direct turret travel request into the turret's linear 0-360
+     * travel range.
      *
      * Examples:
      * - -55 becomes 305
@@ -266,6 +270,46 @@ public class TurretSubsystem extends SubsystemBase {
     }
 
     /**
+     * Wraps a robot-relative aim angle into the normal signed range used by field
+     * geometry.
+     *
+     * In this signed frame:
+     * - 0 means straight ahead
+     * - +90 means left
+     * - -90 means right
+     * - +/-180 means directly behind the robot
+     */
+    private double normalizeSignedRobotRelativeAngle(double angleDeg) {
+        double normalizedAngle = angleDeg % 360.0;
+        if (normalizedAngle >= 180.0) {
+            normalizedAngle -= 360.0;
+        }
+        if (normalizedAngle < -180.0) {
+            normalizedAngle += 360.0;
+        }
+
+        return normalizedAngle;
+    }
+
+    /**
+     * Converts a signed robot-relative aim angle into the turret's rear-zero travel
+     * coordinates.
+     *
+     * In the turret travel model:
+     * - rear = 0 or 360
+     * - left = 90
+     * - front = 180
+     * - right = 270
+     */
+    private double convertSignedAimToTravelAngle(double signedAimAngleDegrees) {
+        if (Math.abs(Math.abs(signedAimAngleDegrees) - 180.0) < 1e-9) {
+            return getTurretAngleDeg() > 180.0 ? MAX_TRACKING_ANGLE_DEGREES : MIN_TRACKING_ANGLE_DEGREES;
+        }
+
+        return normalizeToTravelAngle(180.0 - signedAimAngleDegrees);
+    }
+
+    /**
      * Limits a value to a safe minimum and maximum.
      *
      * We use this helper to keep turret tracking setpoints inside the legal travel
@@ -285,14 +329,6 @@ public class TurretSubsystem extends SubsystemBase {
      */
     private void setRequestedAngle(double requestedAngleDegrees) {
         double normalizedAngle = normalizeToTravelAngle(requestedAngleDegrees);
-
-        // When the desired pointing direction is exactly forward, both 0 and 360 aim
-        // the turret the same way. Choose the closer end of travel so the turret
-        // does not make an unnecessary full-circle move across the seam.
-        if (Math.abs(normalizedAngle) < 1e-9 && getTurretAngleDeg() > 180.0) {
-            normalizedAngle = MAX_TRACKING_ANGLE_DEGREES;
-        }
-
         setAngle = clamp(normalizedAngle, MIN_TRACKING_ANGLE_DEGREES, MAX_TRACKING_ANGLE_DEGREES);
     }
 
@@ -401,8 +437,11 @@ public class TurretSubsystem extends SubsystemBase {
         // Time of flight
         double timeOfFlight = calculateBallTimeOfFlight();
 
+        double signedRobotRelativeAngleDegrees = normalizeSignedRobotRelativeAngle(
+                Math.toDegrees(targetYawRelative));
+
         if (timeOfFlight <= 0.0) {
-            return normalizeToTravelAngle(Math.toDegrees(targetYawRelative));
+            return convertSignedAimToTravelAngle(signedRobotRelativeAngleDegrees);
         }
 
         // Build a unit vector perpendicular to the shot line.
@@ -426,7 +465,10 @@ public class TurretSubsystem extends SubsystemBase {
         // Final turret offset
         double turretOffsetRadians = targetYawRelative + leadRadians;
 
-        return normalizeToTravelAngle(Math.toDegrees(turretOffsetRadians));
+        double signedLeadAdjustedAngleDegrees = normalizeSignedRobotRelativeAngle(
+                Math.toDegrees(turretOffsetRadians));
+
+        return convertSignedAimToTravelAngle(signedLeadAdjustedAngleDegrees);
     }
 
     double voltage;
@@ -456,14 +498,15 @@ public class TurretSubsystem extends SubsystemBase {
 
     public Command setAngleNeutral() {
         return  runOnce(() -> {
-            // Neutral parks the turret on the high-angle side of the 0-360 travel
-            // range.
+            // Neutral parks the turret on the robot's right side in the rear-zero
+            // travel model.
             setRequestedAngle(NEUTRAL_PRESET_DEGREES);
         });
     }
 
     public Command setAngleZero() {
         return  runOnce(() -> {
+            // Zero is the rear-left end of travel in this turret convention.
             setRequestedAngle(0);
         });
     }
@@ -524,9 +567,9 @@ public class TurretSubsystem extends SubsystemBase {
     /**
      * Calculates the turret angle needed to face a field coordinate.
      *
-     * We convert the field point into the turret's 0-360 travel coordinate instead
-     * of using a wrapped signed angle. This keeps the turret from trying to
-     * shortcut across the 0/360 seam.
+     * We first compute the normal signed robot-relative aim angle, then convert it
+     * into the turret's rear-zero travel coordinate. This keeps the field math easy
+     * to reason about while still honoring the mechanism's 0/360 rear seam.
      */
     private double calculateTurretAngleForFieldPoint(Translation2d fieldPoint) {
         Pose2d robotPose = drivetrainSubsys.getEstimatedPose();
@@ -535,9 +578,10 @@ public class TurretSubsystem extends SubsystemBase {
         double deltaY = fieldPoint.getY() - robotPose.getY();
         double fieldAngleToPoint = Math.toDegrees(Math.atan2(deltaY, deltaX));
         double robotHeading = robotPose.getRotation().getDegrees();
-        double robotRelativeAngle = normalizeToTravelAngle(fieldAngleToPoint - robotHeading);
+        double signedRobotRelativeAngle = normalizeSignedRobotRelativeAngle(fieldAngleToPoint - robotHeading);
+        double turretTravelAngle = convertSignedAimToTravelAngle(signedRobotRelativeAngle);
 
-        return clamp(robotRelativeAngle, MIN_TRACKING_ANGLE_DEGREES, MAX_TRACKING_ANGLE_DEGREES);
+        return clamp(turretTravelAngle, MIN_TRACKING_ANGLE_DEGREES, MAX_TRACKING_ANGLE_DEGREES);
     }
 
     public Command aimToDesiredAngle() {

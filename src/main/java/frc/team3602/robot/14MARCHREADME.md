@@ -53,8 +53,11 @@ Useful dashboard values include:
 - A short timeout version of that auton command was also added.
 - Turret angle requests now use a linear `0` through `360` travel model instead
   of the older wrapped-angle model.
+- In that travel model, `0` / `360` mean rear, `90` means left, `180` means
+  forward over the intake, and `270` means right.
 - The software now treats `0` and `360` as separate travel endpoints so the
-  turret goes around the seam instead of taking a fake shortest-angle shortcut.
+  turret goes around the rear seam instead of taking a fake shortest-angle
+  shortcut.
 - Preset turret positions were cleaned up so right corner and neutral are now
   distinct legal positions.
 - The turret hardware config now runs during subsystem startup instead of being
@@ -163,6 +166,8 @@ These are registered for PathPlanner:
   left and right Limelight pose pipeline.
 - The turret now uses a `0` through `360` travel model, with `90` degrees as
   the staged startup position.
+- The current intended direction map is: rear = `0` / `360`, left = `90`,
+  front = `180`, and right = `270`.
 - The software should never shortcut across the `0` / `360` seam. If the goal
   is on the other side of that seam, the turret should rotate the long way
   around instead.
@@ -207,7 +212,7 @@ Use this checklist when the robot is on blocks first, then again on the carpet.
 - Operator POV left sends turret to left-corner preset
 - Operator POV right sends turret to right-corner preset
 - Right-corner and neutral are visibly different positions
-- When moving near the front seam, the turret does not "wrap" across `0` / `360`
+- When moving near the rear seam, the turret does not "wrap" across `0` / `360`
 - Driver `Y` actively aims the turret while held
 - Releasing driver `Y` leaves the turret stable instead of drifting
 
@@ -215,7 +220,7 @@ Use this checklist when the robot is on blocks first, then again on the carpet.
 
 - Operator right trigger makes the turret track the current alliance tower
 - As the robot rotates, the turret updates to keep aiming at that point
-- If the target direction crosses the front seam, the turret rotates the long
+- If the target direction crosses the rear seam, the turret rotates the long
   way around instead of trying to wrap across `0` / `360`
 - Releasing operator right trigger returns control to the normal turret hold
   behavior
