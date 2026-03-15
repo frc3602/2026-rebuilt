@@ -553,7 +553,9 @@ public class TurretSubsystem extends SubsystemBase {
 
         turretMotor.getConfigurator().apply(limitConfigs);
 
-        motorConfigs.NeutralMode = NeutralModeValue.Coast;
+        // Brake mode helps the turret hold its angle when shooter vibration or
+        // robot motion tries to nudge the mechanism.
+        motorConfigs.NeutralMode = NeutralModeValue.Brake;
         turretMotor.getConfigurator().apply(motorConfigs);
     }
 }
