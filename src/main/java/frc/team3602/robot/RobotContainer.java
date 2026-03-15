@@ -72,7 +72,10 @@ public class RobotContainer {
         public final SpindexerSubsystem spindexer = new SpindexerSubsystem();
         public final PivotSubsystem pivot = new PivotSubsystem();
         private final ClimberSubsystem climberSubsys = new ClimberSubsystem();
-        public final Limelight_Pose Limelight_Pose = new Limelight_Pose().getInstance();
+        // Create the shared Limelight pose subsystem through its singleton accessor.
+        // This avoids constructing an extra temporary object and makes it clear that
+        // the whole robot is intended to use one shared vision-pose subsystem.
+        public final Limelight_Pose limelightPose = Limelight_Pose.getInstance();
         public final Superstructure superStructure = new Superstructure(intake, shooter, spindexer, turret, drivetrain,
                         pivot);
 
@@ -83,11 +86,22 @@ public class RobotContainer {
                 // Registered Commands
                 NamedCommands.registerCommand("autonShootBeta", superStructure.autonShootBeta());
                 NamedCommands.registerCommand("autonIntake", superStructure.autonIntake());
+                // Track the field point (5, 5) with the turret during autonomous.
+                // This command is designed to run in parallel with path following or
+                // another auton action rather than as a one-shot command.
+                NamedCommands.registerCommand("autonTrackTurretPoint55", superStructure.autonTrackTurretPoint55());
+                // Short self-ending version of the turret tracking command for
+                // sequential autos that need a simple "aim here briefly" step.
+                NamedCommands.registerCommand("autonTrackTurretPoint55Short",
+                                superStructure.autonTrackTurretPoint55Short());
                 NamedCommands.registerCommand("setTurretTeleop", turret.autonToTeleop());
                 NamedCommands.registerCommand("setAngleAuto", turret.setAngleAuto());
               
 
                 // named commands for pathplanner go here
+                // Share the real shooter subsystem with the turret so any lead-angle
+                // calculations use live shooter velocity instead of a null reference.
+                turret.setShooterSubsystem(shooter);
                 pivot.setDefaultCommand(pivot.holdPivot());
                 climberSubsys.setDefaultCommand(climberSubsys.setPosition());
                 turret.setDefaultCommand(turret.setPosition());
@@ -133,6 +147,10 @@ public class RobotContainer {
                 operatorController.y().whileTrue(spindexer.setFeedVelocity(-35.0)).onFalse(spindexer.stopSpindexer());
                 operatorController.leftTrigger().onTrue(superStructure.shootFailsafe())
                                 .onFalse(superStructure.stopShoot()); // FAILSAFE
+                // While the operator holds the right trigger, keep the turret pointed
+                // at the field coordinate (5, 5). Releasing the trigger returns
+                // control to the turret's default hold-position command.
+                operatorController.rightTrigger().whileTrue(turret.trackOperatorFieldPoint());
                 operatorController.b().onTrue(shooter.setShootVelocity(-55.0)).onFalse(shooter.stopShooter());
                 operatorController.a().onTrue(shooter.setShootVelocity(-41.5)).onFalse(shooter.stopShooter());
                 operatorController.x().onTrue(shooter.setShootVelocity(-44)).onFalse(shooter.stopShooter());
@@ -171,10 +189,12 @@ public class RobotContainer {
         }
 
         public void updatePose() {
-                // puts the drivetrain pose on our dashboards
-                SmartDashboard.putNumber("estimated drive pose x", drivetrain.getState().Pose.getX());
-                SmartDashboard.putNumber("estimated drive pose y", drivetrain.getState().Pose.getY());
+                // Put the drivetrain's shared estimated pose on the dashboard.
+                // This is the same pose used by autonomous and by Limelight vision
+                // correction, so the numbers here should match how the robot behaves.
+                SmartDashboard.putNumber("estimated drive pose x", drivetrain.getEstimatedPose().getX());
+                SmartDashboard.putNumber("estimated drive pose y", drivetrain.getEstimatedPose().getY());
                 SmartDashboard.putNumber("estimated drive pose rotation",
-                                drivetrain.getState().Pose.getRotation().getDegrees());
+                                drivetrain.getEstimatedPose().getRotation().getDegrees());
         }
 }

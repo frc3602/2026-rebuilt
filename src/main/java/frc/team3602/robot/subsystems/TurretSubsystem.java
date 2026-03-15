@@ -29,6 +29,12 @@ import frc.team3602.robot.Vision;
 import frc.team3602.robot.subsystems.ShooterSubsystem;
 
 public class TurretSubsystem extends SubsystemBase {
+    // The turret starts pointed at 90 degrees and can only travel to 0 degrees in
+    // one direction or to 270 degrees in the other direction. Once we normalize the
+    // turret angle into [-180, 180), that legal window becomes [-90, 90].
+    private static final double MIN_TRACKING_ANGLE_DEGREES = -90.0;
+    private static final double MAX_TRACKING_ANGLE_DEGREES = 90.0;
+    private static final Translation2d OPERATOR_TRACK_POINT = new Translation2d(5.0, 5.0);
 
     public CommandSwerveDrivetrain drivetrainSubsys;
     public ShooterSubsystem shooter;
@@ -37,10 +43,35 @@ public class TurretSubsystem extends SubsystemBase {
 
     public TurretSubsystem(CommandSwerveDrivetrain drivetrainSubsys) {
         this.drivetrainSubsys = drivetrainSubsys;
+        initializeTurretTuningState();
+    }
 
+    public TurretSubsystem() {
+        initializeTurretTuningState();
+    }
+
+    /**
+     * Stores the shooter subsystem reference used by the turret's lead calculations.
+     *
+     * The turret does not create the shooter itself. Instead, RobotContainer passes
+     * the shared shooter subsystem in after construction so both subsystems use the
+     * same hardware objects.
+     */
+    public void setShooterSubsystem(ShooterSubsystem shooter) {
+        this.shooter = shooter;
+    }
+
+    /**
+     * Sets up chooser options and PID tolerance used by the turret subsystem.
+     *
+     * We call this from every constructor so the active turret subsystem always gets
+     * the same basic setup.
+     */
+    private void initializeTurretTuningState() {
         startChooser.setDefaultOption("Right Trench", Double.valueOf(0));
         startChooser.addOption("Right Trench", Double.valueOf(0));
         startChooser.addOption("Left Trench", Double.valueOf(180));
+        turretController.setTolerance(1, 2);
     }
 
     public double getsetAnlge() {
@@ -49,18 +80,6 @@ public class TurretSubsystem extends SubsystemBase {
 
     // Motor
     private final TalonFX turretMotor = new TalonFX(TurretConstants.kTurretMotorID, "rio");
-
-    public TurretSubsystem() {
-        startChooser.setDefaultOption("Right Trench", Double.valueOf(0));
-        startChooser.addOption("Right Trench", Double.valueOf(0));
-        startChooser.addOption("Left Trench", Double.valueOf(180));
-
-        // Zero Encoder
-        turretMotor.setPosition(getsetAnlge());
-
-        turretController.setTolerance(1, 2);
-
-    }
 
     private double turretFeedForward = 0.0;
 
@@ -87,23 +106,13 @@ public class TurretSubsystem extends SubsystemBase {
 
     public Command changeSetAngle(double newSetpoint) {
         return runOnce(() -> {
-            setAngle = setAngle + newSetpoint;
+            setRequestedAngle(setAngle + newSetpoint);
         });
     }
 
     public Command setAngle(double setPosition) {
-
         return runOnce(() -> {
-
-            if (setPosition > 90) {
-                setAngle = 90;
-            } else if (setPosition < -180) {
-                setAngle = -180;
-            }
-
-            else { // hehe
-                this.setAngle = setPosition;
-            }
+            setRequestedAngle(setPosition);
         });
     }
 
@@ -122,13 +131,13 @@ public class TurretSubsystem extends SubsystemBase {
 
     public Command turretAlignment() {
         return runOnce(() -> {
-            setAngle = setAngle + vision.getTurretTX();
+            setRequestedAngle(setAngle + vision.getTurretTX());
         });
     }
 
     public Command autonToTeleop() {
         return runOnce(() -> {
-            this.setAngle(270);
+            setRequestedAngle(270);
         });
     }
 
@@ -153,18 +162,24 @@ public class TurretSubsystem extends SubsystemBase {
 
     private final Translation2d TARGET = getTargetPose();
 
+    /**
+     * Calculates the robot-to-target distance for turret aiming logic.
+     *
+     * We read the drivetrain's shared estimated pose so turret calculations stay in
+     * sync with the same pose used by autonomous and Limelight vision correction.
+     */
     public double getDistanceToTarget() {
 
-        // Robot pose from odometry
-        Pose2d robotPose = drivetrainSubsys.getState().Pose;
+        // Robot pose from the drivetrain's shared estimate.
+        Pose2d robotPose = drivetrainSubsys.getEstimatedPose();
 
-        // Target field location (meters)
+        // Target field location (meters).
         Translation2d targetPosition = getTargetPose(); // TODO set correct field coordinates
 
-        // Robot position
+        // Robot position on the field.
         Translation2d robotPosition = robotPose.getTranslation();
 
-        // Distance between the two
+        // Straight-line distance from the robot to the target.
         double distance = robotPosition.getDistance(targetPosition);
 
         double distanceFeet = Units.metersToFeet(distance);
@@ -184,16 +199,23 @@ public class TurretSubsystem extends SubsystemBase {
         return clampAngle(turretDeg);
     }
 
+    /**
+     * Calculates the turret angle needed to face the field target.
+     *
+     * The turret aims by comparing the robot's corrected field pose to the target's
+     * field coordinates. This lets vision-based pose corrections improve aiming
+     * immediately instead of waiting for a separate odometry-only estimate.
+     */
     public double calculateDesiredAngle() {
 
-        Pose2d calcRobot = drivetrainSubsys.robotPose;
+        Pose2d robotPose = drivetrainSubsys.getEstimatedPose();
 
         Translation2d target = getTargetPose();
 
-        double dx = TARGET.getX() - calcRobot.getX();
-        double dy = TARGET.getY() - calcRobot.getY();
+        double dx = target.getX() - robotPose.getX();
+        double dy = target.getY() - robotPose.getY();
         double fieldAngle = Math.toDegrees(Math.atan2(dy, dx));
-        double robotHeading = calcRobot.getRotation().getDegrees();
+        double robotHeading = robotPose.getRotation().getDegrees();
         return clampAngle(fieldAngle - robotHeading);
     }
 
@@ -209,7 +231,36 @@ public class TurretSubsystem extends SubsystemBase {
         return angleDeg;
     }
 
+    /**
+     * Limits a value to a safe minimum and maximum.
+     *
+     * We use this helper to keep turret tracking setpoints inside the legal travel
+     * range of the mechanism.
+     */
+    private double clamp(double value, double minValue, double maxValue) {
+        return Math.max(minValue, Math.min(maxValue, value));
+    }
+
+    /**
+     * Updates the desired turret angle while respecting the mechanism's legal
+     * travel.
+     *
+     * All code paths that request a turret angle should go through this helper so
+     * button commands, autonomous commands, and tracking commands all agree on the
+     * same physical limits.
+     */
+    private void setRequestedAngle(double requestedAngleDegrees) {
+        double normalizedAngle = clampAngle(requestedAngleDegrees);
+        setAngle = clamp(normalizedAngle, MIN_TRACKING_ANGLE_DEGREES, MAX_TRACKING_ANGLE_DEGREES);
+    }
+
     public double getBallVelocity() {
+        // If the shooter subsystem was not linked in, we cannot estimate flight time.
+        // Returning zero keeps the turret code safe and tells the lead calculation to
+        // fall back to "aim directly at the target with no motion lead."
+        if (shooter == null) {
+            return 0.0;
+        }
 
         double motorRPS = shooter.getVelocity();
 
@@ -228,6 +279,9 @@ public class TurretSubsystem extends SubsystemBase {
     public double calculateBallTimeOfFlight() {
         // Ball Velocity m/s TODO: Must Change
         double ballVelocity = getBallVelocity();
+        if (ballVelocity <= 0.0) {
+            return 0.0;
+        }
         // Ball Launch Angle degrees TODO: Must Change
         double launchAngleDegrees = 15;
         // Shooter Height meters
@@ -259,10 +313,17 @@ public class TurretSubsystem extends SubsystemBase {
         return ballTimeOfFlight;
     }
 
+    /**
+     * Calculates a simple lead angle so the turret can compensate for robot motion.
+     *
+     * We start with the drivetrain's shared estimated pose, compute the target angle
+     * relative to the robot, then add a lead term based on the robot's sideways
+     * motion during the shot's time of flight.
+     */
     public double calculateTurretOffset() {
 
-        // Get robot pose
-        Pose2d robotPose = drivetrainSubsys.getState().Pose;
+        // Get the latest shared robot pose.
+        Pose2d robotPose = drivetrainSubsys.getEstimatedPose();
 
         // Target position on field (meters)
         Translation2d targetPosition = new Translation2d(8.27, 4.10); // TODO change to real field location
@@ -289,6 +350,10 @@ public class TurretSubsystem extends SubsystemBase {
         // Time of flight
         double timeOfFlight = calculateBallTimeOfFlight();
 
+        if (timeOfFlight <= 0.0) {
+            return Math.toDegrees(targetYawRelative);
+        }
+
         // Lateral movement during shot
         double lateralMovement = robotVelocity * timeOfFlight;
 
@@ -309,44 +374,88 @@ public class TurretSubsystem extends SubsystemBase {
 
     public Command aimCommand() {
         return run(() -> {
-            setAngle = setAngle - calculateDesiredAngle() + calculateTurretOffset();
+            setRequestedAngle(setAngle - calculateDesiredAngle() + calculateTurretOffset());
         });
     }
 
         public Command setAngleAuto() {
         return  runOnce(() -> {
-            setAngle = 90;
+            setRequestedAngle(90);
         });
     }
 
     public Command setAngleLeftCorner() {
         return  runOnce(() -> {
-            setAngle = -55;
+            setRequestedAngle(-55);
         });
     }
 
     public Command setAngleRightCorner() {
         return  runOnce(() -> {
-            setAngle = 240;
+            setRequestedAngle(240);
         });
     }
 
     public Command setAngleNeutral() {
         return  runOnce(() -> {
-            setAngle = 270;
+            setRequestedAngle(270);
         });
     }
 
     public Command setAngleZero() {
         return  runOnce(() -> {
-            setAngle = 0;
+            setRequestedAngle(0);
         });
     }
 
     public Command basicAuton() {
         return  runOnce(() -> {
-            setAngle = 5;
+            setRequestedAngle(5);
         });
+    }
+
+    /**
+     * Tracks a fixed field point while the command is running.
+     *
+     * This is useful in autonomous because the drivetrain can move along a path
+     * while the turret continuously recomputes the angle to a field coordinate.
+     * The command does not finish on its own, so it should be used as a parallel
+     * command, a PathPlanner event command, or with a timeout.
+     */
+    public Command trackFieldPoint(Translation2d fieldPoint) {
+        return run(() -> {
+            setRequestedAngle(calculateTurretAngleForFieldPoint(fieldPoint));
+            applyTurretPositionControl();
+        });
+    }
+
+    /**
+     * Tracks the fixed field point (5, 5) while the command is held.
+     *
+     * This is the operator-control wrapper around the generic field-point tracking
+     * command so the same aiming logic is reused in teleop and autonomous.
+     */
+    public Command trackOperatorFieldPoint() {
+        return trackFieldPoint(OPERATOR_TRACK_POINT);
+    }
+
+    /**
+     * Calculates the turret angle needed to face a field coordinate.
+     *
+     * We convert the field point into a robot-relative angle, then clamp that angle
+     * into the turret's legal travel range so the mechanism only asks for positions
+     * it can physically reach.
+     */
+    private double calculateTurretAngleForFieldPoint(Translation2d fieldPoint) {
+        Pose2d robotPose = drivetrainSubsys.getEstimatedPose();
+
+        double deltaX = fieldPoint.getX() - robotPose.getX();
+        double deltaY = fieldPoint.getY() - robotPose.getY();
+        double fieldAngleToPoint = Math.toDegrees(Math.atan2(deltaY, deltaX));
+        double robotHeading = robotPose.getRotation().getDegrees();
+        double robotRelativeAngle = clampAngle(fieldAngleToPoint - robotHeading);
+
+        return clamp(robotRelativeAngle, MIN_TRACKING_ANGLE_DEGREES, MAX_TRACKING_ANGLE_DEGREES);
     }
 
 
@@ -384,7 +493,7 @@ public class TurretSubsystem extends SubsystemBase {
             if (vision.getTurretHasTarget()) {
                 aimOutput = aimController.calculate(vision.getTurretTX(), 5);// setpoint is the offset of the
                                                                              // turret(temp)
-                setAngle = setAngle - aimOutput + calculateTurretOffset();
+                setRequestedAngle(setAngle - aimOutput + calculateTurretOffset());
 
             } else {
                 vision.getPose();
@@ -396,10 +505,19 @@ public class TurretSubsystem extends SubsystemBase {
 
     public Command setPosition() {
         return run(() -> {
-            var pidEffort = turretController.calculate(getTurretAngleDeg(), clampAngle(setAngle));
-
-            turretMotor.setVoltage(pidEffort);
+            applyTurretPositionControl();
         });
+    }
+
+    /**
+     * Applies the turret position PID using the current desired set angle.
+     *
+     * This helper is shared by both the default "hold position" command and the new
+     * "track (5, 5)" command so they use the same motor-control behavior.
+     */
+    private void applyTurretPositionControl() {
+        var pidEffort = turretController.calculate(getTurretAngleDeg(), clampAngle(setAngle));
+        turretMotor.setVoltage(pidEffort);
     }
 
     double rotationSpeed;

@@ -22,8 +22,6 @@ import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.estimator.PoseEstimator;
-import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -63,10 +61,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private Notifier m_simNotifier = null;
     private double m_lastSimTime;
 
-    private SwerveDrivePoseEstimator poseEstimator = new SwerveDrivePoseEstimator(getKinematics(),
-            getPigeon2().getRotation2d(), this.getState().ModulePositions, Pose2d.kZero, VecBuilder.fill(0.05, 0.05, Units.degreesToRadians(5)),
-            VecBuilder.fill(0.5, 0.5, Units.degreesToRadians(30)));
-
     public double heading;
     private final ApplyFieldSpeeds autoRequest = new ApplyFieldSpeeds();
 
@@ -78,9 +72,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private boolean m_hasAppliedOperatorPerspective = false;
     /* Vision */
     public final Vision vision = new Vision();
-    public final TurretSubsystem turret = new TurretSubsystem();
     public final CommandXboxController joystick = new CommandXboxController(0);
-    public double turbo;
+    // Start in normal-speed mode so the robot is driveable immediately on enable.
+    public double turbo = 0.8;
     /* PID Controllers */
     private final PIDController rotationController = new PIDController(.1, 0, 0.001);
     private final PIDController yController = new PIDController(1, 0, 0.001);
@@ -290,11 +284,11 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     }
 
     double rotationSpeed;
-    boolean tv = vision.getHasTarget();
 
     public double rAlignment() {
+        boolean hasTarget = vision.getHasTarget();
 
-        if (tv = false) {
+        if (!hasTarget) {
             return 0.3;
         } else {
 
@@ -328,63 +322,85 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         return new Translation2d(0.0, 0.0);
     }
 
-public Pose2d robotPose = poseEstimator.getEstimatedPosition();
+    /**
+     * Returns the single pose estimate we want the rest of the robot to trust.
+     *
+     * We deliberately read from the drivetrain's built-in state estimator so vision,
+     * autonomous path following, turret aiming, and dashboard displays all agree on
+     * where the robot is on the field.
+     */
+    public Pose2d getEstimatedPose() {
+        return getState().Pose;
+    }
 
-public double getDistanceToTarget() {
-    // Target field location
-    Translation2d targetPosition = this.getTargetPose();
+    /**
+     * Estimates the field-relative distance from the turret to the current target.
+     *
+     * We start with the robot's latest estimated pose, shift forward to the turret's
+     * physical mounting location, and then measure from that point to the target.
+     * Using the latest estimated pose here means Limelight corrections can improve
+     * shooter distance calculations immediately.
+     */
+    public double getDistanceToTarget() {
+        Pose2d robotPose = getEstimatedPose();
 
-    // Turret offset from robot center (inches -> meters)
-    double turretOffsetX = Units.inchesToMeters(11.28);  // forward/back offset
-    double turretOffsetY = Units.inchesToMeters(0);  // left/right offset
+        // Target field location.
+        Translation2d targetPosition = this.getTargetPose();
 
-    Translation2d turretOffset = new Translation2d(turretOffsetX, turretOffsetY);
+        // Turret offset from robot center (inches -> meters).
+        double turretOffsetX = Units.inchesToMeters(11.28);
+        double turretOffsetY = Units.inchesToMeters(0);
 
-    // Rotate offset by robot heading
-    Translation2d rotatedOffset = turretOffset.rotateBy(robotPose.getRotation());
+        Translation2d turretOffset = new Translation2d(turretOffsetX, turretOffsetY);
 
-    // Turret field position
-    Translation2d turretPosition = robotPose.getTranslation().plus(rotatedOffset);
+        // Rotate the turret offset into field coordinates using the robot heading.
+        Translation2d rotatedOffset = turretOffset.rotateBy(robotPose.getRotation());
 
-    // Distance from turret to target
-    double distanceMeters = turretPosition.getDistance(targetPosition);
+        // Add the rotated offset to find the turret's field position.
+        Translation2d turretPosition = robotPose.getTranslation().plus(rotatedOffset);
 
-    return Units.metersToFeet(distanceMeters);
-}
+        // Measure the turret-to-target distance in feet for the shooter code.
+        double distanceMeters = turretPosition.getDistance(targetPosition);
+
+        return Units.metersToFeet(distanceMeters);
+    }
 
     private final Field2d field = new Field2d();
     @Override
     public void periodic() {
-
-        poseEstimator.update(getPigeon2().getRotation2d(), this.getState().ModulePositions);
-        poseEstimator.getEstimatedPosition();
-
-        // TODO(Codex-MT2): Read fresh gyro values every loop so MegaTag2 orientation updates are current.
+        // Read fresh gyro values every loop so MegaTag2 can use the latest drivetrain
+        // heading information before we ask the Limelights for a pose estimate.
         double currentYawDegrees = getPigeon2().getRotation2d().getDegrees();
         double currentYawDegreesPerSecond = getPigeon2().getAngularVelocityZWorld().getValueAsDouble();
 
-        // Pass curent theta over to the limelight subsystem
-        // TODO(Codex-MT2): Pass both yaw and yaw rate to Limelight_Pose before it reads MegaTag2 estimates.
+        // Pass the current drivetrain orientation to the Limelight pose subsystem.
+        // MegaTag2 uses this information to improve translation estimates when the
+        // robot is turning.
         Limelight_Pose.getInstance().CollectDriveThetaValue(currentYawDegrees, currentYawDegreesPerSecond);
 
         if (Limelight_Pose.getInstance().poseUpdateAvailable){
-            poseEstimator.setVisionMeasurementStdDevs(VecBuilder.fill(Limelight_Pose.getInstance().poseUpdateXYTrustFactor, 
-                Limelight_Pose.getInstance().poseUpdateXYTrustFactor,Limelight_Pose.getInstance().poseUpdateRotTrustFactor));
-            poseEstimator.addVisionMeasurement(Limelight_Pose.getInstance().poseCamEstimate.pose, Limelight_Pose.getInstance().poseCamEstimate.timestampSeconds);
+            // Feed the accepted Limelight measurement into the drivetrain's built-in
+            // estimator so every subsystem reads the same corrected pose.
+            addVisionMeasurement(
+                Limelight_Pose.getInstance().poseCamEstimate.pose,
+                Limelight_Pose.getInstance().poseCamEstimate.timestampSeconds,
+                VecBuilder.fill(
+                    Limelight_Pose.getInstance().poseUpdateXYTrustFactor,
+                    Limelight_Pose.getInstance().poseUpdateXYTrustFactor,
+                    Limelight_Pose.getInstance().poseUpdateRotTrustFactor));
             Limelight_Pose.getInstance().UpdateVisionCorrectionAdded();
         }
 
-        SmartDashboard.putNumber("Robot X", poseEstimator.getEstimatedPosition().getX());
-        SmartDashboard.putNumber("Robot Y", poseEstimator.getEstimatedPosition().getY());
-        SmartDashboard.putNumber("Robot Angle", poseEstimator.getEstimatedPosition().getRotation().getDegrees());
+        SmartDashboard.putNumber("Robot X", getEstimatedPose().getX());
+        SmartDashboard.putNumber("Robot Y", getEstimatedPose().getY());
+        SmartDashboard.putNumber("Robot Angle", getEstimatedPose().getRotation().getDegrees());
         SmartDashboard.putNumber("Pigeon Angle", getPigeon2().getYaw().getValueAsDouble());
   
         SmartDashboard.putNumber("Rotation Speed", this.rotationSpeed);
         SmartDashboard.putNumber("my heading", vision.getTX());
-        SmartDashboard.putNumber("turret angle", turret.getEncoder());
         SmartDashboard.putNumber("Pose Distance", this.getDistanceToTarget());
         
-        field.setRobotPose(poseEstimator.getEstimatedPosition());
+        field.setRobotPose(getEstimatedPose());
 
         SmartDashboard.putData("PoseVisionAbe", field);
 
@@ -481,7 +497,7 @@ public double getDistanceToTarget() {
 
     public void configPathplanner() {
         try {
-            AutoBuilder.configure(() -> getState().Pose, this::resetPose, () -> getState().Speeds,
+            AutoBuilder.configure(this::getEstimatedPose, this::resetPose, () -> getState().Speeds,
                     (speeds, feedforwards) -> setControl(
                             autoRobotDrive.withSpeeds(speeds)
                                     .withWheelForceFeedforwardsX(feedforwards.robotRelativeForcesXNewtons())

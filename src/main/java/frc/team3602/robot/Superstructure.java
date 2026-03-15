@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
+import edu.wpi.first.math.geometry.Translation2d;
 import frc.team3602.robot.Constants.ShooterConstants;
 import frc.team3602.robot.Constants.spindexerConstants;
 import frc.team3602.robot.subsystems.ClimberSubsystem;
@@ -113,6 +114,30 @@ public class Superstructure {
             spindexerSubsys.stopSpindexer(),
             shooterSubsys.stopShooter()
         );          
+    }
+
+    /**
+     * Continuously tracks the field point (5, 5) with the turret.
+     *
+     * This command is intended for autonomous use while the drivetrain is doing
+     * something else, such as following a path. Because the command keeps updating
+     * the turret every loop, it does not end by itself and should be used in
+     * parallel, as a PathPlanner event command, or with a timeout.
+     */
+    public Command autonTrackTurretPoint55() {
+        return turretSubsys.trackFieldPoint(new Translation2d(5.0, 5.0));
+    }
+
+    /**
+     * Tracks the field point (5, 5) for a short fixed time.
+     *
+     * This version is easier to drop into a sequential autonomous routine because it
+     * ends on its own instead of running forever. The timeout is intentionally short
+     * so the turret gets time to aim without blocking the rest of the auto for too
+     * long.
+     */
+    public Command autonTrackTurretPoint55Short() {
+        return autonTrackTurretPoint55().withTimeout(2.0);
     }
 
 
