@@ -24,6 +24,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 
 import frc.team3602.robot.Constants.*;
+import frc.team3602.robot.Constants.FieldConstants;
 import frc.team3602.robot.LimelightHelpers.PoseEstimate;
 import frc.team3602.robot.Vision;
 import frc.team3602.robot.subsystems.ShooterSubsystem;
@@ -34,7 +35,9 @@ public class TurretSubsystem extends SubsystemBase {
     // turret angle into [-180, 180), that legal window becomes [-90, 90].
     private static final double MIN_TRACKING_ANGLE_DEGREES = -90.0;
     private static final double MAX_TRACKING_ANGLE_DEGREES = 90.0;
-    private static final Translation2d OPERATOR_TRACK_POINT = new Translation2d(5.0, 5.0);
+    private static final double LEFT_CORNER_PRESET_DEGREES = -55.0;
+    private static final double RIGHT_CORNER_PRESET_DEGREES = 55.0;
+    private static final double NEUTRAL_PRESET_DEGREES = -90.0;
 
     public CommandSwerveDrivetrain drivetrainSubsys;
     public ShooterSubsystem shooter;
@@ -72,6 +75,7 @@ public class TurretSubsystem extends SubsystemBase {
         startChooser.addOption("Right Trench", Double.valueOf(0));
         startChooser.addOption("Left Trench", Double.valueOf(180));
         turretController.setTolerance(1, 2);
+        configTurretHardware();
     }
 
     public double getsetAnlge() {
@@ -150,17 +154,15 @@ public class TurretSubsystem extends SubsystemBase {
             Alliance alliance = allianceOpt.get(); // unwrap the Optional
 
             if (alliance == Alliance.Blue) {
-                return new Translation2d(0.0, 0.0); // example blue alliance target
+                return FieldConstants.kBlueTowerPosition;
             } else if (alliance == Alliance.Red) {
-                return new Translation2d(1.0, 1.0); // example red alliance target
+                return FieldConstants.kRedTowerPosition;
             }
         }
 
-        // Fallback if alliance not present or invalid
-        return new Translation2d(0.0, 0.0);
+        // Default to the blue-side tower if the alliance has not been reported yet.
+        return FieldConstants.kBlueTowerPosition;
     }
-
-    private final Translation2d TARGET = getTargetPose();
 
     /**
      * Calculates the robot-to-target distance for turret aiming logic.
@@ -174,7 +176,7 @@ public class TurretSubsystem extends SubsystemBase {
         Pose2d robotPose = drivetrainSubsys.getEstimatedPose();
 
         // Target field location (meters).
-        Translation2d targetPosition = getTargetPose(); // TODO set correct field coordinates
+        Translation2d targetPosition = getTargetPose();
 
         // Robot position on the field.
         Translation2d robotPosition = robotPose.getTranslation();
@@ -326,7 +328,7 @@ public class TurretSubsystem extends SubsystemBase {
         Pose2d robotPose = drivetrainSubsys.getEstimatedPose();
 
         // Target position on field (meters)
-        Translation2d targetPosition = new Translation2d(8.27, 4.10); // TODO change to real field location
+        Translation2d targetPosition = getTargetPose();
 
         // Robot position
         Translation2d robotPosition = robotPose.getTranslation();
@@ -386,19 +388,23 @@ public class TurretSubsystem extends SubsystemBase {
 
     public Command setAngleLeftCorner() {
         return  runOnce(() -> {
-            setRequestedAngle(-55);
+            setRequestedAngle(LEFT_CORNER_PRESET_DEGREES);
         });
     }
 
     public Command setAngleRightCorner() {
         return  runOnce(() -> {
-            setRequestedAngle(240);
+            // Keep the right-corner preset inside the legal turret travel.
+            // Using an explicit positive preset makes this distinct from the neutral
+            // position and avoids silently clamping onto the same hard stop.
+            setRequestedAngle(RIGHT_CORNER_PRESET_DEGREES);
         });
     }
 
     public Command setAngleNeutral() {
         return  runOnce(() -> {
-            setRequestedAngle(270);
+            // Neutral means "park on the negative-side edge" for this mechanism.
+            setRequestedAngle(NEUTRAL_PRESET_DEGREES);
         });
     }
 
@@ -430,13 +436,28 @@ public class TurretSubsystem extends SubsystemBase {
     }
 
     /**
-     * Tracks the fixed field point (5, 5) while the command is held.
+     * Tracks the current alliance tower while the command is held.
      *
-     * This is the operator-control wrapper around the generic field-point tracking
-     * command so the same aiming logic is reused in teleop and autonomous.
+     * This wrapper chooses the blue or red tower based on the current alliance so
+     * teleop and autonomous can share one named field target instead of a temporary
+     * hard-coded point.
      */
     public Command trackOperatorFieldPoint() {
-        return trackFieldPoint(OPERATOR_TRACK_POINT);
+        return trackAllianceTower();
+    }
+
+    /**
+     * Tracks the current alliance tower while the command is running.
+     *
+     * This is the high-level aiming command used by teleop and autonomous when we
+     * want the turret to follow the correct tower target for the current side of the
+     * field.
+     */
+    public Command trackAllianceTower() {
+        return run(() -> {
+            setRequestedAngle(calculateTurretAngleForFieldPoint(getTargetPose()));
+            applyTurretPositionControl();
+        });
     }
 
     /**
@@ -482,8 +503,12 @@ public class TurretSubsystem extends SubsystemBase {
 
     public Command aimToDesiredAngle() {
         return run(() -> {
-
-            // setAngle = aimToDesiredAngle();
+            // Continuously update the turret setpoint while the driver holds the
+            // button. This reuses the same lead-angle math as the existing aim
+            // command, but also applies the turret PID so the mechanism actually
+            // moves while the command is scheduled.
+            setRequestedAngle(setAngle - calculateDesiredAngle() + calculateTurretOffset());
+            applyTurretPositionControl();
         });
     }
 
@@ -512,8 +537,8 @@ public class TurretSubsystem extends SubsystemBase {
     /**
      * Applies the turret position PID using the current desired set angle.
      *
-     * This helper is shared by both the default "hold position" command and the new
-     * "track (5, 5)" command so they use the same motor-control behavior.
+     * This helper is shared by both the default "hold position" command and the
+     * alliance-tower tracking command so they use the same motor-control behavior.
      */
     private void applyTurretPositionControl() {
         var pidEffort = turretController.calculate(getTurretAngleDeg(), clampAngle(setAngle));
@@ -589,7 +614,13 @@ public class TurretSubsystem extends SubsystemBase {
     }
 
     // Config
-    private void configPivotSubsys() {
+    /**
+     * Applies the turret motor's safety and neutral-mode configuration.
+     *
+     * This must run during subsystem construction so the real turret motor uses the
+     * current limits and neutral mode that the rest of the code expects.
+     */
+    private void configTurretHardware() {
 
         // encoder configs
         var magnetSensorConfigs = new MagnetSensorConfigs();

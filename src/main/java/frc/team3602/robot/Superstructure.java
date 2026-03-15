@@ -12,7 +12,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
-import edu.wpi.first.math.geometry.Translation2d;
 import frc.team3602.robot.Constants.ShooterConstants;
 import frc.team3602.robot.Constants.spindexerConstants;
 import frc.team3602.robot.subsystems.ClimberSubsystem;
@@ -50,8 +49,11 @@ public class Superstructure {
         return Commands.parallel(
                 turretSubsys.aimCommand(),
                 Commands.sequence(
-
-                        shooterSubsys.setShootVelocity(-62.5).withTimeout(1.7),
+                        // The shooter velocity command now sets a persistent target once.
+                        // We wait here before feeding so the flywheel still gets time to
+                        // spin up before the spindexer starts moving the ball.
+                        shooterSubsys.setShootVelocity(-62.5),
+                        Commands.waitSeconds(1.7),
                         spindexerSubsys.setFeedVelocity(-62.5)));
     }
 
@@ -68,6 +70,8 @@ public class Superstructure {
     public Command shootFailsafe() {
         return Commands.sequence(
                 turretSubsys.setAngle(0),
+                // Set the shooter target once, then wait for the flywheel spin-up
+                // time before feeding. This keeps the command sequence moving.
                 shooterSubsys.setShootVelocity(ShooterConstants.kShooterFailsafeSpeed),
                 Commands.waitSeconds(4),
                 spindexerSubsys.setFeedVelocity(-62.5));
@@ -107,6 +111,8 @@ public class Superstructure {
 
     public Command autonShootBeta() {
         return Commands.sequence(
+            // Command the flywheel once, then wait until it reaches the target speed
+            // before feeding the note during autonomous.
             shooterSubsys.setShootVelocity(-41.5),
             Commands.waitUntil(() -> shooterSubsys.getVelocity() <= -41.25).withTimeout(2.0),
             turretSubsys.basicAuton(),
@@ -117,7 +123,7 @@ public class Superstructure {
     }
 
     /**
-     * Continuously tracks the field point (5, 5) with the turret.
+     * Continuously tracks the current alliance tower with the turret.
      *
      * This command is intended for autonomous use while the drivetrain is doing
      * something else, such as following a path. Because the command keeps updating
@@ -125,11 +131,11 @@ public class Superstructure {
      * parallel, as a PathPlanner event command, or with a timeout.
      */
     public Command autonTrackTurretPoint55() {
-        return turretSubsys.trackFieldPoint(new Translation2d(5.0, 5.0));
+        return turretSubsys.trackAllianceTower();
     }
 
     /**
-     * Tracks the field point (5, 5) for a short fixed time.
+     * Tracks the current alliance tower for a short fixed time.
      *
      * This version is easier to drop into a sequential autonomous routine because it
      * ends on its own instead of running forever. The timeout is intentionally short

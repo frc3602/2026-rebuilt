@@ -14,7 +14,10 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.team3602.robot.Constants.ClimberConstants;
 
 public class ClimberSubsystem extends SubsystemBase {
-    private final TalonFX climberMotor = new TalonFX(/*ClimberConstants.kClimberMotorID*/20);
+    // We allow the climber subsystem to exist in a disabled state so the code can
+    // stay in the project even when the hardware is not mounted on the robot.
+    private final boolean climberEnabled;
+    private final TalonFX climberMotor;
 
     private double pivotSetPoint = 0.0;
     public double pidEffort;
@@ -22,11 +25,22 @@ public class ClimberSubsystem extends SubsystemBase {
     public double totalEffort;
 
     public ClimberSubsystem() {
+        climberEnabled = ClimberConstants.kClimberEnabled;
+
+        if (climberEnabled) {
+            climberMotor = new TalonFX(ClimberConstants.kClimberMotorID, "rio");
+        } else {
+            climberMotor = null;
+        }
+
         var ClimbMotorConfig = new MotorOutputConfigs();
         var ClimbLimitConfig = new CurrentLimitsConfigs();
     }
 
     public double climberPosition() {
+       if (!climberEnabled || climberMotor == null) {
+           return 0.0;
+       }
        return (climberMotor.getRotorPosition().getValueAsDouble() * (Math.PI * 2.15) /  20.25);
     }
 
@@ -48,6 +62,13 @@ public class ClimberSubsystem extends SubsystemBase {
 
     public Command setPosition() {
         return run(() -> {
+            if (!climberEnabled || climberMotor == null) {
+                // Intentionally do nothing when the climber hardware is disabled.
+                // This keeps the subsystem safe to schedule even when the motor is
+                // not present on the robot.
+                return;
+            }
+
             var pidEffort = climbController.calculate(climberPosition(), pivotSetPoint);
             this.pidEffort = pidEffort;
 
@@ -63,6 +84,7 @@ public class ClimberSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
+        SmartDashboard.putBoolean("Climber Enabled", climberEnabled);
         // SmartDashboard.putNumber("PID Effort", ffEffort);
         // SmartDashboard.putNumber("Feedforward Effort", ffEffort);
         // SmartDashboard.putNumber("Total Effort", totalEffort);

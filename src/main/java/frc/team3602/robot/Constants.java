@@ -6,6 +6,8 @@
 
 package frc.team3602.robot;
 
+import edu.wpi.first.math.geometry.Translation2d;
+
 public final class Constants {
     public final class ShooterConstants {
         //Motor ID
@@ -20,6 +22,12 @@ public final class Constants {
     }
 
     public final class ClimberConstants {
+        // Feature flag
+        // Set this to true when the climber hardware is back on the robot and the
+        // CAN ID below is correct. Leaving it false keeps the climber code in the
+        // project without letting the robot talk to hardware that is not installed.
+        public final static boolean kClimberEnabled = false;
+
         //Motor ID
         public final static int kClimberMotorID = 15;
     }
@@ -52,6 +60,19 @@ public final class Constants {
         public final static double kSpindexerMotorSpeed = -.65;
 
         public final static double kRecieveFuelSpeed = .75;//.65
+    }
+
+    public final class FieldConstants {
+        // Official REBUILT field coordinate system:
+        // - (0, 0) is the blue-right corner when viewed from above
+        // - +X points toward the red alliance wall
+        // - +Y points left across the field
+        //
+        // The field is about 16.54 m long and 8.07 m wide.
+        // Both towers are centered across the width of the field, so they share
+        // Y = 4.035 m. Each tower sits about 2.03 m from its alliance wall.
+        public final static Translation2d kBlueTowerPosition = new Translation2d(2.03, 4.035);
+        public final static Translation2d kRedTowerPosition = new Translation2d(14.51, 4.035);
     }
 
     

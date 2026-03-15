@@ -1,6 +1,7 @@
 package frc.team3602.robot.subsystems;
 
 import static edu.wpi.first.units.Units.*;
+import static frc.team3602.robot.Constants.*;
 
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -44,6 +45,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.team3602.robot.LimelightHelpers;
 import frc.team3602.robot.Vision;
 import frc.team3602.robot.LimelightHelpers.PoseEstimate;
+import frc.team3602.robot.Constants.FieldConstants;
 import frc.team3602.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 
 /**
@@ -312,14 +314,15 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             Alliance alliance = allianceOpt.get(); // unwrap the Optional
 
             if (alliance == Alliance.Blue) {
-                return new Translation2d(4.634, 4.024); // example blue alliance target
+                return FieldConstants.kBlueTowerPosition;
             } else if (alliance == Alliance.Red) {
-                return new Translation2d(11.920, 4.024); // example red alliance target
+                return FieldConstants.kRedTowerPosition;
             }
         }
 
-        // Fallback if alliance not present or invalid
-        return new Translation2d(0.0, 0.0);
+        // Default to the blue-side tower if the alliance is unknown.
+        // This keeps distance math deterministic during startup and testing.
+        return FieldConstants.kBlueTowerPosition;
     }
 
     /**

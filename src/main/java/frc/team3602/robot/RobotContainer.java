@@ -30,6 +30,7 @@ import javax.swing.JFrame;
 
 import frc.team3602.robot.Vision;
 import frc.team3602.robot.Constants.ShooterConstants;
+import frc.team3602.robot.Constants.ClimberConstants;
 import frc.team3602.robot.generated.TunerConstants;
 import frc.team3602.robot.subsystems.ClimberSubsystem;
 import frc.team3602.robot.subsystems.CommandSwerveDrivetrain;
@@ -86,9 +87,10 @@ public class RobotContainer {
                 // Registered Commands
                 NamedCommands.registerCommand("autonShootBeta", superStructure.autonShootBeta());
                 NamedCommands.registerCommand("autonIntake", superStructure.autonIntake());
-                // Track the field point (5, 5) with the turret during autonomous.
-                // This command is designed to run in parallel with path following or
-                // another auton action rather than as a one-shot command.
+                // Track the current alliance tower with the turret during
+                // autonomous. This command is designed to run in parallel with path
+                // following or another auton action rather than as a one-shot
+                // command.
                 NamedCommands.registerCommand("autonTrackTurretPoint55", superStructure.autonTrackTurretPoint55());
                 // Short self-ending version of the turret tracking command for
                 // sequential autos that need a simple "aim here briefly" step.
@@ -103,7 +105,9 @@ public class RobotContainer {
                 // calculations use live shooter velocity instead of a null reference.
                 turret.setShooterSubsystem(shooter);
                 pivot.setDefaultCommand(pivot.holdPivot());
-                climberSubsys.setDefaultCommand(climberSubsys.setPosition());
+                if (ClimberConstants.kClimberEnabled) {
+                        climberSubsys.setDefaultCommand(climberSubsys.setPosition());
+                }
                 turret.setDefaultCommand(turret.setPosition());
                 configureBindings();
                 polarityChooser.setDefaultOption("Positive", 1.0);
@@ -148,7 +152,7 @@ public class RobotContainer {
                 operatorController.leftTrigger().onTrue(superStructure.shootFailsafe())
                                 .onFalse(superStructure.stopShoot()); // FAILSAFE
                 // While the operator holds the right trigger, keep the turret pointed
-                // at the field coordinate (5, 5). Releasing the trigger returns
+                // at the current alliance tower. Releasing the trigger returns
                 // control to the turret's default hold-position command.
                 operatorController.rightTrigger().whileTrue(turret.trackOperatorFieldPoint());
                 operatorController.b().onTrue(shooter.setShootVelocity(-55.0)).onFalse(shooter.stopShooter());
@@ -165,9 +169,13 @@ public class RobotContainer {
                 driverController.rightBumper().whileTrue(pivot.dumbDropIntake());
                 driverController.leftBumper().whileTrue(intake.setIntakeSpeed()).whileFalse(intake.stopIntake());
                 driverController.rightTrigger().onTrue(drivetrain.setTurbo()).onFalse(drivetrain.setNormalSpeed());
-                driverController.povUp().onTrue(climberSubsys.raiseClimber());
-                driverController.povDown().onTrue(climberSubsys.lowerClimber());
-                driverController.y().onTrue(turret.aimToDesiredAngle()).whileFalse(turret.stopTurret());
+                if (ClimberConstants.kClimberEnabled) {
+                        driverController.povUp().onTrue(climberSubsys.raiseClimber());
+                        driverController.povDown().onTrue(climberSubsys.lowerClimber());
+                }
+                // Hold Y to actively aim the turret. Releasing the button hands control
+                // back to the turret's default hold-position command.
+                driverController.y().whileTrue(turret.aimToDesiredAngle());
 
                 // Run SysId routines when holding back/start and X/Y.
                 // Note that each routine should be run exactly once in a single log.

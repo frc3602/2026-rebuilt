@@ -6,22 +6,15 @@
 
 package frc.team3602.robot.subsystems;
 
-import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static frc.team3602.robot.Constants.*;
 
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import com.ctre.phoenix6.configs.MotionMagicConfigs;
-import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
-import com.ctre.phoenix6.configs.MagnetSensorConfigs;
-import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
@@ -59,7 +52,6 @@ public class ShooterSubsystem extends SubsystemBase {
         // feedermoter = new TalonFX(ShooterConstants.kFeederMotorID);
         configShooterSubsys();
         SmartDashboard.putNumber("ShootSpeedInput", shootShuffleSpeed);
-        shootermotor2.setControl(new Follower(shootermotor1.getDeviceID(), MotorAlignmentValue.Opposed));
     }
 
     final MotionMagicVelocityVoltage m_request = new MotionMagicVelocityVoltage(0);
@@ -77,20 +69,29 @@ public class ShooterSubsystem extends SubsystemBase {
     //     });
     // }`
 
+    /**
+     * Sends one shooter velocity target to the motor controllers.
+     *
+     * Phoenix keeps holding the last Motion Magic velocity target after we send it,
+     * so this should be a one-shot command instead of a never-ending command. That
+     * makes it safe to use inside command sequences for autonomous and timed shots.
+     */
     public Command setShootVelocity(double rotationsPerSecond) {
-        return run(() -> {
+        return runOnce(() -> {
             shootermotor1.setControl(m_request.withVelocity(rotationsPerSecond));
-            shootermotor2.setControl(m_request.withVelocity(-rotationsPerSecond));
         });
     }
 
+    /**
+     * Sends the interpolated shooter velocity target to the shooter.
+     *
+     * We command only the leader motor here because motor 2 is configured to follow
+     * it. Keeping one control path avoids the two motors fighting each other.
+     */
     public Command setShootVLerp() {
-        return run(() -> {
+        return runOnce(() -> {
             shootermotor1.setControl(m_request.withVelocity(shootLerpSpeed));
-        }
-
-        );
-
+        });
     }
 
     // public Command setShootVoltage(double shootVoltz) {
@@ -138,7 +139,7 @@ public class ShooterSubsystem extends SubsystemBase {
         // SmartDashboard.putNumber("Lerp Shoot Speed", shootLerpSpeed);
         // SmartDashboard.putNumber("Dist in side of shootSubsys", distance / 12);
         // SmartDashboard.getNumber("ShootSpeedInput", shootShuffleSpeed);
-        SmartDashboard.putNumber("turretAngle", angle);
+        SmartDashboard.putNumber("Shooter Lerp Speed", shootLerpSpeed);
 
     }
 
@@ -167,6 +168,12 @@ public class ShooterSubsystem extends SubsystemBase {
 
         shootermotor1.getConfigurator().apply(talonFXConfigs);
         shootermotor2.getConfigurator().apply(talonFXConfigs);
+
+        // Motor 2 should always mirror motor 1.
+        // We configure that once here and then only send velocity requests to the
+        // leader motor. That keeps the two flywheel motors synchronized.
+        shootermotor2.setControl(new Follower(shootermotor1.getDeviceID(), MotorAlignmentValue.Opposed));
+
         // Interpolation table config
         shootLerp.put(2.0, 31.0);
         shootLerp.put(3.0, 33.0);
@@ -184,7 +191,10 @@ public class ShooterSubsystem extends SubsystemBase {
         shootLerp.put(15.0, 58.0);
         shootLerp.put(16.0, 60.0);
         shootLerp.put(17.0, 62.5);
-        shootLerp.put(18.0, 0.9);
+        // Keep the final point monotonic until the team measures a better long-shot
+        // speed on the practice field. The old 0.9 value would nearly stop the
+        // shooter at the far end of the table.
+        shootLerp.put(18.0, 64.5);
 
 
     }
