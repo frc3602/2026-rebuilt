@@ -40,6 +40,9 @@ Useful dashboard values include:
 ### 2. Turret Improvements
 
 - The turret now uses the shared drivetrain pose for aiming math.
+- The robot no longer has a dedicated turret Limelight.
+- Turret aiming is now fully pose-based instead of mixing in a separate
+  turret-camera correction path.
 - The turret can track the current alliance tower target.
 - Blue tower target uses `(2.03, 4.035)` meters.
 - Red tower target uses `(14.51, 4.035)` meters.
@@ -147,6 +150,9 @@ These are registered for PathPlanner:
 - The climber is intentionally disabled right now.
 - The Limelight system is safer than before, but it still needs on-robot testing
   and tuning with real tags.
+- There is no turret-mounted camera in the current robot configuration.
+- Turret tracking now depends on the shared drivetrain pose estimate from the
+  left and right Limelight pose pipeline.
 - The turret field-point tracking will clamp to the legal turret range if the
   target is outside the mechanism's reachable arc.
 - The shooter preset values and interpolation table should still be tuned with
@@ -225,6 +231,8 @@ Use this checklist when the robot is on blocks first, then again on the carpet.
   `Vision/Right/TranslationErrorMeters` stay reasonable during normal driving
 - Robot pose on the dashboard changes smoothly instead of snapping repeatedly
 - Covering one camera still allows the other camera to be selected when valid
+- Turret aiming continues to work from field pose even though there is no
+  turret-mounted Limelight
 
 ### Autonomous Commands
 
