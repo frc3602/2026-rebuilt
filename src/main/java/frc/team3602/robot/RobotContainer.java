@@ -186,11 +186,6 @@ public class RobotContainer {
                                 .onFalse(shooter.stopShooter());
                 operatorController.x().and(trackedShotNotHeld).onTrue(shooter.setShootVelocity(-44))
                                 .onFalse(shooter.stopShooter());
-                // Use the live distance-based interpolation table while this button is
-                // held so the operator can test or use the current lerp shot without
-                // changing the fixed preset buttons.
-                operatorController.rightBumper().and(trackedShotNotHeld).onTrue(shooter.setShootVLerp())
-                                .onFalse(shooter.stopShooter());
                 operatorController.leftBumper().onTrue(superStructure.stopIntake());
                 operatorController.povUp().and(trackedShotNotHeld).onTrue(turret.setAngleZero());
                 operatorController.povDown().and(trackedShotNotHeld).onTrue(turret.setAngleRight());

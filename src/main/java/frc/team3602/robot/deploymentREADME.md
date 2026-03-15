@@ -65,7 +65,6 @@ Turret:
 Shooting:
 
 - `B` = combined tracked lerp shot
-- Right bumper = snapshot lerp-table shooter speed only
 - `A` = fixed `-41.5` shooter preset
 - `X` = fixed `-44.0` shooter preset
 - `Y` = manual spindexer / transfer feed
@@ -114,9 +113,6 @@ Intake / Pivot Support:
 - Confirm driver controller 0 begins rumbling when the shot becomes ready.
 - Release operator `B` and confirm the shooter and feed stop cleanly.
 - Confirm the rumble stops when operator `B` is released.
-- Press operator right bumper and confirm the shooter uses the current
-  interpolated lerp speed sampled at the moment the button is pressed.
-- Release operator right bumper and confirm the shooter stops.
 - Press operator `A` and confirm both shooter motors spin up together.
 - Release operator `A` and confirm both shooter motors stop.
 - Press operator `A` again and confirm both shooter motors spin up together a second time.
@@ -135,7 +131,7 @@ We want to verify the second shooter motor still follows correctly after a stop.
 ## Phase 6: Shooter Vibration Check
 
 - Send the turret to a fixed preset.
-- Run shooter right bumper, then `A`, then `X`.
+- Run shooter `A`, then `X`.
 - Watch whether the turret stays put while the shooter is running.
 
 This step verifies the recent turret brake-mode change.
@@ -163,8 +159,7 @@ blocked:
 
 Also verify the protected combined-shot controls:
 
-- While operator `B` is held, press operator `A`, `X`, right bumper, and POV
-  presets one at a time.
+ - While operator `B` is held, press operator `A`, `X`, and POV presets one at a time.
 - Confirm those overlapping operator shooter / turret controls do not steal the
   shot away while `B` is still held.
 - Release operator `B` and confirm the normal operator shooter / turret controls
@@ -173,7 +168,7 @@ Also verify the protected combined-shot controls:
 Then also verify the older split workflow still works:
 
 - Hold operator right trigger so the turret tracks the alliance tower.
-- Start the shooter with the intended preset or right bumper lerp shot.
+- Start the shooter with the intended preset.
 - Wait for spin-up.
 - Hold operator `Y` briefly to feed.
 

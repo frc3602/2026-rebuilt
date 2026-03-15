@@ -137,7 +137,6 @@ Turret:
 Shooting:
 
 - `B`: hold for the full tracked lerp shot
-- Right bumper: sample the current lerp-table speed once, release to stop
 - `A`: set shooter velocity to `-41.5`, release to stop
 - `X`: set shooter velocity to `-44.0`, release to stop
 - `Y`: run spindexer feed at `-35.0` while held
@@ -174,8 +173,6 @@ Turret Aiming / Position:
 Shooting / Feeding:
 
 - Operator `B` runs the combined tracked lerp shot
-- Operator right bumper runs only a snapshot of the current lerp-table shooter
-  speed
 - Operator `A` and `X` run fixed shooter presets
 - Operator `Y` manually runs the spindexer / transfer feed
 - Operator left trigger runs the timed failsafe shot
@@ -209,7 +206,7 @@ Use this if the team wants to control the shot in separate steps instead of the
 combined `B` shot:
 
 1. Operator holds right trigger to track the alliance tower.
-2. Operator starts the shooter with right bumper, `A`, or `X`.
+2. Operator starts the shooter with `A` or `X`.
 3. Operator holds `Y` to feed when ready.
 
 ### Intake / Shot Coordination
@@ -345,8 +342,6 @@ Use this checklist when the robot is on blocks first, then again on the carpet.
 
 ### Shooter
 
-- Operator right bumper spins the shooter to the current lerp-table speed
-  sampled when the button is pressed
 - Operator `B` runs the full tracked lerp shot while held and keeps updating
   turret aim plus lerp-table flywheel speed while the button stays down
 - Driver controller 0 should rumble when the tracked lerp shot becomes ready
