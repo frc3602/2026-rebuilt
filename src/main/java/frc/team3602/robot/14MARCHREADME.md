@@ -142,6 +142,8 @@ Shooting:
 - `Y`: run spindexer feed at `-35.0` while held
 - Left trigger: run the timed failsafe shooting routine, release early to stop
   shooter and feed
+- Left trigger failsafe uses turret angle `0.0` degrees, which is rear in the
+  current turret travel model, and shooter speed `-62.5` RPS
 - Driver controller 0 should rumble when the tracked `B` shot becomes ready
 - While `B` is held, the other operator shooter and turret controls are paused
   so the combined shot keeps control until the button is released
@@ -199,6 +201,7 @@ Shooting / Feeding:
 - Operator `B` = full tracked shot
 - Operator left bumper = stop intake and raise pivot
 - Operator left trigger = failsafe shot if normal tracking is not working
+- Failsafe shot = turret `0.0` degrees (rear) and shooter `-62.5` RPS
 
 ### Split-Shot Backup Workflow
 
@@ -283,6 +286,9 @@ PathPlanner, see `autonREADME.md`.
   the staged startup position.
 - The current intended direction map is: rear = `0` / `360`, left = `90`,
   front = `180`, and right = `270`.
+- The current failsafe shot uses turret `0.0` degrees, so it points to the rear
+  side of the robot in this travel model.
+- The current failsafe shooter target is `-62.5` RPS.
 - The software should never shortcut across the `0` / `360` seam. If the goal
   is on the other side of that seam, the turret should rotate the long way
   around instead.

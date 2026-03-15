@@ -69,6 +69,7 @@ Shooting:
 - `X` = fixed `-44.0` shooter preset
 - `Y` = manual spindexer / transfer feed
 - Left trigger = failsafe shot
+- Failsafe shot = turret `0.0` degrees (rear) and shooter `-62.5` RPS
 
 Intake / Pivot Support:
 
@@ -175,8 +176,9 @@ Then also verify the older split workflow still works:
 ## Phase 8: Failsafe Shot Check
 
 - Press and hold operator left trigger.
-- Confirm the turret moves to the failsafe angle.
-- Confirm the shooter spins up.
+- Confirm the turret moves to `0.0` degrees, which is the rear direction in the
+  current rear-zero turret map.
+- Confirm the shooter spins up to the fixed failsafe target of `-62.5` RPS.
 - Confirm feeding starts only after the built-in delay.
 - Confirm the routine stops the shooter and feed on its own after the fixed feed window.
 - Release the trigger early during one test run and confirm shooter and feed stop immediately.
