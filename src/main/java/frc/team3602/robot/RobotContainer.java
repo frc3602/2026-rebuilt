@@ -98,7 +98,7 @@ public class RobotContainer {
                 // Prepare the basic autonomous shot by spinning up the shooter while
                 // the turret tracks the alliance tower.
                 NamedCommands.registerCommand("autonPrepareBetaShot", superStructure.autonPrepareBetaShot());
-                // Feed the note for the current beta autonomous shot, then stop the
+                // Feed the fuel for the current beta autonomous shot, then stop the
                 // spindexer so the command finishes cleanly.
                 NamedCommands.registerCommand("autonFeedBetaShot", superStructure.autonFeedBetaShot());
                 // Stop the shooter and spindexer after an autonomous shot so later

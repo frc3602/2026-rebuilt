@@ -94,7 +94,7 @@ This command is a good setup command because it:
 - tracks the tower
 - waits for the shooter to be ready
 
-but it still does not feed the note yet.
+but it still does not feed the fuel yet.
 
 That is a good balance between:
 
@@ -147,7 +147,7 @@ What it does:
 1. Starts the shooter for the beta auto shot.
 2. Waits for the shooter to reach the ready speed, with a timeout.
 3. Tracks the alliance tower with the turret while waiting.
-4. Feeds the note with the spindexer.
+4. Feeds the fuel with the spindexer.
 5. Stops the spindexer and shooter.
 
 Best use:
@@ -165,7 +165,7 @@ What it does:
 
 Best use:
 
-- Starting a note collection routine
+- Starting a fuel collection routine
 - Preparing for future intake autos
 
 ### `autonSpinUpBetaShot`
@@ -331,7 +331,7 @@ This gives the robot time to:
 - move into position
 - track the target
 - spin up the shooter
-- feed the note
+- feed the fuel
 - shut down cleanly
 
 ## Example PathPlanner Flow
@@ -351,13 +351,13 @@ If the robot must:
 - move slightly
 - aim at the tower
 - spin up the shooter
-- feed the note
+- feed the fuel
 
 then a good way to build that auto is:
 
 1. Let PathPlanner handle the short drive path.
 2. Use a setup command like `autonPrepareBetaShot` for aiming and flywheel prep.
-3. Use `autonFeedBetaShot` only when the robot is ready to release the note.
+3. Use `autonFeedBetaShot` only when the robot is ready to release the fuel.
 4. Use `autonStopShooting` so the robot ends in a known state.
 
 This is usually better than forcing all of those decisions into one giant
@@ -393,7 +393,7 @@ These do not exist yet, but would make full autonomous routines easier to build:
 
 - `autonRunIntake`
 - `autonStopIntake`
-- `autonCollectNote`
+- `autonCollectFuel`
 - `autonPrepareLerpShot`
 - `autonFeedShot`
 - `autonStopAll`

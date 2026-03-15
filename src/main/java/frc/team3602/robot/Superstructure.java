@@ -142,7 +142,7 @@ public class Superstructure {
      * Feeds one autonomous shot using the spindexer, then stops the feed motors.
      *
      * We keep feeding separate from spin-up so PathPlanner can decide exactly when
-     * to release the note after the robot has finished moving and aiming.
+     * to release the fuel after the robot has finished moving and aiming.
      */
     public Command autonFeedBetaShot() {
         return Commands.sequence(
