@@ -25,15 +25,19 @@ import frc.team3602.robot.Constants.*;
 import frc.team3602.robot.Constants.FieldConstants;
 
 public class TurretSubsystem extends SubsystemBase {
-    // The turret starts pointed at 90 degrees and can only travel to 0 degrees in
-    // one direction or to 270 degrees in the other direction. Once we normalize the
-    // turret angle into [-180, 180), that legal window becomes [-90, 90].
-    private static final double MIN_TRACKING_ANGLE_DEGREES = -90.0;
-    private static final double MAX_TRACKING_ANGLE_DEGREES = 90.0;
+    // The turret uses linear travel coordinates from 0 through 360 degrees.
+    // 0 degrees and 360 degrees point in the same direction on the robot, but they
+    // are different ends of the mechanism's legal travel. That means we must not
+    // use normal "shortest angle" wrapping when we command the turret.
+    private static final double MIN_TRACKING_ANGLE_DEGREES = 0.0;
+    private static final double MAX_TRACKING_ANGLE_DEGREES = 360.0;
     private static final double STARTING_TURRET_ANGLE_DEGREES = 90.0;
-    private static final double LEFT_CORNER_PRESET_DEGREES = -55.0;
+    private static final double LEFT_CORNER_PRESET_DEGREES = 305.0;
     private static final double RIGHT_CORNER_PRESET_DEGREES = 55.0;
-    private static final double NEUTRAL_PRESET_DEGREES = -90.0;
+    private static final double NEUTRAL_PRESET_DEGREES = 270.0;
+    private static final double MOTOR_ROTATIONS_PER_TURRET_ROTATION = 30.0;
+    private static final double TURRET_DEGREES_PER_MOTOR_ROTATION = 360.0
+            / MOTOR_ROTATIONS_PER_TURRET_ROTATION;
     // These values are the current best estimates for the turret's moving-shot
     // lead math. They should be updated whenever on-robot testing gives us better
     // measured numbers for the shooter exit angle or release height.
@@ -78,6 +82,20 @@ public class TurretSubsystem extends SubsystemBase {
         startChooser.addOption("Left Trench", Double.valueOf(180));
         turretController.setTolerance(1, 2);
         configTurretHardware();
+        seedTurretSensorToStartAngle();
+    }
+
+    /**
+     * Seeds the Falcon's relative rotor sensor to the team's known startup angle.
+     *
+     * We do not have an absolute turret sensor yet, so the robot assumes the turret
+     * is physically staged at the shared start angle before boot. Seeding the sensor
+     * here keeps the software's 0-360 travel model aligned with that operational
+     * assumption.
+     */
+    private void seedTurretSensorToStartAngle() {
+        double startMotorRotations = STARTING_TURRET_ANGLE_DEGREES / TURRET_DEGREES_PER_MOTOR_ROTATION;
+        turretMotor.setPosition(startMotorRotations);
     }
 
     // Review note 2026-03-15 10:15:26 -04:00: this method may be unused in the
@@ -95,9 +113,7 @@ public class TurretSubsystem extends SubsystemBase {
     // Review note 2026-03-15 10:15:26 -04:00: this method may be unused in the
     // current codebase.
     public Double getEncoder() {
-        return (turretMotor.getRotorPosition().getValueAsDouble() * 12); // every revolution is 12 degrees because it is
-                                                                         // a 30:1 gear ratio 10:1 from gear, 3:1 from
-                                                                         // gear box
+        return turretMotor.getRotorPosition().getValueAsDouble() * TURRET_DEGREES_PER_MOTOR_ROTATION;
     }
 
     // Hold the turret at its intended starting angle until another command asks
@@ -113,7 +129,7 @@ public class TurretSubsystem extends SubsystemBase {
     // current codebase.
     public Command changeSetAngle(double newSetpoint) {
         return runOnce(() -> {
-            setRequestedAngle(setAngle + newSetpoint);
+            setAngle = clamp(setAngle + newSetpoint, MIN_TRACKING_ANGLE_DEGREES, MAX_TRACKING_ANGLE_DEGREES);
         });
     }
 
@@ -198,12 +214,10 @@ public class TurretSubsystem extends SubsystemBase {
         // Get rotor position in motor rotations
         double motorRot = turretMotor.getRotorPosition().getValueAsDouble();
 
-        // Convert motor rotations to turret degrees
-        // Assume 30 motor rotations = 360 degrees turret rotation
-        double turretDeg = motorRot * (360.0 / 30.0);
+        // Convert motor rotations into the turret's linear 0-360 travel coordinate.
+        double turretDeg = motorRot * TURRET_DEGREES_PER_MOTOR_ROTATION;
 
-        // Clamp or normalize angle to -180° to +180° (or use 0-360 if you prefer)
-        return clampAngle(turretDeg);
+        return clamp(turretDeg, MIN_TRACKING_ANGLE_DEGREES, MAX_TRACKING_ANGLE_DEGREES);
     }
 
     /**
@@ -225,19 +239,30 @@ public class TurretSubsystem extends SubsystemBase {
         double dy = target.getY() - robotPose.getY();
         double fieldAngle = Math.toDegrees(Math.atan2(dy, dx));
         double robotHeading = robotPose.getRotation().getDegrees();
-        return clampAngle(fieldAngle - robotHeading);
+        return normalizeToTravelAngle(fieldAngle - robotHeading);
     }
 
     /**
-     * Normalize angle to [-180, 180) degrees
+     * Converts any angle description into the turret's linear 0-360 travel range.
+     *
+     * Examples:
+     * - -55 becomes 305
+     * - 370 becomes 10
+     * - 360 stays 360 so the code can still command the upper travel limit
      */
-    private double clampAngle(double angleDeg) {
-        angleDeg = angleDeg % 360.0; // wrap around
-        if (angleDeg > 180.0)
-            angleDeg -= 360.0;
-        if (angleDeg <= -180.0)
-            angleDeg += 360.0;
-        return angleDeg;
+    private double normalizeToTravelAngle(double angleDeg) {
+        double normalizedAngle = angleDeg % 360.0;
+        if (normalizedAngle < 0.0) {
+            normalizedAngle += 360.0;
+        }
+
+        // If the request was exactly one full rotation, keep it at the top end of the
+        // legal range instead of collapsing it back to zero.
+        if (Math.abs(normalizedAngle) < 1e-9 && angleDeg > 0.0) {
+            return MAX_TRACKING_ANGLE_DEGREES;
+        }
+
+        return normalizedAngle;
     }
 
     /**
@@ -259,7 +284,15 @@ public class TurretSubsystem extends SubsystemBase {
      * same physical limits.
      */
     private void setRequestedAngle(double requestedAngleDegrees) {
-        double normalizedAngle = clampAngle(requestedAngleDegrees);
+        double normalizedAngle = normalizeToTravelAngle(requestedAngleDegrees);
+
+        // When the desired pointing direction is exactly forward, both 0 and 360 aim
+        // the turret the same way. Choose the closer end of travel so the turret
+        // does not make an unnecessary full-circle move across the seam.
+        if (Math.abs(normalizedAngle) < 1e-9 && getTurretAngleDeg() > 180.0) {
+            normalizedAngle = MAX_TRACKING_ANGLE_DEGREES;
+        }
+
         setAngle = clamp(normalizedAngle, MIN_TRACKING_ANGLE_DEGREES, MAX_TRACKING_ANGLE_DEGREES);
     }
 
@@ -369,7 +402,7 @@ public class TurretSubsystem extends SubsystemBase {
         double timeOfFlight = calculateBallTimeOfFlight();
 
         if (timeOfFlight <= 0.0) {
-            return Math.toDegrees(targetYawRelative);
+            return normalizeToTravelAngle(Math.toDegrees(targetYawRelative));
         }
 
         // Build a unit vector perpendicular to the shot line.
@@ -393,7 +426,7 @@ public class TurretSubsystem extends SubsystemBase {
         // Final turret offset
         double turretOffsetRadians = targetYawRelative + leadRadians;
 
-        return Math.toDegrees(turretOffsetRadians);
+        return normalizeToTravelAngle(Math.toDegrees(turretOffsetRadians));
     }
 
     double voltage;
@@ -417,16 +450,14 @@ public class TurretSubsystem extends SubsystemBase {
 
     public Command setAngleRightCorner() {
         return  runOnce(() -> {
-            // Keep the right-corner preset inside the legal turret travel.
-            // Using an explicit positive preset makes this distinct from the neutral
-            // position and avoids silently clamping onto the same hard stop.
             setRequestedAngle(RIGHT_CORNER_PRESET_DEGREES);
         });
     }
 
     public Command setAngleNeutral() {
         return  runOnce(() -> {
-            // Neutral means "park on the negative-side edge" for this mechanism.
+            // Neutral parks the turret on the high-angle side of the 0-360 travel
+            // range.
             setRequestedAngle(NEUTRAL_PRESET_DEGREES);
         });
     }
@@ -493,9 +524,9 @@ public class TurretSubsystem extends SubsystemBase {
     /**
      * Calculates the turret angle needed to face a field coordinate.
      *
-     * We convert the field point into a robot-relative angle, then clamp that angle
-     * into the turret's legal travel range so the mechanism only asks for positions
-     * it can physically reach.
+     * We convert the field point into the turret's 0-360 travel coordinate instead
+     * of using a wrapped signed angle. This keeps the turret from trying to
+     * shortcut across the 0/360 seam.
      */
     private double calculateTurretAngleForFieldPoint(Translation2d fieldPoint) {
         Pose2d robotPose = drivetrainSubsys.getEstimatedPose();
@@ -504,7 +535,7 @@ public class TurretSubsystem extends SubsystemBase {
         double deltaY = fieldPoint.getY() - robotPose.getY();
         double fieldAngleToPoint = Math.toDegrees(Math.atan2(deltaY, deltaX));
         double robotHeading = robotPose.getRotation().getDegrees();
-        double robotRelativeAngle = clampAngle(fieldAngleToPoint - robotHeading);
+        double robotRelativeAngle = normalizeToTravelAngle(fieldAngleToPoint - robotHeading);
 
         return clamp(robotRelativeAngle, MIN_TRACKING_ANGLE_DEGREES, MAX_TRACKING_ANGLE_DEGREES);
     }
@@ -531,7 +562,7 @@ public class TurretSubsystem extends SubsystemBase {
      * alliance-tower tracking command so they use the same motor-control behavior.
      */
     private void applyTurretPositionControl() {
-        var pidEffort = turretController.calculate(getTurretAngleDeg(), clampAngle(setAngle));
+        var pidEffort = turretController.calculate(getTurretAngleDeg(), setAngle);
         turretMotor.setVoltage(pidEffort);
     }
 

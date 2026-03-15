@@ -19,7 +19,8 @@ full teleop or autonomous routines.
 
 - Verify the battery is charged and firmly connected.
 - Verify the robot is on blocks if any mechanism may move unexpectedly.
-- Verify the turret is physically placed in the team's expected start position.
+- Verify the turret is physically placed in the team's expected start position
+  of `90` degrees.
 - Verify fuel is removed from the robot for the first motion checks.
 - Verify the turret lead-math assumptions still match the current shooter setup:
   `20` degree launch angle and `20` inch shooter height.
@@ -54,6 +55,8 @@ full teleop or autonomous routines.
 - Press operator POV down and confirm the turret goes to neutral.
 - Press operator POV left and confirm the turret goes to the left corner preset.
 - Press operator POV right and confirm the turret goes to the right corner preset.
+- If the turret moves near the front seam, confirm it goes around the `0` / `360`
+  boundary instead of trying to wrap across it.
 - Hold driver `Y` and confirm the turret actively aims.
 - Release driver `Y` and confirm the turret stays stable.
 
@@ -141,6 +144,8 @@ These values help separate aiming problems from feed problems.
 - Stop and test with no fuel first.
 - If only one shooter motor seems active, re-check shooter follower behavior.
 - If the turret drifts while shooting, re-check turret brake mode and turret hold behavior.
+- If the turret takes a shortcut across the forward seam, re-check the new
+  `0` through `360` travel model and startup-angle assumptions.
 - If shots consistently arc high or low, re-check the turret lead-math
   assumptions for shooter height and launch angle.
 - If fuel hesitates or bounces, focus on the spindexer-to-transfer handoff first.
