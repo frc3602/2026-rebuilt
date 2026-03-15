@@ -78,6 +78,7 @@ public class ShooterSubsystem extends SubsystemBase {
      */
     public Command setShootVelocity(double rotationsPerSecond) {
         return runOnce(() -> {
+            restoreFollowerControl();
             shootermotor1.setControl(m_request.withVelocity(rotationsPerSecond));
         });
     }
@@ -92,6 +93,7 @@ public class ShooterSubsystem extends SubsystemBase {
     // current codebase.
     public Command setShootVLerp() {
         return runOnce(() -> {
+            restoreFollowerControl();
             shootermotor1.setControl(m_request.withVelocity(shootLerpSpeed));
         });
     }
@@ -112,8 +114,13 @@ public class ShooterSubsystem extends SubsystemBase {
     // Stop
     public Command stopShooter() {
         return runOnce(() -> {
-            shootermotor1.set(0);
-            shootermotor2.set(0);
+            // Stop the leader using the same closed-loop path we use for normal
+            // shooting, then immediately re-apply the follower request.
+            //
+            // This avoids sending a direct percent-output command to motor 2, which
+            // could leave it no longer following the leader on the next shot.
+            shootermotor1.setControl(m_request.withVelocity(0));
+            restoreFollowerControl();
         });
     }
 
@@ -173,10 +180,7 @@ public class ShooterSubsystem extends SubsystemBase {
         shootermotor1.getConfigurator().apply(talonFXConfigs);
         shootermotor2.getConfigurator().apply(talonFXConfigs);
 
-        // Motor 2 should always mirror motor 1.
-        // We configure that once here and then only send velocity requests to the
-        // leader motor. That keeps the two flywheel motors synchronized.
-        shootermotor2.setControl(new Follower(shootermotor1.getDeviceID(), MotorAlignmentValue.Opposed));
+        restoreFollowerControl();
 
         // Interpolation table config
         shootLerp.put(2.0, 31.0);
@@ -201,6 +205,20 @@ public class ShooterSubsystem extends SubsystemBase {
         shootLerp.put(18.0, 64.5);
 
 
+    }
+
+    /**
+     * Re-applies the follower request for shooter motor 2.
+     *
+     * The robot only intends to command the leader motor directly. Calling this
+     * helper any time we change shooter state keeps motor 2 synchronized even after
+     * stop commands or future tuning changes.
+     */
+    private void restoreFollowerControl() {
+        // Motor 2 should always mirror motor 1.
+        // We keep the follower setup in one helper so all shooter commands use the
+        // same synchronization behavior.
+        shootermotor2.setControl(new Follower(shootermotor1.getDeviceID(), MotorAlignmentValue.Opposed));
     }
 
 }

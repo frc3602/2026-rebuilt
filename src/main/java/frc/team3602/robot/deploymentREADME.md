@@ -1,0 +1,153 @@
+# Deployment README
+
+## Purpose
+
+This file is a practical deployment and test checklist for the robot.
+
+Use it after:
+
+- code changes
+- wiring changes
+- mechanism repairs
+- sensor adjustments
+- drivetrain or turret tuning changes
+
+The goal is to catch problems in a safe order before the robot is asked to run
+full teleop or autonomous routines.
+
+## Before You Deploy
+
+- Verify the battery is charged and firmly connected.
+- Verify the robot is on blocks if any mechanism may move unexpectedly.
+- Verify the turret is physically placed in the team's expected start position.
+- Verify fuel is removed from the robot for the first motion checks.
+- Verify Driver Station and radio are connected normally.
+- Verify the correct branch and commit are deployed.
+
+## After Deploy
+
+- Enable the robot while still on blocks.
+- Watch Driver Station for CAN errors, brownout warnings, or spammed faults.
+- Confirm SmartDashboard values are updating.
+- Confirm no subsystem moves unexpectedly at enable.
+
+## Phase 1: Safe Idle Checks
+
+- Disable and re-enable once to confirm the robot comes up cleanly.
+- Verify the turret holds position when idle.
+- Verify the pivot holds position when idle.
+- Verify the drivetrain does not creep when sticks are centered.
+
+## Phase 2: Drivetrain Check
+
+- Drive slowly in open space.
+- Confirm forward, strafe, and rotate all behave normally.
+- Hold turbo and confirm the robot speeds up.
+- Release turbo and confirm normal speed returns.
+- Watch the dashboard pose values and confirm they move smoothly.
+
+## Phase 3: Turret Check
+
+- Press operator POV up and confirm the turret goes to zero.
+- Press operator POV down and confirm the turret goes to neutral.
+- Press operator POV left and confirm the turret goes to the left corner preset.
+- Press operator POV right and confirm the turret goes to the right corner preset.
+- Hold driver `Y` and confirm the turret actively aims.
+- Release driver `Y` and confirm the turret stays stable.
+
+## Phase 4: Shooter Check
+
+- Press operator `A` and confirm both shooter motors spin up together.
+- Release operator `A` and confirm both shooter motors stop.
+- Press operator `A` again and confirm both shooter motors spin up together a second time.
+- Repeat the same restart test with operator `B` and `X`.
+
+This step is important because the shooter follower issue was recently fixed.
+We want to verify the second shooter motor still follows correctly after a stop.
+
+## Phase 5: Spindexer And Transfer Check
+
+- With no fuel loaded, hold operator `Y`.
+- Confirm the spindexer and transfer/X44 both run together smoothly.
+- Release operator `Y` and confirm both stop immediately.
+- Listen for any obvious speed mismatch, chatter, or slipping.
+
+## Phase 6: Shooter Vibration Check
+
+- Send the turret to a fixed preset.
+- Run shooter `A`, then `B`, then `X`.
+- Watch whether the turret stays put while the shooter is running.
+
+This step verifies the recent turret brake-mode change.
+
+## Phase 7: Manual Shot Check
+
+- Load one fuel piece.
+- Aim the robot at a safe scoring direction.
+- Hold operator right trigger so the turret tracks the alliance tower.
+- Start the shooter with the intended preset.
+- Wait for spin-up.
+- Hold operator `Y` briefly to feed.
+
+Watch for:
+
+- clean fuel handoff from spindexer to transfer
+- no hesitation entering the shooter
+- no double-feed
+- turret staying aimed during the shot
+- both shooter motors sounding synchronized
+
+## Phase 8: Failsafe Shot Check
+
+- Press and hold operator left trigger.
+- Confirm the turret moves to the failsafe angle.
+- Confirm the shooter spins up.
+- Confirm feeding starts only after the built-in delay.
+- Release the trigger and confirm shooter and feed stop.
+
+## Phase 9: Autonomous Command Check Without Fuel
+
+- Run the selected autonomous with no fuel loaded first.
+- Confirm the path starts correctly.
+- Confirm `autonPrepareBetaShot` runs after the drive segment.
+- Confirm `autonFeedBetaShot` runs for its expected window.
+- Confirm `autonStopShooting` stops the shooter and spindexer.
+- Confirm `moveTurretToStartAngle` returns the turret to its start angle.
+
+## Phase 10: Autonomous Shot Check With Fuel
+
+- Load one fuel piece.
+- Re-run the simplest autonomous.
+- Watch whether the shooter is ready before feed begins.
+- Watch whether the turret stays aimed through the shot.
+- Watch whether the fuel path stays smooth from spindexer to transfer to shooter.
+
+## Dashboard Values To Watch
+
+- `Robot X`
+- `Robot Y`
+- `Robot Angle`
+- `Pose Distance`
+- `Shooter Lerp Speed`
+- `Pigeon Angle`
+
+These values help separate aiming problems from feed problems.
+
+## If Something Looks Wrong
+
+- Stop and test with no fuel first.
+- If only one shooter motor seems active, re-check shooter follower behavior.
+- If the turret drifts while shooting, re-check turret brake mode and turret hold behavior.
+- If fuel hesitates or bounces, focus on the spindexer-to-transfer handoff first.
+- If autonomous feeds too early, remember the current beta auto still allows a timeout-based shot.
+
+## Sign-Off
+
+Before the robot is considered ready, confirm:
+
+- drivetrain works
+- turret holds and aims
+- both shooter motors spin reliably after repeated stop/start cycles
+- spindexer and transfer run together cleanly
+- one manual shot works
+- one simple autonomous works
