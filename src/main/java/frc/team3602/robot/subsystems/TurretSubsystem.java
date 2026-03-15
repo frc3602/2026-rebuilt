@@ -34,12 +34,16 @@ public class TurretSubsystem extends SubsystemBase {
     private static final double MIN_TRACKING_ANGLE_DEGREES = 0.0;
     private static final double MAX_TRACKING_ANGLE_DEGREES = 360.0;
     private static final double STARTING_TURRET_ANGLE_DEGREES = 90.0;
-    private static final double LEFT_CORNER_PRESET_DEGREES = 305.0;
-    private static final double RIGHT_CORNER_PRESET_DEGREES = 55.0;
+    private static final double LEFT_CORNER_PRESET_DEGREES = 55.0;
+    private static final double RIGHT_CORNER_PRESET_DEGREES = 305.0;
     private static final double NEUTRAL_PRESET_DEGREES = 270.0;
     private static final double MOTOR_ROTATIONS_PER_TURRET_ROTATION = 30.0;
     private static final double TURRET_DEGREES_PER_MOTOR_ROTATION = 360.0
             / MOTOR_ROTATIONS_PER_TURRET_ROTATION;
+    // When the target direction is very close to the rear seam, keep the turret on
+    // its current side of travel instead of letting tiny pose noise flip the
+    // setpoint from 0 to 360 or back again.
+    private static final double REAR_SEAM_DEADBAND_DEGREES = 5.0;
     // These values are the current best estimates for the turret's moving-shot
     // lead math. They should be updated whenever on-robot testing gives us better
     // measured numbers for the shooter exit angle or release height.
@@ -302,7 +306,11 @@ public class TurretSubsystem extends SubsystemBase {
      * - right = 270
      */
     private double convertSignedAimToTravelAngle(double signedAimAngleDegrees) {
-        if (Math.abs(Math.abs(signedAimAngleDegrees) - 180.0) < 1e-9) {
+        // If the target is very close to straight rear, prefer the current side of
+        // the rear seam so tiny pose jitter does not bounce the turret between the
+        // two travel endpoints.
+        double distanceFromRearDegrees = 180.0 - Math.abs(signedAimAngleDegrees);
+        if (distanceFromRearDegrees <= REAR_SEAM_DEADBAND_DEGREES) {
             return getTurretAngleDeg() > 180.0 ? MAX_TRACKING_ANGLE_DEGREES : MIN_TRACKING_ANGLE_DEGREES;
         }
 
@@ -340,7 +348,9 @@ public class TurretSubsystem extends SubsystemBase {
             return 0.0;
         }
 
-        double motorRPS = shooter.getVelocity();
+        // Shooter commands currently use negative RPS to match motor direction, but
+        // fuel launch speed should always be treated as a positive magnitude.
+        double motorRPS = Math.abs(shooter.getVelocity());
 
         double gearRatio = 1.0; // example motor:wheel
         double wheelDiameterMeters = 0.1016; // 4 inch wheel
@@ -486,12 +496,14 @@ public class TurretSubsystem extends SubsystemBase {
 
     public Command setAngleLeftCorner() {
         return  runOnce(() -> {
+            // The left corner preset lives on the rear-left side of travel.
             setRequestedAngle(LEFT_CORNER_PRESET_DEGREES);
         });
     }
 
     public Command setAngleRightCorner() {
         return  runOnce(() -> {
+            // The right corner preset lives on the rear-right side of travel.
             setRequestedAngle(RIGHT_CORNER_PRESET_DEGREES);
         });
     }
