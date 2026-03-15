@@ -58,8 +58,8 @@ Useful dashboard values include:
 - The software now treats `0` and `360` as separate travel endpoints so the
   turret goes around the rear seam instead of taking a fake shortest-angle
   shortcut.
-- Preset turret positions were cleaned up so right corner and neutral are now
-  distinct legal positions.
+- Preset turret positions were cleaned up so right corner and right-side preset
+  are now distinct legal positions.
 - The turret hardware config now runs during subsystem startup instead of being
   left unused.
 - Operator right trigger is now the single dedicated teleop tower-tracking
@@ -124,7 +124,7 @@ Turret:
 
 - Right trigger: hold to track the current alliance tower with the turret
 - POV up: turret to zero preset
-- POV down: turret to neutral preset
+- POV down: turret to right-side preset
 - POV left: turret to left-corner preset
 - POV right: turret to right-corner preset
 
@@ -281,10 +281,10 @@ Use this checklist when the robot is on blocks first, then again on the carpet.
 
 - Turret holds its position when idle
 - Operator POV up sends turret to zero preset
-- Operator POV down sends turret to neutral preset
+- Operator POV down sends turret to right-side preset
 - Operator POV left sends turret to left-corner preset
 - Operator POV right sends turret to right-corner preset
-- Right-corner and neutral are visibly different positions
+- Right-corner and right-side preset are visibly different positions
 - When moving near the rear seam, the turret does not "wrap" across `0` / `360`
 
 ### Turret Field-Point Tracking

@@ -36,7 +36,7 @@ public class TurretSubsystem extends SubsystemBase {
     private static final double STARTING_TURRET_ANGLE_DEGREES = 90.0;
     private static final double LEFT_CORNER_PRESET_DEGREES = 55.0;
     private static final double RIGHT_CORNER_PRESET_DEGREES = 305.0;
-    private static final double NEUTRAL_PRESET_DEGREES = 270.0;
+    private static final double RIGHT_PRESET_DEGREES = 270.0;
     private static final double MOTOR_ROTATIONS_PER_TURRET_ROTATION = 30.0;
     private static final double TURRET_DEGREES_PER_MOTOR_ROTATION = 360.0
             / MOTOR_ROTATIONS_PER_TURRET_ROTATION;
@@ -522,11 +522,11 @@ public class TurretSubsystem extends SubsystemBase {
         });
     }
 
-    public Command setAngleNeutral() {
+    public Command setAngleRight() {
         return  runOnce(() -> {
-            // Neutral parks the turret on the robot's right side in the rear-zero
-            // travel model.
-            setRequestedAngle(NEUTRAL_PRESET_DEGREES);
+            // This preset parks the turret on the robot's right side in the
+            // rear-zero travel model.
+            setRequestedAngle(RIGHT_PRESET_DEGREES);
         });
     }
 

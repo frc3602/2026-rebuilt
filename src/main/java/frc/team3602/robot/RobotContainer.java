@@ -187,7 +187,7 @@ public class RobotContainer {
                 operatorController.rightBumper().onTrue(shooter.setShootVLerp()).onFalse(shooter.stopShooter());
                 operatorController.leftBumper().onTrue(superStructure.stopIntake());
                 operatorController.povUp().onTrue(turret.setAngleZero());
-                operatorController.povDown().onTrue(turret.setAngleNeutral());
+                operatorController.povDown().onTrue(turret.setAngleRight());
                 operatorController.povLeft().onTrue(turret.setAngleLeftCorner());
                 operatorController.povRight().onTrue(turret.setAngleRightCorner());
 
