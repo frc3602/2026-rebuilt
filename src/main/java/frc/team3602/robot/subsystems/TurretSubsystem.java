@@ -35,6 +35,7 @@ public class TurretSubsystem extends SubsystemBase {
     // turret angle into [-180, 180), that legal window becomes [-90, 90].
     private static final double MIN_TRACKING_ANGLE_DEGREES = -90.0;
     private static final double MAX_TRACKING_ANGLE_DEGREES = 90.0;
+    private static final double STARTING_TURRET_ANGLE_DEGREES = 90.0;
     private static final double LEFT_CORNER_PRESET_DEGREES = -55.0;
     private static final double RIGHT_CORNER_PRESET_DEGREES = 55.0;
     private static final double NEUTRAL_PRESET_DEGREES = -90.0;
@@ -97,8 +98,9 @@ public class TurretSubsystem extends SubsystemBase {
     // Vision
     public final Vision vision = new Vision();
 
-    // Set Point *This number needs to be changed*
-    public double setAngle = 0;
+    // Hold the turret at its intended starting angle until another command asks
+    // for a different target.
+    public double setAngle = STARTING_TURRET_ANGLE_DEGREES;
 
     // Controllers *These PID values need to be changed*
     private final PIDController turretController = new PIDController(.04, 0.0, 0.0);
@@ -141,7 +143,8 @@ public class TurretSubsystem extends SubsystemBase {
 
     public Command autonToTeleop() {
         return runOnce(() -> {
-            setRequestedAngle(270);
+            // Use the same handoff angle that the mechanism is expected to start at.
+            setRequestedAngle(STARTING_TURRET_ANGLE_DEGREES);
         });
     }
 
@@ -316,11 +319,14 @@ public class TurretSubsystem extends SubsystemBase {
     }
 
     /**
-     * Calculates a simple lead angle so the turret can compensate for robot motion.
+     * Calculates the lead-adjusted turret angle for the current tower target.
      *
      * We start with the drivetrain's shared estimated pose, compute the target angle
      * relative to the robot, then add a lead term based on the robot's sideways
      * motion during the shot's time of flight.
+     *
+     * Even though the method name says "offset", the value returned here is the
+     * full robot-relative angle that the turret should try to reach.
      */
     public double calculateTurretOffset() {
 
@@ -376,13 +382,16 @@ public class TurretSubsystem extends SubsystemBase {
 
     public Command aimCommand() {
         return run(() -> {
-            setRequestedAngle(setAngle - calculateDesiredAngle() + calculateTurretOffset());
+            // Command the full lead-adjusted tower angle directly and keep applying
+            // turret PID while this command owns the subsystem.
+            setRequestedAngle(calculateTurretOffset());
+            applyTurretPositionControl();
         });
     }
 
         public Command setAngleAuto() {
         return  runOnce(() -> {
-            setRequestedAngle(90);
+            setRequestedAngle(STARTING_TURRET_ANGLE_DEGREES);
         });
     }
 
@@ -416,7 +425,8 @@ public class TurretSubsystem extends SubsystemBase {
 
     public Command basicAuton() {
         return  runOnce(() -> {
-            setRequestedAngle(5);
+            // Point at the live alliance tower target instead of using a magic angle.
+            setRequestedAngle(calculateTurretOffset());
         });
     }
 
@@ -455,7 +465,9 @@ public class TurretSubsystem extends SubsystemBase {
      */
     public Command trackAllianceTower() {
         return run(() -> {
-            setRequestedAngle(calculateTurretAngleForFieldPoint(getTargetPose()));
+            // Recompute the tower angle every loop so the turret follows the current
+            // alliance target while the robot drives.
+            setRequestedAngle(calculateTurretOffset());
             applyTurretPositionControl();
         });
     }
@@ -503,11 +515,9 @@ public class TurretSubsystem extends SubsystemBase {
 
     public Command aimToDesiredAngle() {
         return run(() -> {
-            // Continuously update the turret setpoint while the driver holds the
-            // button. This reuses the same lead-angle math as the existing aim
-            // command, but also applies the turret PID so the mechanism actually
-            // moves while the command is scheduled.
-            setRequestedAngle(setAngle - calculateDesiredAngle() + calculateTurretOffset());
+            // Continuously point at the lead-adjusted tower angle while the driver
+            // holds the button.
+            setRequestedAngle(calculateTurretOffset());
             applyTurretPositionControl();
         });
     }

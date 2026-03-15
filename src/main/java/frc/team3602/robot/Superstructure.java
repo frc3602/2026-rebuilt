@@ -41,6 +41,7 @@ public class Superstructure {
         this.shooterSubsys = shooterSubsys;
         this.spindexerSubsys = spindexerSubsys;
         this.turretSubsys = turretSubsys;
+        this.commandSwerveDrivetrainsubsys = commandSwerveDrivetrainSubsys;
         this.pivotSubsys = pivotsubsys;
     }
 
