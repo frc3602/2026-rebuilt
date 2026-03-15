@@ -44,6 +44,12 @@ public class Robot extends TimedRobot {
     public void robotPeriodic() {
         m_timeAndJoystickReplay.update();
         CommandScheduler.getInstance().run();
+        // Keep the RobotContainer pose dashboard keys live every loop.
+        // The drivetrain already publishes its own pose values, but these
+        // "estimated drive pose" entries are used in team debugging notes and
+        // should reflect the current estimator state instead of only the startup
+        // snapshot.
+        m_robotContainer.updatePose();
         
     }
 

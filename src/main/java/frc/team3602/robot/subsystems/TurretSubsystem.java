@@ -663,6 +663,13 @@ public class TurretSubsystem extends SubsystemBase {
      */
     private void configTurretHardware() {
 
+        // This config block is kept as a placeholder for a future magnet-based
+        // absolute turret sensor or homing reference path.
+        //
+        // The current robot does not apply or use these settings yet because turret
+        // position is still seeded from the known startup angle instead of a live
+        // absolute sensor. Keeping the object here makes that future integration
+        // easier to resume without re-discovering the intended config values.
         // encoder configs
         var magnetSensorConfigs = new MagnetSensorConfigs();
         magnetSensorConfigs.AbsoluteSensorDiscontinuityPoint = 1;

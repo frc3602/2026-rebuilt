@@ -82,6 +82,15 @@ public class RobotContainer {
         public final Superstructure superStructure = new Superstructure(intake, shooter, spindexer, turret, drivetrain,
                         pivot);
 
+        // These snapshot booleans are not part of the active robot logic today.
+        // We are keeping them as placeholders in case the team later wants quick
+        // intake-up / intake-down indicators in RobotContainer-driven dashboard or
+        // command logic.
+        //
+        // Important: because they are initialized once here, they are not live
+        // values. If we start using them again, they should become methods or be
+        // refreshed periodically from the pivot subsystem instead of staying as
+        // one-time snapshots.
         private Boolean intakeUp = (pivot.getPivotEncoder < 0);
         private Boolean intakeDown = (pivot.getPivotEncoder > 90);
 

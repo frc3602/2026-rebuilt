@@ -122,6 +122,11 @@ public class ShooterSubsystem extends SubsystemBase {
      *
      * We command only the leader motor here because motor 2 is configured to follow
      * it. Keeping one control path avoids the two motors fighting each other.
+     *
+     * This helper is currently retained as a simple one-shot lerp-speed utility for
+     * future tuning or temporary test bindings. The active driver-facing tracked
+     * shot now uses holdShootVLerp() instead so the target keeps updating while the
+     * shot is held.
      */
     public Command setShootVLerp() {
         return runOnce(() -> {
