@@ -104,7 +104,6 @@ Useful dashboard values include:
 - Right trigger: turbo speed while held, normal speed on release
 - Left bumper: run intake while held
 - Right bumper: drop intake while held
-- `Y`: hold to aim turret using pose-based aiming
 - POV up: raise climber, only if climber is enabled
 - POV down: lower climber, only if climber is enabled
 
@@ -239,8 +238,6 @@ Use this checklist when the robot is on blocks first, then again on the carpet.
 - Operator POV right sends turret to right-corner preset
 - Right-corner and neutral are visibly different positions
 - When moving near the rear seam, the turret does not "wrap" across `0` / `360`
-- Driver `Y` actively aims the turret while held
-- Releasing driver `Y` leaves the turret stable instead of drifting
 
 ### Turret Field-Point Tracking
 
