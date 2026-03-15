@@ -124,9 +124,10 @@ public class TurretSubsystem extends SubsystemBase {
         });
     }
 
-    public Command moveToTeleopHandoff() {
+    public Command moveToStartAngle() {
         return runOnce(() -> {
-            // Use the same handoff angle that the mechanism is expected to start at.
+            // The current start angle is also our handoff/stowed angle, so one
+            // command keeps the auton API from exposing two names for the same state.
             setRequestedAngle(STARTING_TURRET_ANGLE_DEGREES);
         });
     }
@@ -387,12 +388,6 @@ public class TurretSubsystem extends SubsystemBase {
             // turret PID while this command owns the subsystem.
             setRequestedAngle(calculateTurretOffset());
             applyTurretPositionControl();
-        });
-    }
-
-        public Command moveToAutoStartAngle() {
-        return  runOnce(() -> {
-            setRequestedAngle(STARTING_TURRET_ANGLE_DEGREES);
         });
     }
 

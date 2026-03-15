@@ -87,6 +87,8 @@ public class RobotContainer {
                 // Registered Commands
                 NamedCommands.registerCommand("autonRunBetaShot", superStructure.autonRunBetaShot());
                 NamedCommands.registerCommand("autonLowerIntake", superStructure.autonLowerIntake());
+                NamedCommands.registerCommand("autonStartIntake", superStructure.autonStartIntake());
+                NamedCommands.registerCommand("autonStopIntake", superStructure.autonStopIntake());
                 // Start the shooter for the simple beta autonomous shot without
                 // feeding yet. This is useful while finishing a short path or aiming
                 // step.
@@ -112,8 +114,7 @@ public class RobotContainer {
                 // Short self-ending version of the turret tracking command for
                 // sequential autos that need a simple "aim here briefly" step.
                 NamedCommands.registerCommand("autonTrackTowerShort", superStructure.autonTrackTowerShort());
-                NamedCommands.registerCommand("moveTurretToTeleopHandoff", turret.moveToTeleopHandoff());
-                NamedCommands.registerCommand("moveTurretToAutoStartAngle", turret.moveToAutoStartAngle());
+                NamedCommands.registerCommand("moveTurretToStartAngle", turret.moveToStartAngle());
               
 
                 // named commands for pathplanner go here

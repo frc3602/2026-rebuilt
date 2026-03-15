@@ -111,6 +111,27 @@ public class Superstructure {
         );
     }
 
+    /**
+     * Starts only the intake roller for autonomous.
+     *
+     * This is intentionally separate from pivot motion so PathPlanner can decide
+     * whether lowering the intake, starting the roller, and driving should happen
+     * together or in separate steps.
+     */
+    public Command autonStartIntake() {
+        return intakeSubsys.setIntakeSpeed();
+    }
+
+    /**
+     * Stops only the intake roller for autonomous.
+     *
+     * We keep this separate from any pivot-stow behavior so autos can stop the
+     * roller without unexpectedly moving the mechanism.
+     */
+    public Command autonStopIntake() {
+        return intakeSubsys.stopIntake();
+    }
+
     // public Command autonShoot() {
     //     return Commands.sequence(
     //             shooterSubsys.setShootVelocity(ShooterConstants.kShooterFailsafeSpeed),

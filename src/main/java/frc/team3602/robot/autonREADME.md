@@ -67,6 +67,8 @@ These do one job only.
 
 Examples:
 
+- `autonStartIntake`
+- `autonStopIntake`
 - `autonSpinUpBetaShot`
 - `autonFeedBetaShot`
 - `autonStopShooting`
@@ -167,6 +169,34 @@ Best use:
 
 - Starting a fuel collection routine
 - Preparing for future intake autos
+
+### `autonStartIntake`
+
+Use this when you want to start only the intake roller during autonomous.
+
+What it does:
+
+1. Starts the intake motor.
+
+Best use:
+
+- After lowering the intake
+- While driving toward loose fuel
+- As one piece of a future collection routine
+
+### `autonStopIntake`
+
+Use this when you want to stop only the intake roller during autonomous.
+
+What it does:
+
+1. Stops the intake motor.
+
+Best use:
+
+- After finishing a collection step
+- Before a shot
+- Any time an auto should stop the roller without moving the pivot
 
 ### `autonSpinUpBetaShot`
 
@@ -273,31 +303,20 @@ Best use:
 - Sequential autos
 - Short settle windows before a shot
 
-### `moveTurretToTeleopHandoff`
+### `moveTurretToStartAngle`
 
-Use this when you want to send the turret back to the teleop handoff position.
-
-What it does:
-
-1. Sends the turret to the normal teleop handoff angle.
-
-Best use:
-
-- At the end of an autonomous routine
-- When returning to a known safe turret position
-
-### `moveTurretToAutoStartAngle`
-
-Use this when you want to send the turret to the autonomous starting angle.
+Use this when you want to send the turret back to its shared start/handoff
+position.
 
 What it does:
 
-1. Sends the turret to the auto start angle.
+1. Sends the turret to the current starting angle.
 
 Best use:
 
 - At the beginning of an auto
-- Before a predictable opening shot
+- At the end of an autonomous routine
+- Any time you want the turret in its known home position
 
 ## How To Decide Between A Macro And Smaller Steps
 
@@ -324,7 +343,7 @@ For the team's current simplest scoring auto, use this order:
 2. Run `autonPrepareBetaShot`.
 3. Run `autonFeedBetaShot`.
 4. Run `autonStopShooting`.
-5. Optionally run `moveTurretToTeleopHandoff`.
+5. Optionally run `moveTurretToStartAngle`.
 
 This gives the robot time to:
 
@@ -342,7 +361,7 @@ Example simple autonomous sequence:
 2. `named: autonPrepareBetaShot`
 3. `named: autonFeedBetaShot`
 4. `named: autonStopShooting`
-5. `named: moveTurretToTeleopHandoff`
+5. `named: moveTurretToStartAngle`
 
 ## Example Of A Good Thought Process
 
@@ -392,7 +411,6 @@ Before adding a new autonomous routine, ask:
 These do not exist yet, but would make full autonomous routines easier to build:
 
 - `autonRunIntake`
-- `autonStopIntake`
 - `autonCollectFuel`
 - `autonPrepareLerpShot`
 - `autonFeedShot`

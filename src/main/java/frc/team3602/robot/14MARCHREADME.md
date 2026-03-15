@@ -131,6 +131,12 @@ These are registered for PathPlanner:
 - `autonLowerIntake`
   - Drops the intake pivot for autonomous intake setup.
 
+- `autonStartIntake`
+  - Starts the intake roller for autonomous collection steps.
+
+- `autonStopIntake`
+  - Stops the intake roller without moving the pivot.
+
 - `autonTrackTower`
   - Continuously tracks the current alliance tower with the turret.
   - This is best used in parallel with path following or another auton step.
@@ -139,11 +145,8 @@ These are registered for PathPlanner:
   - Tracks the current alliance tower for `2.0` seconds, then ends.
   - This is the easier version to use in a normal sequential auton.
 
-- `moveTurretToTeleopHandoff`
-  - Sends the turret to the teleop handoff position.
-
-- `moveTurretToAutoStartAngle`
-  - Sends the turret to the autonomous starting angle.
+- `moveTurretToStartAngle`
+  - Sends the turret to the shared starting / handoff angle.
 
 ## Important Notes For The Team
 
@@ -238,10 +241,11 @@ Use this checklist when the robot is on blocks first, then again on the carpet.
 
 - `autonRunBetaShot` spins up, waits for speed, feeds, and then stops as expected
 - `autonLowerIntake` drops the intake pivot
+- `autonStartIntake` starts the intake roller
+- `autonStopIntake` stops the intake roller
 - `autonTrackTower` works when run in parallel with movement
 - `autonTrackTowerShort` runs for about 2 seconds and then ends
-- `moveTurretToTeleopHandoff` sends turret to the handoff position
-- `moveTurretToAutoStartAngle` sends turret to the autonomous starting angle
+- `moveTurretToStartAngle` sends turret to the shared starting / handoff angle
 
 ### Climber Disabled State
 
