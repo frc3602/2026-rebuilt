@@ -1,5 +1,7 @@
 package frc.team3602.robot.subsystems;
 
+import java.util.function.BooleanSupplier;
+
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -32,11 +34,29 @@ public class SpindexerSubsystem extends SubsystemBase {
 
     /* Commands */
 
+    /**
+     * Applies one closed-loop velocity request to both feed motors.
+     *
+     * Keeping this in one helper makes sure every scoring path uses the same ratio
+     * between the main spindexer wheel and the smaller transfer/X44 wheel.
+     */
+    private void applyFeedVelocityRequest(double rotationsPerSecond) {
+        receiveMotor.setControl(
+                m_request.withVelocity(rotationsPerSecond / TRANSFER_TO_SPINDEXER_DIAMETER_RATIO));
+        spindexerMotor.setControl(m_request.withVelocity(rotationsPerSecond));
+    }
+
+    /**
+     * Stops both feed motors immediately.
+     */
+    private void stopFeedMotors() {
+        spindexerMotor.set(0);
+        receiveMotor.set(0);
+    }
 
     public Command stopSpindexer() {
         return runOnce(() -> {
-            spindexerMotor.set(0);
-            receiveMotor.set(0);
+            stopFeedMotors();
         });
     }
 
@@ -51,9 +71,24 @@ public class SpindexerSubsystem extends SubsystemBase {
      */
     public Command setFeedVelocity(double rotationsPerSecond) {
         return run(() -> {
-            receiveMotor.setControl(
-                    m_request.withVelocity(rotationsPerSecond / TRANSFER_TO_SPINDEXER_DIAMETER_RATIO));
-            spindexerMotor.setControl(m_request.withVelocity(rotationsPerSecond));
+            applyFeedVelocityRequest(rotationsPerSecond);
+        });
+    }
+
+    /**
+     * Runs the feed path only while a separate ready condition is true.
+     *
+     * This is useful for a single-button shot command. The robot can keep aiming
+     * and spinning up first, then begin feeding automatically once the shooter is
+     * ready.
+     */
+    public Command setFeedVelocityWhen(BooleanSupplier shouldFeed, double rotationsPerSecond) {
+        return run(() -> {
+            if (shouldFeed.getAsBoolean()) {
+                applyFeedVelocityRequest(rotationsPerSecond);
+            } else {
+                stopFeedMotors();
+            }
         });
     }
 

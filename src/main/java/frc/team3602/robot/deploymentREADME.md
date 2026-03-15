@@ -64,13 +64,21 @@ full teleop or autonomous routines.
 
 ## Phase 4: Shooter Check
 
+- Press and hold operator `B`.
+- Confirm the turret tracks the current alliance tower.
+- Confirm the shooter follows the current interpolated lerp speed.
+- Confirm the spindexer and transfer stay off at first, then begin feeding only
+  after the shooter and turret are ready.
+- Confirm driver controller 0 begins rumbling when the shot becomes ready.
+- Release operator `B` and confirm the shooter and feed stop cleanly.
+- Confirm the rumble stops when operator `B` is released.
 - Press operator right bumper and confirm the shooter uses the current
   interpolated lerp speed.
 - Release operator right bumper and confirm the shooter stops.
 - Press operator `A` and confirm both shooter motors spin up together.
 - Release operator `A` and confirm both shooter motors stop.
 - Press operator `A` again and confirm both shooter motors spin up together a second time.
-- Repeat the same restart test with operator `B` and `X`.
+- Repeat the same restart test with operator `X`.
 
 This step is important because the shooter follower issue was recently fixed.
 We want to verify the second shooter motor still follows correctly after a stop.
@@ -85,7 +93,7 @@ We want to verify the second shooter motor still follows correctly after a stop.
 ## Phase 6: Shooter Vibration Check
 
 - Send the turret to a fixed preset.
-- Run shooter `A`, then `B`, then `X`.
+- Run shooter right bumper, then `A`, then `X`.
 - Watch whether the turret stays put while the shooter is running.
 
 This step verifies the recent turret brake-mode change.
@@ -94,10 +102,7 @@ This step verifies the recent turret brake-mode change.
 
 - Load one fuel piece.
 - Aim the robot at a safe scoring direction.
-- Hold operator right trigger so the turret tracks the alliance tower.
-- Start the shooter with the intended preset.
-- Wait for spin-up.
-- Hold operator `Y` briefly to feed.
+- Hold operator `B` for the combined tracked lerp shot.
 
 Watch for:
 
@@ -106,6 +111,20 @@ Watch for:
 - no double-feed
 - turret staying aimed during the shot
 - both shooter motors sounding synchronized
+
+While operator `B` is still held, also verify the intake and pivot are not
+blocked:
+
+- Press driver left bumper and confirm the intake can still turn on and off.
+- Press driver right bumper and confirm the intake can still drop.
+- Press operator left bumper and confirm the intake can still stop and raise.
+
+Then also verify the older split workflow still works:
+
+- Hold operator right trigger so the turret tracks the alliance tower.
+- Start the shooter with the intended preset or right bumper lerp shot.
+- Wait for spin-up.
+- Hold operator `Y` briefly to feed.
 
 ## Phase 8: Failsafe Shot Check
 

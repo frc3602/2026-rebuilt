@@ -74,6 +74,8 @@ Useful dashboard values include:
 - Shooter motor 2 now follows motor 1 through one consistent control path.
 - Dashboard output now reports `Shooter Lerp Speed` instead of an unrelated
   number.
+- Operator `B` can now run one combined tracked lerp shot instead of splitting
+  aiming, flywheel spin-up, and feed across multiple buttons.
 
 ### 4. Autonomous / Command Flow Fixes
 
@@ -113,10 +115,11 @@ Useful dashboard values include:
   shooter and feed
 - `Y`: run spindexer feed at `-35.0` while held
 - Right bumper: run shooter at the current lerp-table speed, release to stop
-- `B`: set shooter velocity to `-55.0`, release to stop
+- `B`: hold for the full tracked lerp shot
 - `A`: set shooter velocity to `-41.5`, release to stop
 - `X`: set shooter velocity to `-44.0`, release to stop
 - Left bumper: stop intake / raise pivot through the superstructure stop command
+- Holding `B` should not block the normal intake / pivot controls
 - POV up: turret to zero preset
 - POV down: turret to neutral preset
 - POV left: turret to left-corner preset
@@ -224,6 +227,8 @@ Use this checklist when the robot is on blocks first, then again on the carpet.
 - Releasing left bumper stops intake
 - Operator left bumper stops intake and returns pivot through the stop command
 - Pivot holds position when no button is pressed
+- While operator `B` is held for the tracked shot, these intake / pivot controls
+  should still work normally
 
 ### Turret Basic Function
 
@@ -249,7 +254,8 @@ Use this checklist when the robot is on blocks first, then again on the carpet.
 ### Shooter
 
 - Operator right bumper spins the shooter to the current lerp-table speed
-- Operator `B` spins the shooter to `-55.0`
+- Operator `B` runs the full tracked lerp shot while held
+- Driver controller 0 should rumble when the tracked lerp shot becomes ready
 - Operator `A` spins the shooter to `-41.5`
 - Operator `X` spins the shooter to `-44.0`
 - Releasing each shooter button stops the shooter
@@ -260,6 +266,10 @@ Use this checklist when the robot is on blocks first, then again on the carpet.
 
 - Operator `Y` runs the spindexer feed while held
 - Releasing operator `Y` stops the spindexer
+- Operator `B` should wait to feed until the turret and shooter are ready, then
+  start feeding automatically while still held
+- When that tracked shot becomes ready, driver controller 0 should vibrate as a
+  cue that the robot is ready to fire
 - `shootFailsafe()` feeds only after the shooter spin-up delay and now ends on
   its own after the fixed feed window
 

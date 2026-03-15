@@ -14,6 +14,7 @@ import com.pathplanner.lib.auto.NamedCommands;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -42,6 +43,7 @@ import frc.team3602.robot.subsystems.SpindexerSubsystem;
 import frc.team3602.robot.subsystems.TurretSubsystem;
 
 public class RobotContainer {
+        private static final double DRIVER_SHOT_READY_RUMBLE = 1.0;
 
         private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired
                                                                                             // top // speed
@@ -172,7 +174,11 @@ public class RobotContainer {
                 // at the current alliance tower. Releasing the trigger returns
                 // control to the turret's default hold-position command.
                 operatorController.rightTrigger().whileTrue(turret.trackOperatorFieldPoint());
-                operatorController.b().onTrue(shooter.setShootVelocity(-55.0)).onFalse(shooter.stopShooter());
+                // Hold B for the full tracked lerp shot. This keeps the turret on the
+                // tower, updates the shooter from the lerp table, and feeds
+                // automatically once the shot is ready.
+                operatorController.b().whileTrue(superStructure.shootTrackedLerpShot())
+                                .onFalse(superStructure.stopShoot());
                 operatorController.a().onTrue(shooter.setShootVelocity(-41.5)).onFalse(shooter.stopShooter());
                 operatorController.x().onTrue(shooter.setShootVelocity(-44)).onFalse(shooter.stopShooter());
                 // Use the live distance-based interpolation table while this button is
@@ -184,6 +190,13 @@ public class RobotContainer {
                 operatorController.povDown().onTrue(turret.setAngleNeutral());
                 operatorController.povLeft().onTrue(turret.setAngleLeftCorner());
                 operatorController.povRight().onTrue(turret.setAngleRightCorner());
+
+                // Let driver controller 0 rumble only when the operator's tracked
+                // lerp-shot button is held and the robot is actually ready to fire.
+                // This gives the driver a simple "send it now" cue without adding
+                // another dashboard value to watch during teleop.
+                new Trigger(() -> operatorController.getHID().getBButton() && superStructure.isTrackedLerpShotReady())
+                                .whileTrue(driverShotReadyRumble());
 
 
                 // DriverControls
@@ -206,6 +219,20 @@ public class RobotContainer {
                 // Reset the field-centric heading on left bumper press.
                 // driverController.leftBumper().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
                 // drivetrain.registerTelemetry(logger::telemeterize);
+        }
+
+        /**
+         * Rumbles driver controller 0 while the tracked lerp shot is ready.
+         *
+         * Trigger.whileTrue() schedules this command when the readiness condition is
+         * true and cancels it automatically when the shot is no longer ready or the
+         * operator releases B.
+         */
+        private Command driverShotReadyRumble() {
+                return Commands.startEnd(
+                                () -> driverController.getHID().setRumble(RumbleType.kBothRumble,
+                                                DRIVER_SHOT_READY_RUMBLE),
+                                () -> driverController.getHID().setRumble(RumbleType.kBothRumble, 0.0));
         }
 
         public Command getAutonomousCommand() {

@@ -31,6 +31,8 @@ public class Superstructure {
     private static final double FAILSAFE_SHOOTER_SPINUP_SECONDS = 4.0;
     private static final double FAILSAFE_FEED_RPS = -62.5;
     private static final double FAILSAFE_FEED_TIME_SECONDS = 1.0;
+    private static final double TRACKED_LERP_FEED_RPS = -35.0;
+    private static final double TRACKED_LERP_READY_TOLERANCE_RPS = 1.0;
 
 
     public IntakeSubsystem intakeSubsys;
@@ -92,6 +94,37 @@ public class Superstructure {
                 Commands.waitSeconds(FAILSAFE_SHOOTER_SPINUP_SECONDS),
                 spindexerSubsys.setFeedVelocity(FAILSAFE_FEED_RPS).withTimeout(FAILSAFE_FEED_TIME_SECONDS),
                 stopShoot());
+    }
+
+    /**
+     * Returns whether the robot is ready to release the tracked lerp shot.
+     *
+     * We wait for both the flywheel and the turret:
+     * - shooter must be near the current lerp-table speed
+     * - turret must be near its current tower-tracking setpoint
+     *
+     * This prevents the single-button shot from feeding immediately when the button
+     * is first pressed.
+     */
+    public boolean isTrackedLerpShotReady() {
+        return shooterSubsys.isNearLerpVelocity(TRACKED_LERP_READY_TOLERANCE_RPS)
+                && turretSubsys.isAtRequestedAngle();
+    }
+
+    /**
+     * Runs a single-button tracked tower shot using the shooter lerp table.
+     *
+     * While the command is held:
+     * - the turret tracks the current alliance tower
+     * - the shooter continuously follows the current lerp-table target
+     * - the feed path stays off until the shot is ready
+     * - once ready, the spindexer and transfer run until the button is released
+     */
+    public Command shootTrackedLerpShot() {
+        return Commands.parallel(
+                turretSubsys.trackAllianceTower(),
+                shooterSubsys.holdShootVLerp(),
+                spindexerSubsys.setFeedVelocityWhen(this::isTrackedLerpShotReady, TRACKED_LERP_FEED_RPS));
     }
 
     public Command stopShoot() {

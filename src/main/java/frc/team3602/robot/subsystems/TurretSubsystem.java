@@ -50,6 +50,7 @@ public class TurretSubsystem extends SubsystemBase {
     private static final double ASSUMED_LAUNCH_ANGLE_DEGREES = 70.0;
     private static final double ASSUMED_SHOOTER_HEIGHT_METERS = Units.inchesToMeters(20.0);
     private static final double TOWER_TARGET_HEIGHT_METERS = Units.inchesToMeters(72.0);
+    private static final double SHOT_READY_ANGLE_TOLERANCE_DEGREES = 1.0;
 
     public CommandSwerveDrivetrain drivetrainSubsys;
     public ShooterSubsystem shooter;
@@ -86,7 +87,7 @@ public class TurretSubsystem extends SubsystemBase {
         startChooser.setDefaultOption("Right Trench", Double.valueOf(0));
         startChooser.addOption("Right Trench", Double.valueOf(0));
         startChooser.addOption("Left Trench", Double.valueOf(180));
-        turretController.setTolerance(1, 2);
+        turretController.setTolerance(SHOT_READY_ANGLE_TOLERANCE_DEGREES, 2);
         configTurretHardware();
         seedTurretSensorToStartAngle();
     }
@@ -128,6 +129,19 @@ public class TurretSubsystem extends SubsystemBase {
 
     // Controllers *These PID values need to be changed*
     private final PIDController turretController = new PIDController(.04, 0.0, 0.0);
+
+    /**
+     * Checks whether the turret is pointed close enough to the requested angle for
+     * shooting.
+     *
+     * The travel model treats 0 and 360 as different travel endpoints, but for a
+     * shot they are the same aiming direction. Because of that, this method uses
+     * the smallest circular angle error instead of the raw travel-coordinate error.
+     */
+    public boolean isAtRequestedAngle() {
+        double angleErrorDegrees = Math.abs(((getTurretAngleDeg() - setAngle + 540.0) % 360.0) - 180.0);
+        return angleErrorDegrees <= SHOT_READY_ANGLE_TOLERANCE_DEGREES;
+    }
 
     // Commands
 

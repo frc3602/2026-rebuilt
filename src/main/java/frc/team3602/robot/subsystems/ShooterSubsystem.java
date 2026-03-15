@@ -61,6 +61,17 @@ public class ShooterSubsystem extends SubsystemBase {
         return shootermotor1.getVelocity().getValueAsDouble();
     }
 
+    /**
+     * Returns the signed shooter target for the current lerp-table shot.
+     *
+     * The interpolation table stores positive speed magnitudes because that is easy
+     * to read and tune. The shooter motors on this robot still need a negative
+     * velocity command to spin the correct direction.
+     */
+    public double getLerpVelocityTarget() {
+        return -Math.abs(shootLerpSpeed);
+    }
+
     // Go
     // public Command setShootSpeed() {
     //     return run(() -> {
@@ -89,12 +100,23 @@ public class ShooterSubsystem extends SubsystemBase {
      * We command only the leader motor here because motor 2 is configured to follow
      * it. Keeping one control path avoids the two motors fighting each other.
      */
-    // Review note 2026-03-15 10:15:26 -04:00: this method may be unused in the
-    // current codebase.
     public Command setShootVLerp() {
         return runOnce(() -> {
             restoreFollowerControl();
-            shootermotor1.setControl(m_request.withVelocity(shootLerpSpeed));
+            shootermotor1.setControl(m_request.withVelocity(getLerpVelocityTarget()));
+        });
+    }
+
+    /**
+     * Continuously updates the shooter to the current lerp-table target.
+     *
+     * This is useful for hold-to-shoot behavior because the robot can keep changing
+     * the flywheel target while distance updates during driving or aiming.
+     */
+    public Command holdShootVLerp() {
+        return run(() -> {
+            restoreFollowerControl();
+            shootermotor1.setControl(m_request.withVelocity(getLerpVelocityTarget()));
         });
     }
 
@@ -138,6 +160,23 @@ public class ShooterSubsystem extends SubsystemBase {
     // current codebase.
     public boolean atSpeed() {
         return shootermotor1.getMotionMagicAtTarget().getValue();
+    }
+
+    /**
+     * Checks whether the shooter is near a requested velocity.
+     *
+     * Higher-level commands use this before feeding so the robot does not release
+     * fuel while the flywheel is still accelerating.
+     */
+    public boolean isNearVelocity(double targetRps, double toleranceRps) {
+        return Math.abs(getVelocity() - targetRps) <= toleranceRps;
+    }
+
+    /**
+     * Checks whether the shooter is near the current lerp-table target.
+     */
+    public boolean isNearLerpVelocity(double toleranceRps) {
+        return isNearVelocity(getLerpVelocityTarget(), toleranceRps);
     }
 
     @Override
