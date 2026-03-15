@@ -34,6 +34,12 @@ public class TurretSubsystem extends SubsystemBase {
     private static final double LEFT_CORNER_PRESET_DEGREES = -55.0;
     private static final double RIGHT_CORNER_PRESET_DEGREES = 55.0;
     private static final double NEUTRAL_PRESET_DEGREES = -90.0;
+    // These values are the current best estimates for the turret's moving-shot
+    // lead math. They should be updated whenever on-robot testing gives us better
+    // measured numbers for the shooter exit angle or release height.
+    private static final double ASSUMED_LAUNCH_ANGLE_DEGREES = 20.0;
+    private static final double ASSUMED_SHOOTER_HEIGHT_METERS = Units.inchesToMeters(20.0);
+    private static final double TOWER_TARGET_HEIGHT_METERS = Units.inchesToMeters(72.0);
 
     public CommandSwerveDrivetrain drivetrainSubsys;
     public ShooterSubsystem shooter;
@@ -280,26 +286,24 @@ public class TurretSubsystem extends SubsystemBase {
     }
 
     public double calculateBallTimeOfFlight() {
-        // Ball Velocity m/s TODO: Must Change
+        // Estimate how long the fuel is in the air so the turret can lead the target
+        // while the robot is moving. This is only an estimate, so the launch angle and
+        // shooter height must stay synced with what the real mechanism does on the
+        // robot.
         double ballVelocity = getBallVelocity();
         if (ballVelocity <= 0.0) {
             return 0.0;
         }
-        // Ball Launch Angle degrees TODO: Must Change
-        double launchAngleDegrees = 15;
-        // Shooter Height meters
-        double shooterHeight = 0.4826;
-        // Target Height meters
-        double targetHeight = 1.8288;
+
         // Convert launch angle from degrees to radians (Java's trig functions use
         // radians)
-        double launchAngleRadians = Math.toRadians(launchAngleDegrees);
+        double launchAngleRadians = Math.toRadians(ASSUMED_LAUNCH_ANGLE_DEGREES);
 
         // Calculate the vertical component of velocity
         double vVertical = ballVelocity * Math.sin(launchAngleRadians);
 
         // Calculate height difference (positive if target is higher than shooter)
-        double heightDifference = targetHeight - shooterHeight;
+        double heightDifference = TOWER_TARGET_HEIGHT_METERS - ASSUMED_SHOOTER_HEIGHT_METERS;
 
         // Gravity constant (m/s²)
         double g = 9.81;

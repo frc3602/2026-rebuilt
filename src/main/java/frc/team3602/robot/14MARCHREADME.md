@@ -46,6 +46,8 @@ Useful dashboard values include:
 - The turret can track the current alliance tower target.
 - Blue tower target uses `(2.03, 4.035)` meters.
 - Red tower target uses `(14.51, 4.035)` meters.
+- The current moving-shot lead math assumes a `20` degree launch angle and a
+  `20` inch shooter release height.
 - Operator controller right trigger uses this field-point tracking in teleop.
 - A reusable autonomous turret tracking command was added.
 - A short timeout version of that auton command was also added.
@@ -159,6 +161,9 @@ These are registered for PathPlanner:
   left and right Limelight pose pipeline.
 - The turret field-point tracking will clamp to the legal turret range if the
   target is outside the mechanism's reachable arc.
+- The current ballistic estimate in turret lead math assumes a `20` degree
+  launch angle and a `20` inch shooter height until more on-robot tuning is
+  completed.
 - The shooter preset values and interpolation table should still be tuned with
   real practice shots.
 

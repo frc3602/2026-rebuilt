@@ -21,6 +21,8 @@ full teleop or autonomous routines.
 - Verify the robot is on blocks if any mechanism may move unexpectedly.
 - Verify the turret is physically placed in the team's expected start position.
 - Verify fuel is removed from the robot for the first motion checks.
+- Verify the turret lead-math assumptions still match the current shooter setup:
+  `20` degree launch angle and `20` inch shooter height.
 - Verify Driver Station and radio are connected normally.
 - Verify the correct branch and commit are deployed.
 
@@ -139,6 +141,8 @@ These values help separate aiming problems from feed problems.
 - Stop and test with no fuel first.
 - If only one shooter motor seems active, re-check shooter follower behavior.
 - If the turret drifts while shooting, re-check turret brake mode and turret hold behavior.
+- If shots consistently arc high or low, re-check the turret lead-math
+  assumptions for shooter height and launch angle.
 - If fuel hesitates or bounces, focus on the spindexer-to-transfer handoff first.
 - If autonomous feeds too early, remember the current beta auto still allows a timeout-based shot.
 
