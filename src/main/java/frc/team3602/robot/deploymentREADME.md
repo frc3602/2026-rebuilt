@@ -23,7 +23,7 @@ full teleop or autonomous routines.
   of `90` degrees.
 - Verify fuel is removed from the robot for the first motion checks.
 - Verify the turret lead-math assumptions still match the current shooter setup:
-  `20` degree launch angle and `20` inch shooter height.
+  `70` degree launch angle and `20` inch shooter height.
 - Verify Driver Station and radio are connected normally.
 - Verify the correct branch and commit are deployed.
 

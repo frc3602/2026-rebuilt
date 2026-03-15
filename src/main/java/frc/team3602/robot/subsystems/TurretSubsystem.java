@@ -41,7 +41,7 @@ public class TurretSubsystem extends SubsystemBase {
     // These values are the current best estimates for the turret's moving-shot
     // lead math. They should be updated whenever on-robot testing gives us better
     // measured numbers for the shooter exit angle or release height.
-    private static final double ASSUMED_LAUNCH_ANGLE_DEGREES = 20.0;
+    private static final double ASSUMED_LAUNCH_ANGLE_DEGREES = 70.0;
     private static final double ASSUMED_SHOOTER_HEIGHT_METERS = Units.inchesToMeters(20.0);
     private static final double TOWER_TARGET_HEIGHT_METERS = Units.inchesToMeters(72.0);
 
