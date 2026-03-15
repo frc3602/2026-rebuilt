@@ -5,11 +5,8 @@ import java.util.Optional;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
-import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-import com.ctre.phoenix6.swerve.utility.WheelForceCalculator.Feedforwards;
-import com.ctre.phoenix6.configs.MotionMagicConfigs;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -26,9 +23,6 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 
 import frc.team3602.robot.Constants.*;
 import frc.team3602.robot.Constants.FieldConstants;
-import frc.team3602.robot.LimelightHelpers.PoseEstimate;
-import frc.team3602.robot.Vision;
-import frc.team3602.robot.subsystems.ShooterSubsystem;
 
 public class TurretSubsystem extends SubsystemBase {
     // The turret starts pointed at 90 degrees and can only travel to 0 degrees in
@@ -96,18 +90,12 @@ public class TurretSubsystem extends SubsystemBase {
                                                                          // gear box
     }
 
-    // Vision
-    public final Vision vision = new Vision();
-
     // Hold the turret at its intended starting angle until another command asks
     // for a different target.
     public double setAngle = STARTING_TURRET_ANGLE_DEGREES;
 
     // Controllers *These PID values need to be changed*
     private final PIDController turretController = new PIDController(.04, 0.0, 0.0);
-    private final PIDController aimController = new PIDController(.04, 0.0, 0);
-
-    private final Feedforwards aimFf = new Feedforwards(0);
 
     // Commands
 
@@ -133,12 +121,6 @@ public class TurretSubsystem extends SubsystemBase {
     public Command stopTurret() {
         return runOnce(() -> {
             turretMotor.stopMotor();
-        });
-    }
-
-    public Command turretAlignment() {
-        return runOnce(() -> {
-            setRequestedAngle(setAngle + vision.getTurretTX());
         });
     }
 
@@ -397,8 +379,6 @@ public class TurretSubsystem extends SubsystemBase {
 
     double voltage;
 
-    double aimOutput;
-
     public boolean atTarget;
 
     public Command aimCommand() {
@@ -512,53 +492,11 @@ public class TurretSubsystem extends SubsystemBase {
         return clamp(robotRelativeAngle, MIN_TRACKING_ANGLE_DEGREES, MAX_TRACKING_ANGLE_DEGREES);
     }
 
-
-    // public Command track() {
-    // return run(() -> {
-    // if (vision.getTurretHasTarget()) {
-    // aimOutput = aimController.calculate(vision.getTurretTX(),5);//setpoint is the
-    // offset of the turret(temp)
-    // setAngle = setAngle - aimOutput + calculateTurretOffset() ;
-    // }
-    // setAngle = turnFeedforward() + setAngle; // Adds rotational feedforward
-    // atTarget = (Math.abs(setAngle - getEncoder())<0.5);
-    // voltage = turretController.calculate(getEncoder(), setAngle);
-    // if (voltage > 4) { //TODO: create constant for 2, do not go higher than 2
-    // voltage = 4;
-    // } else if (voltage < -4) {
-    // voltage = -4;
-    // } turretMotor.setVoltage(voltage);
-    // }
-
-    // );
-
-    // }
-
     public Command aimToDesiredAngle() {
         return run(() -> {
             // Continuously point at the lead-adjusted tower angle while the driver
             // holds the button.
             setRequestedAngle(calculateTurretOffset());
-            applyTurretPositionControl();
-        });
-    }
-
-    // THIS IS IN PROGRESS DO NOT HATE HATER ABE
-    public Command passMode() {
-        return run(() -> {
-            if (vision.getTurretHasTarget()) {
-                aimOutput = aimController.calculate(vision.getTurretTX(), 5);// setpoint is the offset of the
-                                                                             // turret(temp)
-                // Start from the lead-adjusted tower angle, then apply the fine
-                // Limelight correction on top of it.
-                setRequestedAngle(calculateTurretOffset() - aimOutput);
-
-            } else {
-                // If the turret camera loses the target, fall back to the drivetrain
-                // pose-based tower angle instead of freezing the turret math.
-                setRequestedAngle(calculateTurretOffset());
-
-            }
             applyTurretPositionControl();
         });
     }
@@ -580,53 +518,10 @@ public class TurretSubsystem extends SubsystemBase {
         turretMotor.setVoltage(pidEffort);
     }
 
-    double rotationSpeed;
-
-    // Calculations
-    // public double rAlignment() {
-
-    // double tx = vision.getTX();
-
-    // rotationSpeed = turretController.calculate(tx, 0);
-
-    // if (Math.abs(rotationSpeed) < 0.5) {
-    // rotationSpeed = 0;
-    // }
-
-    // return rotationSpeed;
-
-    // }
-    // Getting the rotational speed in degrees per execution
-    // Commands run every 20 milliSeconds / rotation per execution by 50 to get
-    // rotations per second.
-
     public double turnFeedforward() {
         turretFeedForward = (Math.toDegrees(drivetrainSubsys.getChassisSpeeds().omegaRadiansPerSecond)) / 50;
         return turretFeedForward;
     }
-
-    public double rAlignment() {
-        // Rotation error in degrees (positive = tag is to the right, for example)
-        double rotationErrorDeg = vision.getTX();
-
-        // Tunable gain: volts per degree
-        double kP = 0.1; // example value
-
-        double voltage = rotationErrorDeg * kP;
-
-        // Deadband
-        if (Math.abs(voltage) < 0.3) {
-            voltage = 0.0;
-        }
-
-        // Clamp to legal voltage range
-        voltage = Math.max(-12.0, Math.min(12.0, voltage));
-
-        return voltage;
-    }
-
-    double distance = 0;
-    double angle = 0;
 
     // Periodic
     @Override
@@ -634,18 +529,9 @@ public class TurretSubsystem extends SubsystemBase {
         // SmartDashboard.putNumber("Turret Encoder", getEncoder());
         // SmartDashboard.putNumber("Turret Voltage", voltage);
         // SmartDashboard.putNumber("Set Angle", setAngle);
-        // SmartDashboard.putNumber("Turret Set Angle", vision.getTurretTX());
-        // SmartDashboard.putNumber("Aim PID",
-        // aimController.calculate(vision.getTurretTX(), 0));
-        // SmartDashboard.putNumber("GetTy", vision.getTY());
         // turretFeedForward = turnFeedforward();
         // SmartDashboard.putNumber("Turret Feedforward", turretFeedForward); // Bruh
-        // SmartDashboard.putNumber("Turret IMUPitch", vision.getTurretIMUPitch());
-        angle = Math.toRadians(vision.getTY() + vision.getTurretIMUPitch());
-        distance = (44.21875 - 15.625) / Math.tan(angle);
         SmartDashboard.putData(startChooser);
-        // SmartDashboard.putNumber("counculatedDist", distance);
-        // SmartDashboard.putNumber("Aim Output", aimOutput);
     }
 
     // Config
