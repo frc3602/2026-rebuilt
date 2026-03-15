@@ -117,7 +117,7 @@ Drive:
 Intake / Pivot:
 
 - Left bumper: run intake while held
-- Right bumper: drop intake while held
+- Right bumper: press once to drop intake
 
 Climber:
 
@@ -163,7 +163,7 @@ Drive:
 Intake / Pivot:
 
 - Driver left bumper runs intake
-- Driver right bumper drops intake
+- Driver right bumper sends the intake to the down position
 - Operator left bumper stops intake and raises the pivot
 - These intake / pivot controls should still work while operator `B` is held
 
@@ -185,7 +185,7 @@ Shooting / Feeding:
 ### Basic Fuel Cycle
 
 1. Driver drives to fuel with controller 0.
-2. Driver holds right bumper to drop the intake.
+2. Driver presses right bumper to drop the intake.
 3. Driver holds left bumper to run the intake and collect fuel.
 4. Driver moves to a safe shooting position.
 5. Operator holds `B` for the combined tracked lerp shot.
@@ -319,7 +319,7 @@ Use this checklist when the robot is on blocks first, then again on the carpet.
 
 ### Intake / Pivot
 
-- Driver right bumper drops the intake
+- Driver right bumper sends the intake to the down position
 - Driver left bumper runs intake while held
 - Releasing left bumper stops intake
 - Operator left bumper stops intake and returns pivot through the stop command

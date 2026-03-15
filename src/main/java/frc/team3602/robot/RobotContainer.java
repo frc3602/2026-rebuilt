@@ -210,8 +210,15 @@ public class RobotContainer {
 
 
                 // DriverControls
-                driverController.rightBumper().whileTrue(pivot.dumbDropIntake());
-                driverController.leftBumper().whileTrue(intake.setIntakeSpeed()).whileFalse(intake.stopIntake());
+                // The pivot drop command is a one-time setpoint change, so bind it as
+                // a button press instead of a held command. That matches how the
+                // command actually behaves and makes the control flow easier for
+                // students to read.
+                driverController.rightBumper().onTrue(pivot.dumbDropIntake());
+                // The intake motor should start on press and stop on release. Using
+                // onTrue/onFalse matches the fact that the subsystem commands are
+                // one-shot motor state changes rather than long-running hold commands.
+                driverController.leftBumper().onTrue(intake.setIntakeSpeed()).onFalse(intake.stopIntake());
                 driverController.rightTrigger().onTrue(drivetrain.setTurbo()).onFalse(drivetrain.setNormalSpeed());
                 if (ClimberConstants.kClimberEnabled) {
                         driverController.povUp().onTrue(climberSubsys.raiseClimber());

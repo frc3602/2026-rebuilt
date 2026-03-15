@@ -49,7 +49,7 @@ Drive:
 Intake / Pivot:
 
 - Left bumper = intake on while held
-- Right bumper = intake down while held
+- Right bumper = press once to send intake down
 
 Climber:
 
