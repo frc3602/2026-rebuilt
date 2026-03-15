@@ -62,7 +62,8 @@ Useful dashboard values include:
   distinct legal positions.
 - The turret hardware config now runs during subsystem startup instead of being
   left unused.
-- Driver `Y` now acts like a real hold-to-aim command.
+- Operator right trigger is now the single dedicated teleop tower-tracking
+  control.
 
 ### 3. Shooter Improvements
 
@@ -95,34 +96,81 @@ Useful dashboard values include:
 - Driver climber bindings and climber default commands are also skipped when the
   climber is disabled.
 
-## Teleop Button Bindings
+## Teleop Controls
 
-### Driver Controller 0
+### By Controller
+
+#### Driver Controller 0
+
+Drive:
 
 - Left stick: translate the swerve drivetrain
 - Right stick X: rotate the drivetrain
 - Right trigger: turbo speed while held, normal speed on release
+
+Intake / Pivot:
+
 - Left bumper: run intake while held
 - Right bumper: drop intake while held
+
+Climber:
+
 - POV up: raise climber, only if climber is enabled
 - POV down: lower climber, only if climber is enabled
 
-### Operator Controller 1
+#### Operator Controller 1
+
+Turret:
 
 - Right trigger: hold to track the current alliance tower with the turret
-- Left trigger: run the timed failsafe shooting routine, release early to stop
-  shooter and feed
-- `Y`: run spindexer feed at `-35.0` while held
-- Right bumper: run shooter at the current lerp-table speed, release to stop
-- `B`: hold for the full tracked lerp shot
-- `A`: set shooter velocity to `-41.5`, release to stop
-- `X`: set shooter velocity to `-44.0`, release to stop
-- Left bumper: stop intake / raise pivot through the superstructure stop command
-- Holding `B` should not block the normal intake / pivot controls
 - POV up: turret to zero preset
 - POV down: turret to neutral preset
 - POV left: turret to left-corner preset
 - POV right: turret to right-corner preset
+
+Shooting:
+
+- `B`: hold for the full tracked lerp shot
+- Right bumper: run shooter at the current lerp-table speed, release to stop
+- `A`: set shooter velocity to `-41.5`, release to stop
+- `X`: set shooter velocity to `-44.0`, release to stop
+- `Y`: run spindexer feed at `-35.0` while held
+- Left trigger: run the timed failsafe shooting routine, release early to stop
+  shooter and feed
+- Driver controller 0 should rumble when the tracked `B` shot becomes ready
+
+Intake / Pivot Support:
+
+- Left bumper: stop intake / raise pivot through the superstructure stop command
+- Holding `B` should not block the normal intake / pivot controls
+
+### By Function
+
+Drive:
+
+- Driver left stick and right stick X handle normal field-centric driving
+- Driver right trigger enables turbo while held
+
+Intake / Pivot:
+
+- Driver left bumper runs intake
+- Driver right bumper drops intake
+- Operator left bumper stops intake and raises the pivot
+- These intake / pivot controls should still work while operator `B` is held
+
+Turret Aiming / Position:
+
+- Operator right trigger tracks the current alliance tower
+- Operator POV up / down / left / right send the turret to preset positions
+
+Shooting / Feeding:
+
+- Operator `B` runs the combined tracked lerp shot
+- Operator right bumper runs only the lerp-table shooter speed
+- Operator `A` and `X` run fixed shooter presets
+- Operator `Y` manually runs the spindexer / transfer feed
+- Operator left trigger runs the timed failsafe shot
+- Driver controller 0 rumbles when the tracked `B` shot is ready to fire
 
 ## Default Commands
 

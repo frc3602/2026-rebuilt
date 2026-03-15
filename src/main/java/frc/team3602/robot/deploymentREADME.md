@@ -36,6 +36,45 @@ full teleop or autonomous routines.
 - Confirm SmartDashboard values are updating.
 - Confirm no subsystem moves unexpectedly at enable.
 
+## Control Map To Verify
+
+### Driver Controller 0
+
+Drive:
+
+- Left stick = translation
+- Right stick X = rotation
+- Right trigger = turbo
+
+Intake / Pivot:
+
+- Left bumper = intake on while held
+- Right bumper = intake down while held
+
+Climber:
+
+- POV up / down = climber, only if enabled
+
+### Operator Controller 1
+
+Turret:
+
+- Right trigger = track alliance tower
+- POV up / down / left / right = turret presets
+
+Shooting:
+
+- `B` = combined tracked lerp shot
+- Right bumper = lerp-table shooter speed only
+- `A` = fixed `-41.5` shooter preset
+- `X` = fixed `-44.0` shooter preset
+- `Y` = manual spindexer / transfer feed
+- Left trigger = failsafe shot
+
+Intake / Pivot Support:
+
+- Left bumper = stop intake and raise pivot
+
 ## Phase 1: Safe Idle Checks
 
 - Disable and re-enable once to confirm the robot comes up cleanly.
@@ -59,8 +98,9 @@ full teleop or autonomous routines.
 - Press operator POV right and confirm the turret goes to the right corner preset.
 - If the turret moves near the rear seam, confirm it goes around the `0` / `360`
   boundary instead of trying to wrap across it.
-- Hold driver `Y` and confirm the turret actively aims.
-- Release driver `Y` and confirm the turret stays stable.
+- Hold operator right trigger and confirm the turret actively tracks the alliance
+  tower.
+- Release operator right trigger and confirm the turret stays stable.
 
 ## Phase 4: Shooter Check
 

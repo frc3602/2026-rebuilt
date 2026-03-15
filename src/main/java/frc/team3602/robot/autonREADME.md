@@ -137,6 +137,32 @@ When adding new auton logic, try to build it in this order:
 This keeps the robot code flexible without making students drag around a huge
 number of tiny one-line commands in every auto.
 
+## Named Commands By Function
+
+### Intake / Fuel Collection Setup
+
+- `autonLowerIntake`
+- `autonStartIntake`
+- `autonStopIntake`
+
+### Shooter Prep
+
+- `autonSpinUpBetaShot`
+- `autonWaitForBetaShotReady`
+- `autonPrepareBetaShot`
+
+### Shot Release And Cleanup
+
+- `autonFeedBetaShot`
+- `autonStopShooting`
+- `autonRunBetaShot`
+
+### Turret Tracking / Position
+
+- `autonTrackTower`
+- `autonTrackTowerShort`
+- `moveTurretToStartAngle`
+
 ## Current Named Commands
 
 ### `autonRunBetaShot`
