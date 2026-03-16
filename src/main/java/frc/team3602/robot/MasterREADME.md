@@ -250,12 +250,12 @@ The most important current autonomous helpers are:
 - `autonRaiseIntake`
 - `autonStartIntake`
 - `autonStopIntake`
-- `autonPrepareBetaShot`
-- `autonFeedBetaShot`
-- `autonStopShooting`
-- `autonTrackTower`
-- `autonTrackTowerShort`
-- `moveTurretToStartAngle`
+- `autonPrepareTowerShot`
+- `autonFireShot`
+- `autonStopShooter`
+- `autonAimTower`
+- `autonAimTowerShort`
+- `autonStowTurret`
 
 For how those commands are intended to be combined, use `autonREADME.md`.
 

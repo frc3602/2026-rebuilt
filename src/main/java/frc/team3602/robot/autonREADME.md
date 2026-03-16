@@ -71,10 +71,10 @@ Examples:
 - `autonRaiseIntake`
 - `autonStartIntake`
 - `autonStopIntake`
-- `autonSpinUpBetaShot`
-- `autonFeedBetaShot`
-- `autonStopShooting`
-- `autonTrackTower`
+- `autonStartShooter`
+- `autonFireShot`
+- `autonStopShooter`
+- `autonAimTower`
 
 Why these are useful:
 
@@ -89,7 +89,7 @@ These combine a few small actions into one useful step.
 
 Example:
 
-- `autonPrepareBetaShot`
+- `autonPrepareTowerShot`
 
 This command is a good setup command because it:
 
@@ -110,7 +110,7 @@ These run an entire behavior from start to finish.
 
 Example:
 
-- `autonRunBetaShot`
+- `autonShootTower`
 
 Macro commands are useful when:
 
@@ -149,25 +149,25 @@ number of tiny one-line commands in every auto.
 
 ### Shooter Prep
 
-- `autonSpinUpBetaShot`
-- `autonWaitForBetaShotReady`
-- `autonPrepareBetaShot`
+- `autonStartShooter`
+- `autonWaitForShooterReady`
+- `autonPrepareTowerShot`
 
 ### Shot Release And Cleanup
 
-- `autonFeedBetaShot`
-- `autonStopShooting`
-- `autonRunBetaShot`
+- `autonFireShot`
+- `autonStopShooter`
+- `autonShootTower`
 
 ### Turret Tracking / Position
 
-- `autonTrackTower`
-- `autonTrackTowerShort`
-- `moveTurretToStartAngle`
+- `autonAimTower`
+- `autonAimTowerShort`
+- `autonStowTurret`
 
 ## Current Named Commands
 
-### `autonRunBetaShot`
+### `autonShootTower`
 
 Use this when you want one single command that performs the entire simple
 autonomous shot.
@@ -241,27 +241,27 @@ Best use:
 - Before a shot
 - Any time an auto should stop the roller without moving the pivot
 
-### `autonSpinUpBetaShot`
+### `autonStartShooter`
 
 Use this when you want to start the shooter early, but do not want to feed yet.
 
 What it does:
 
-1. Commands the shooter to the beta autonomous shot speed.
+1. Commands the shooter to the current autonomous tower-shot speed.
 
 Best use:
 
 - While finishing a short drive path
 - Before a separate aiming or settle step
 
-### `autonWaitForBetaShotReady`
+### `autonWaitForShooterReady`
 
 Use this when you want the auto to pause until the shooter is near the target
 speed.
 
 What it does:
 
-1. Waits until the shooter velocity is at the beta ready threshold.
+1. Waits until the shooter velocity is at the autonomous ready threshold.
 2. Ends early if the timeout is reached.
 
 Best use:
@@ -269,7 +269,7 @@ Best use:
 - After spin-up
 - Before feeding
 
-### `autonPrepareBetaShot`
+### `autonPrepareTowerShot`
 
 Use this when you want one setup command for a simple shot, but still want
 feeding to stay separate.
@@ -285,13 +285,13 @@ Best use:
 - Basic autos that drive first, then prepare the shot
 - PathPlanner routines where feeding should happen in a separate step
 
-### `autonFeedBetaShot`
+### `autonFireShot`
 
 Use this when the robot is already aimed and the shooter is already near speed.
 
 What it does:
 
-1. Runs the spindexer feed at the beta shot feed speed.
+1. Runs the spindexer feed at the autonomous shot feed speed.
 2. Feeds for a fixed amount of time.
 3. Stops the spindexer at the end.
 
@@ -300,7 +300,7 @@ Best use:
 - The final release step of a shot
 - Autos that separate "prepare" and "fire"
 
-### `autonStopShooting`
+### `autonStopShooter`
 
 Use this to clean up after an autonomous shot.
 
@@ -314,7 +314,7 @@ Best use:
 - Immediately after feeding
 - Before moving on to the next autonomous action
 
-### `autonTrackTower`
+### `autonAimTower`
 
 Use this when the turret should continuously follow the current alliance tower.
 
@@ -332,7 +332,7 @@ Best use:
 - In parallel with a path
 - As a PathPlanner event command
 
-### `autonTrackTowerShort`
+### `autonAimTowerShort`
 
 Use this when you want a short tower-tracking settle step that ends by itself.
 
@@ -346,7 +346,7 @@ Best use:
 - Sequential autos
 - Short settle windows before a shot
 
-### `moveTurretToStartAngle`
+### `autonStowTurret`
 
 Use this when you want to send the turret back to its shared start/handoff
 position.
@@ -363,13 +363,13 @@ Best use:
 
 ## How To Decide Between A Macro And Smaller Steps
 
-Use a macro command like `autonRunBetaShot` when:
+Use a macro command like `autonShootTower` when:
 
 - the whole sequence is always used together
 - the timing is already known and stable
 - the team wants the fastest possible setup for a simple auto
 
-Use smaller steps like `autonPrepareBetaShot` and `autonFeedBetaShot` when:
+Use smaller steps like `autonPrepareTowerShot` and `autonFireShot` when:
 
 - you want to tune the shot timing
 - you may want to add a wait or another path in between
@@ -383,10 +383,10 @@ For most competition autos, smaller steps are usually the better default.
 For the team's current simplest scoring auto, use this order:
 
 1. Drive a short path in PathPlanner.
-2. Run `autonPrepareBetaShot`.
-3. Run `autonFeedBetaShot`.
-4. Run `autonStopShooting`.
-5. Optionally run `moveTurretToStartAngle`.
+2. Run `autonPrepareTowerShot`.
+3. Run `autonFireShot`.
+4. Run `autonStopShooter`.
+5. Optionally run `autonStowTurret`.
 
 This gives the robot time to:
 
@@ -401,10 +401,10 @@ This gives the robot time to:
 Example simple autonomous sequence:
 
 1. `path: ShootBetaDrive`
-2. `named: autonPrepareBetaShot`
-3. `named: autonFeedBetaShot`
-4. `named: autonStopShooting`
-5. `named: moveTurretToStartAngle`
+2. `named: autonPrepareTowerShot`
+3. `named: autonFireShot`
+4. `named: autonStopShooter`
+5. `named: autonStowTurret`
 
 ## Example Of A Good Thought Process
 
@@ -418,9 +418,9 @@ If the robot must:
 then a good way to build that auto is:
 
 1. Let PathPlanner handle the short drive path.
-2. Use a setup command like `autonPrepareBetaShot` for aiming and flywheel prep.
-3. Use `autonFeedBetaShot` only when the robot is ready to release the fuel.
-4. Use `autonStopShooting` so the robot ends in a known state.
+2. Use a setup command like `autonPrepareTowerShot` for aiming and flywheel prep.
+3. Use `autonFireShot` only when the robot is ready to release the fuel.
+4. Use `autonStopShooter` so the robot ends in a known state.
 
 This is usually better than forcing all of those decisions into one giant
 command because:
@@ -462,7 +462,7 @@ These do not exist yet, but would make full autonomous routines easier to build:
 ## Team Notes
 
 - Keep command names action-based so they describe what the robot actually does.
-- Prefer names like `autonTrackTower` over names that depend on old tuning notes
+- Prefer names like `autonAimTower` over names that depend on old tuning notes
   or temporary numbers.
 - Try to separate "prepare", "feed", and "stop" steps so autos are easier to
   tune in PathPlanner.

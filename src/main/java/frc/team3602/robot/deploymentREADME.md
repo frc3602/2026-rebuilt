@@ -193,10 +193,10 @@ Then also verify the older split workflow still works:
 
 - Run the selected autonomous with no fuel loaded first.
 - Confirm the path starts correctly.
-- Confirm `autonPrepareBetaShot` runs after the drive segment.
-- Confirm `autonFeedBetaShot` runs for its expected window.
-- Confirm `autonStopShooting` stops the shooter and spindexer.
-- Confirm `moveTurretToStartAngle` returns the turret to its start angle.
+- Confirm `autonPrepareTowerShot` runs after the drive segment.
+- Confirm `autonFireShot` runs for its expected window.
+- Confirm `autonStopShooter` stops the shooter and spindexer.
+- Confirm `autonStowTurret` returns the turret to its start angle.
 
 ## Phase 10: Autonomous Shot Check With Fuel
 

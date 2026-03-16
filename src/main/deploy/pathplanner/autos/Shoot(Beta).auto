@@ -13,25 +13,25 @@
         {
           "type": "named",
           "data": {
-            "name": "autonPrepareBetaShot"
+            "name": "autonPrepareTowerShot"
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "autonFeedBetaShot"
+            "name": "autonFireShot"
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "autonStopShooting"
+            "name": "autonStopShooter"
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "moveTurretToStartAngle"
+            "name": "autonStowTurret"
           }
         }
       ]

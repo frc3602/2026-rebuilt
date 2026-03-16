@@ -19,14 +19,14 @@ import frc.team3602.robot.subsystems.SpindexerSubsystem;
 import frc.team3602.robot.subsystems.TurretSubsystem;
 
 public class Superstructure {
-    // These constants define the team's current simple autonomous shot.
+    // These constants define the team's current simple autonomous tower shot.
     // Keeping them here makes the named PathPlanner commands easier to read and
     // easier for students to tune without digging through each command body.
-    private static final double AUTON_BETA_SHOOTER_SPEED_RPS = -41.5;
-    private static final double AUTON_BETA_READY_THRESHOLD_RPS = -41.25;
-    private static final double AUTON_BETA_SPINDEXER_FEED_RPS = -30.0;
-    private static final double AUTON_BETA_READY_TIMEOUT_SECONDS = 2.0;
-    private static final double AUTON_BETA_FEED_TIME_SECONDS = 2.0;
+    private static final double AUTON_TOWER_SHOT_SHOOTER_SPEED_RPS = -41.5;
+    private static final double AUTON_TOWER_SHOT_READY_THRESHOLD_RPS = -41.25;
+    private static final double AUTON_TOWER_SHOT_SPINDEXER_FEED_RPS = -30.0;
+    private static final double AUTON_TOWER_SHOT_READY_TIMEOUT_SECONDS = 2.0;
+    private static final double AUTON_TOWER_SHOT_FEED_TIME_SECONDS = 2.0;
     private static final double AUTON_TURRET_TRACK_SETTLE_SECONDS = 2.0;
     // The fallback shot still points to the rear of the robot, but turret command
     // APIs now use WPILib's signed convention where 180 degrees means "backward."
@@ -242,24 +242,24 @@ public class Superstructure {
     // }
 
     /**
-     * Starts the beta autonomous shooter speed without feeding.
+     * Starts the autonomous tower-shot shooter speed without feeding.
      *
      * This is useful when a PathPlanner auto wants to begin spinning the flywheel
      * while the robot is still finishing a short drive or a turret-alignment step.
      */
-    public Command autonSpinUpBetaShot() {
-        return shooterSubsys.setShootVelocity(AUTON_BETA_SHOOTER_SPEED_RPS);
+    public Command autonStartShooter() {
+        return shooterSubsys.setShootVelocity(AUTON_TOWER_SHOT_SHOOTER_SPEED_RPS);
     }
 
     /**
-     * Waits until the shooter is close enough to the beta autonomous target speed.
+     * Waits until the shooter is close enough to the autonomous tower-shot speed.
      *
      * The timeout prevents the auto from getting stuck forever if the flywheel
      * never reaches speed because of battery sag, tuning, or a mechanical issue.
      */
-    public Command autonWaitForBetaShotReady() {
-        return Commands.waitUntil(() -> shooterSubsys.getVelocity() <= AUTON_BETA_READY_THRESHOLD_RPS)
-                .withTimeout(AUTON_BETA_READY_TIMEOUT_SECONDS);
+    public Command autonWaitForShooterReady() {
+        return Commands.waitUntil(() -> shooterSubsys.getVelocity() <= AUTON_TOWER_SHOT_READY_THRESHOLD_RPS)
+                .withTimeout(AUTON_TOWER_SHOT_READY_TIMEOUT_SECONDS);
     }
 
     /**
@@ -268,10 +268,10 @@ public class Superstructure {
      * We keep feeding separate from spin-up so PathPlanner can decide exactly when
      * to release the fuel after the robot has finished moving and aiming.
      */
-    public Command autonFeedBetaShot() {
+    public Command autonFireShot() {
         return Commands.sequence(
-                spindexerSubsys.setFeedVelocity(AUTON_BETA_SPINDEXER_FEED_RPS)
-                        .withTimeout(AUTON_BETA_FEED_TIME_SECONDS),
+                spindexerSubsys.setFeedVelocity(AUTON_TOWER_SHOT_SPINDEXER_FEED_RPS)
+                        .withTimeout(AUTON_TOWER_SHOT_FEED_TIME_SECONDS),
                 spindexerSubsys.stopSpindexer());
     }
 
@@ -281,38 +281,38 @@ public class Superstructure {
      * This gives PathPlanner a simple cleanup step so later auto actions do not
      * accidentally keep the shooter or spindexer running.
      */
-    public Command autonStopShooting() {
+    public Command autonStopShooter() {
         return Commands.sequence(
                 spindexerSubsys.stopSpindexer(),
                 shooterSubsys.stopShooter());
     }
 
     /**
-     * Prepares the simple beta autonomous shot.
+     * Prepares the simple autonomous tower shot.
      *
      * This command starts the shooter, keeps the turret tracking the alliance
      * tower, and ends once the flywheel is ready or the timeout expires. It is a
      * good "next step after driving" block for simple autonomous routines.
      */
-    public Command autonPrepareBetaShot() {
+    public Command autonPrepareTowerShot() {
         return Commands.sequence(
-                autonSpinUpBetaShot(),
+                autonStartShooter(),
                 Commands.deadline(
-                        autonWaitForBetaShotReady(),
+                        autonWaitForShooterReady(),
                         turretSubsys.trackAllianceTower()));
     }
 
     /**
-     * Runs the full beta autonomous shot as one reusable macro.
+     * Runs the full simple tower shot as one reusable macro.
      *
      * This keeps the original one-command auto behavior available even after we
      * split the sequence into smaller named pieces for PathPlanner.
      */
-    public Command autonRunBetaShot() {
+    public Command autonShootTower() {
         return Commands.sequence(
-                autonPrepareBetaShot(),
-                autonFeedBetaShot(),
-                autonStopShooting());
+                autonPrepareTowerShot(),
+                autonFireShot(),
+                autonStopShooter());
     }
 
     /**
@@ -323,7 +323,7 @@ public class Superstructure {
      * the turret every loop, it does not end by itself and should be used in
      * parallel, as a PathPlanner event command, or with a timeout.
      */
-    public Command autonTrackTower() {
+    public Command autonAimTower() {
         return turretSubsys.trackAllianceTower();
     }
 
@@ -335,8 +335,8 @@ public class Superstructure {
      * so the turret gets time to aim without blocking the rest of the auto for too
      * long.
      */
-    public Command autonTrackTowerShort() {
-        return autonTrackTower().withTimeout(AUTON_TURRET_TRACK_SETTLE_SECONDS);
+    public Command autonAimTowerShort() {
+        return autonAimTower().withTimeout(AUTON_TURRET_TRACK_SETTLE_SECONDS);
     }
 
 

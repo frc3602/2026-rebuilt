@@ -105,37 +105,39 @@ public class RobotContainer {
         public RobotContainer() {
                 // Register the named commands that PathPlanner autos can call by
                 // name from the GUI.
-                NamedCommands.registerCommand("autonRunBetaShot", superStructure.autonRunBetaShot());
+                NamedCommands.registerCommand("autonShootTower", superStructure.autonShootTower());
                 NamedCommands.registerCommand("autonLowerIntake", superStructure.autonLowerIntake());
                 NamedCommands.registerCommand("autonRaiseIntake", superStructure.autonRaiseIntake());
                 NamedCommands.registerCommand("autonStartIntake", superStructure.autonStartIntake());
                 NamedCommands.registerCommand("autonStopIntake", superStructure.autonStopIntake());
-                // Start the shooter for the simple beta autonomous shot without
+                // Start the shooter for the simple autonomous tower shot without
                 // feeding yet. This is useful while finishing a short path or aiming
                 // step.
-                NamedCommands.registerCommand("autonSpinUpBetaShot", superStructure.autonSpinUpBetaShot());
-                // Wait until the shooter is near the beta autonomous target speed.
+                NamedCommands.registerCommand("autonStartShooter", superStructure.autonStartShooter());
+                // Wait until the shooter is near the autonomous tower-shot target
+                // speed.
                 // The command times out so the auto cannot hang forever.
-                NamedCommands.registerCommand("autonWaitForBetaShotReady",
-                                superStructure.autonWaitForBetaShotReady());
-                // Prepare the basic autonomous shot by spinning up the shooter while
+                NamedCommands.registerCommand("autonWaitForShooterReady",
+                                superStructure.autonWaitForShooterReady());
+                // Prepare the basic autonomous tower shot by spinning up the shooter
+                // while
                 // the turret tracks the alliance tower.
-                NamedCommands.registerCommand("autonPrepareBetaShot", superStructure.autonPrepareBetaShot());
-                // Feed the fuel for the current beta autonomous shot, then stop the
+                NamedCommands.registerCommand("autonPrepareTowerShot", superStructure.autonPrepareTowerShot());
+                // Feed the fuel for the current autonomous shot, then stop the
                 // spindexer so the command finishes cleanly.
-                NamedCommands.registerCommand("autonFeedBetaShot", superStructure.autonFeedBetaShot());
+                NamedCommands.registerCommand("autonFireShot", superStructure.autonFireShot());
                 // Stop the shooter and spindexer after an autonomous shot so later
                 // actions begin from a known safe state.
-                NamedCommands.registerCommand("autonStopShooting", superStructure.autonStopShooting());
+                NamedCommands.registerCommand("autonStopShooter", superStructure.autonStopShooter());
                 // Track the current alliance tower with the turret during
                 // autonomous. This command is designed to run in parallel with path
                 // following or another auton action rather than as a one-shot
                 // command.
-                NamedCommands.registerCommand("autonTrackTower", superStructure.autonTrackTower());
+                NamedCommands.registerCommand("autonAimTower", superStructure.autonAimTower());
                 // Short self-ending version of the turret tracking command for
                 // sequential autos that need a simple "aim here briefly" step.
-                NamedCommands.registerCommand("autonTrackTowerShort", superStructure.autonTrackTowerShort());
-                NamedCommands.registerCommand("moveTurretToStartAngle", turret.moveToStartAngle());
+                NamedCommands.registerCommand("autonAimTowerShort", superStructure.autonAimTowerShort());
+                NamedCommands.registerCommand("autonStowTurret", turret.autonStowTurret());
               
 
                 // Share the real shooter subsystem with the turret so any lead-angle

@@ -198,7 +198,7 @@ public class TurretSubsystem extends SubsystemBase {
         });
     }
 
-    public Command moveToStartAngle() {
+    public Command autonStowTurret() {
         return runOnce(() -> {
             // The current start angle is also our handoff/stowed angle, so one
             // command keeps the auton API from exposing two names for the same state.
