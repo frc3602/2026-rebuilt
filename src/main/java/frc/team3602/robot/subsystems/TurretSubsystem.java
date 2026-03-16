@@ -588,8 +588,10 @@ public class TurretSubsystem extends SubsystemBase {
         // Lead angle
         double leadRadians = Math.atan2(lateralMovement, distanceToTarget);
 
-        // Final turret offset
-        double turretOffsetRadians = targetYawRelative + leadRadians;
+        // The ball inherits the robot's sideways velocity as it leaves the shooter.
+        // Because of that, we aim opposite the robot's lateral motion so the shot
+        // drifts back onto the tower instead of farther away from it.
+        double turretOffsetRadians = targetYawRelative - leadRadians;
 
         double signedLeadAdjustedAngleDegrees = normalizeSignedAimAngleDegrees(
                 Math.toDegrees(turretOffsetRadians));
