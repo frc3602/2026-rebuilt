@@ -71,7 +71,8 @@ Shooting:
 - `X` = fixed `-44.0` shooter preset
 - `Y` = manual spindexer / transfer feed
 - Left trigger = failsafe shot
-- Failsafe shot = turret `180.0` degrees (rear) and shooter `-62.5` RPS
+- Failsafe shot = turret `180.0` degrees (rear), shooter `-41.5` RPS, then
+  spindexer / transfer feed at `-62.5` RPS after the built-in delay
 
 Intake / Pivot Support:
 
@@ -106,7 +107,8 @@ Intake / Pivot Support:
 - While doing these checks, watch:
   `Turret/MeasuredAimDegrees`, `Turret/RequestedAimDegrees`,
   `Turret/AimErrorDegrees`, `Turret/MeasuredTravelDegrees`,
-  `Turret/RequestedTravelDegrees`, and `Turret/MotorVoltage`.
+  `Turret/RequestedTravelDegrees`, `Turret/AtRequestedAngle`, and
+  `Turret/MotorVoltage`.
 
 ## Phase 4: Shooter Check
 
@@ -184,16 +186,22 @@ Then also verify the older split workflow still works:
 - Press and hold operator left trigger.
 - Confirm the turret moves to `180.0` degrees, which is the rear direction in
   the public signed turret convention.
-- Confirm the shooter spins up to the fixed failsafe target of `-62.5` RPS.
+- Confirm the shooter spins up to the fixed failsafe target of `-41.5` RPS.
 - Confirm feeding starts only after the built-in delay.
+- Confirm the feed path runs at the fixed failsafe feed speed of `-62.5` RPS.
 - Confirm the routine stops the shooter and feed on its own after the fixed feed window.
 - Release the trigger early during one test run and confirm shooter and feed stop immediately.
 
 ## Phase 9: Autonomous Command Check Without Fuel
 
 - Run the selected autonomous with no fuel loaded first.
+- If you are testing `ShootTower.auto` or another tower-shot autonomous, verify
+  the current shot sequence explicitly.
 - Confirm the path starts correctly.
 - Confirm `autonPrepareTowerShot` runs after the drive segment.
+- Confirm `autonPrepareTowerShot` tracks the tower while the shooter spins up.
+- Confirm `autonPrepareTowerShot` ends when the shooter is ready or its timeout
+  expires.
 - Confirm `autonFireShot` runs for its expected window.
 - Confirm `autonStopShooter` stops the shooter and spindexer.
 - Confirm `autonStowTurret` returns the turret to its start angle.
@@ -214,11 +222,15 @@ Then also verify the older split workflow still works:
 - `Pose Distance`
 - `Shooter Lerp Speed`
 - `Pigeon Angle`
+- `Vision/Selected/Available`
+- `Vision/Selected/Camera`
+- `Vision/Selected/PreferredCamera`
 - `Turret/MeasuredAimDegrees`
 - `Turret/RequestedAimDegrees`
 - `Turret/AimErrorDegrees`
 - `Turret/MeasuredTravelDegrees`
 - `Turret/RequestedTravelDegrees`
+- `Turret/AtRequestedAngle`
 - `Turret/MotorVoltage`
 
 These values help separate aiming problems from feed problems.
@@ -233,7 +245,9 @@ These values help separate aiming problems from feed problems.
 - If shots consistently arc high or low, re-check the turret lead-math
   assumptions for shooter height and launch angle.
 - If fuel hesitates or bounces, focus on the spindexer-to-transfer handoff first.
-- If autonomous feeds too early, remember the current beta auto still allows a timeout-based shot.
+- If autonomous feeds too early, remember the current tower-shot prep uses a
+  timeout-based shooter-ready check and does not add a separate turret-at-angle
+  wait before `autonFireShot`.
 
 ## Sign-Off
 

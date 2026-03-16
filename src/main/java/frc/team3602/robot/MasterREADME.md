@@ -185,6 +185,8 @@ While `B` is held:
 - shooter follows the interpolation table
 - feed waits until the shot is ready
 - driver controller 0 rumbles when the shot becomes ready
+- overlapping manual operator shooter and turret preset controls are gated so
+  they do not interrupt the tracked shot
 
 ### 2. Failsafe Shot
 
@@ -193,7 +195,10 @@ Use operator left trigger when the team wants a simple backup shot.
 Current failsafe behavior:
 
 - turret command = `180.0` degrees
-- shooter speed = `ShooterConstants.kShooterFailsafeSpeed`
+- shooter speed = `ShooterConstants.kShooterFailsafeSpeed` which is currently
+  `-41.5` RPS
+- after the built-in spin-up delay, the spindexer and transfer feed at
+  `-62.5` RPS for a short fixed window
 
 Because the public turret convention is signed, `180.0` means straight to the
 rear of the robot.
@@ -246,10 +251,13 @@ PathPlanner named commands are registered in `RobotContainer.java`.
 
 The most important current autonomous helpers are:
 
+- `autonShootTower`
 - `autonLowerIntake`
 - `autonRaiseIntake`
 - `autonStartIntake`
 - `autonStopIntake`
+- `autonStartShooter`
+- `autonWaitForShooterReady`
 - `autonPrepareTowerShot`
 - `autonFireShot`
 - `autonStopShooter`

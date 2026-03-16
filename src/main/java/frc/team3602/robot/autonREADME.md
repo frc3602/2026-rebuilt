@@ -174,7 +174,7 @@ autonomous shot.
 
 What it does:
 
-1. Starts the shooter for the beta auto shot.
+1. Starts the shooter for the current simple tower shot.
 2. Waits for the shooter to reach the ready speed, with a timeout.
 3. Tracks the alliance tower with the turret while waiting.
 4. Feeds the fuel with the spindexer.
@@ -280,6 +280,12 @@ What it does:
 2. Tracks the alliance tower with the turret.
 3. Ends when the shooter is ready or when the timeout is reached.
 
+Important note:
+
+- This command currently waits on shooter readiness only.
+- Turret tracking runs during the prep step, but the command does not explicitly
+  wait for `Turret/AtRequestedAngle` before it ends.
+
 Best use:
 
 - Basic autos that drive first, then prepare the shot
@@ -368,6 +374,13 @@ Use a macro command like `autonShootTower` when:
 - the whole sequence is always used together
 - the timing is already known and stable
 - the team wants the fastest possible setup for a simple auto
+
+Important note:
+
+- The current tower-shot flow does not add a separate turret-ready gate after
+  `autonPrepareTowerShot`.
+- If the prep step ends because of its timeout, the next step in the auto can
+  still move on to `autonFireShot`.
 
 Use smaller steps like `autonPrepareTowerShot` and `autonFireShot` when:
 
