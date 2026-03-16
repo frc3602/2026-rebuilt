@@ -142,8 +142,8 @@ Shooting:
 - `Y`: run spindexer feed at `-35.0` while held
 - Left trigger: run the timed failsafe shooting routine, release early to stop
   shooter and feed
-- Left trigger failsafe uses turret angle `0.0` degrees, which is rear in the
-  current turret travel model, and shooter speed `-62.5` RPS
+- Left trigger failsafe uses turret angle `180.0` degrees, which is straight
+  rear in the WPILib signed turret convention, and shooter speed `-62.5` RPS
 - Driver controller 0 should rumble when the tracked `B` shot becomes ready
 - While `B` is held, the other operator shooter and turret controls are paused
   so the combined shot keeps control until the button is released
@@ -282,12 +282,13 @@ PathPlanner, see `autonREADME.md`.
 - There is no turret-mounted camera in the current robot configuration.
 - Turret tracking now depends on the shared drivetrain pose estimate from the
   left and right Limelight pose pipeline.
-- The turret now uses a `0` through `360` travel model, with `90` degrees as
-  the staged startup position.
-- The current intended direction map is: rear = `0` / `360`, left = `90`,
-  front = `180`, and right = `270`.
-- The current failsafe shot uses turret `0.0` degrees, so it points to the rear
-  side of the robot in this travel model.
+- Public turret aiming angles now follow the WPILib signed convention:
+  forward = `0`, left = `90`, right = `-90`, and rear = `180`.
+- Internally, the turret still keeps a private `0` through `360` travel model
+  so it can remember which side of the rear seam it is on.
+- The staged startup angle is still left at `90` degrees in both conventions.
+- The current failsafe shot uses turret `180.0` degrees, so it points to the
+  rear side of the robot in the public signed convention.
 - The current failsafe shooter target is `-62.5` RPS.
 - The software should never shortcut across the `0` / `360` seam. If the goal
   is on the other side of that seam, the turret should rotate the long way

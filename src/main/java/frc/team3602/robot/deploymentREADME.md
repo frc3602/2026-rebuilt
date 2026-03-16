@@ -92,7 +92,7 @@ Intake / Pivot Support:
 
 ## Phase 3: Turret Check
 
-- Press operator POV up and confirm the turret goes to zero.
+- Press operator POV up and confirm the turret goes to the rear preset.
 - Press operator POV down and confirm the turret goes to the right-side preset.
 - Press operator POV left and confirm the turret goes to the left corner preset.
 - Press operator POV right and confirm the turret goes to the right corner preset.

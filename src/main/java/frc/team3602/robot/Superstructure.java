@@ -28,7 +28,9 @@ public class Superstructure {
     private static final double AUTON_BETA_READY_TIMEOUT_SECONDS = 2.0;
     private static final double AUTON_BETA_FEED_TIME_SECONDS = 2.0;
     private static final double AUTON_TURRET_TRACK_SETTLE_SECONDS = 2.0;
-    private static final double FAILSAFE_TURRET_ANGLE_DEGREES = 0.0;
+    // The fallback shot still points to the rear of the robot, but turret command
+    // APIs now use WPILib's signed convention where 180 degrees means "backward."
+    private static final double FAILSAFE_TURRET_ANGLE_DEGREES = 180.0;
     private static final double FAILSAFE_SHOOTER_SPINUP_SECONDS = 4.0;
     private static final double FAILSAFE_FEED_RPS = -62.5;
     private static final double FAILSAFE_FEED_TIME_SECONDS = 1.0;

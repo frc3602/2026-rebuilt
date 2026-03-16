@@ -226,7 +226,7 @@ public class RobotContainer {
                 // Left bumper raises/stows the intake path through the superstructure.
                 operatorController.leftBumper().onTrue(superStructure.stopIntake());
                 // POV buttons are turret presets for common manual aiming positions.
-                operatorController.povUp().and(trackedShotNotHeld).onTrue(turret.setAngleZero());
+                operatorController.povUp().and(trackedShotNotHeld).onTrue(turret.setAngleRear());
                 operatorController.povDown().and(trackedShotNotHeld).onTrue(turret.setAngleRight());
                 operatorController.povLeft().and(trackedShotNotHeld).onTrue(turret.setAngleLeftCorner());
                 operatorController.povRight().and(trackedShotNotHeld).onTrue(turret.setAngleRightCorner());

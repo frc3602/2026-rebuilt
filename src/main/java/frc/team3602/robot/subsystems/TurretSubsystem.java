@@ -25,18 +25,22 @@ import frc.team3602.robot.Constants.*;
 import frc.team3602.robot.Constants.FieldConstants;
 
 public class TurretSubsystem extends SubsystemBase {
-    // The turret uses linear travel coordinates from 0 through 360 degrees.
-    // 0/360 degrees point to the rear of the robot, 90 points left, 180 points
-    // forward over the intake, and 270 points right. 0 degrees and 360 degrees
-    // are the same aiming direction, but they are different ends of the
-    // mechanism's legal travel. That means we must not use normal "shortest
-    // angle" wrapping when we command the turret.
-    private static final double MIN_TRACKING_ANGLE_DEGREES = 0.0;
-    private static final double MAX_TRACKING_ANGLE_DEGREES = 360.0;
-    private static final double STARTING_TURRET_ANGLE_DEGREES = 90.0;
-    private static final double LEFT_CORNER_PRESET_DEGREES = 55.0;
-    private static final double RIGHT_CORNER_PRESET_DEGREES = 305.0;
-    private static final double RIGHT_PRESET_DEGREES = 270.0;
+    // Public turret angles follow WPILib's normal robot-relative convention:
+    // 0 degrees = forward, +90 = left, -90 = right, and 180 = directly backward.
+    //
+    // The mechanism itself still has a rear seam, though. Physically, the turret
+    // can point backward by traveling to 0 degrees or to 360 degrees, and those
+    // are different legal endpoints for the motor. To keep that seam behavior
+    // explicit, the subsystem uses two angle representations:
+    // - signed "aim angles" for geometry, commands, and documentation
+    // - 0-360 "travel angles" for the motor's actual motion limits
+    private static final double MIN_TRAVEL_ANGLE_DEGREES = 0.0;
+    private static final double MAX_TRAVEL_ANGLE_DEGREES = 360.0;
+    private static final double STARTING_TURRET_AIM_ANGLE_DEGREES = 90.0;
+    private static final double REAR_LEFT_CORNER_PRESET_AIM_DEGREES = 125.0;
+    private static final double REAR_RIGHT_CORNER_PRESET_AIM_DEGREES = -125.0;
+    private static final double RIGHT_PRESET_AIM_DEGREES = -90.0;
+    private static final double REAR_PRESET_AIM_DEGREES = 180.0;
     private static final double MOTOR_ROTATIONS_PER_TURRET_ROTATION = 30.0;
     private static final double TURRET_DEGREES_PER_MOTOR_ROTATION = 360.0
             / MOTOR_ROTATIONS_PER_TURRET_ROTATION;
@@ -88,6 +92,7 @@ public class TurretSubsystem extends SubsystemBase {
         startChooser.addOption("Right Trench", Double.valueOf(0));
         startChooser.addOption("Left Trench", Double.valueOf(180));
         turretController.setTolerance(SHOT_READY_ANGLE_TOLERANCE_DEGREES, 2);
+        setRequestedAngle(STARTING_TURRET_AIM_ANGLE_DEGREES);
         configTurretHardware();
         seedTurretSensorToStartAngle();
     }
@@ -101,7 +106,8 @@ public class TurretSubsystem extends SubsystemBase {
      * assumption.
      */
     private void seedTurretSensorToStartAngle() {
-        double startMotorRotations = STARTING_TURRET_ANGLE_DEGREES / TURRET_DEGREES_PER_MOTOR_ROTATION;
+        double startTravelAngleDegrees = convertSignedAimToTravelAngle(STARTING_TURRET_AIM_ANGLE_DEGREES);
+        double startMotorRotations = startTravelAngleDegrees / TURRET_DEGREES_PER_MOTOR_ROTATION;
         turretMotor.setPosition(startMotorRotations);
     }
 
@@ -125,7 +131,8 @@ public class TurretSubsystem extends SubsystemBase {
 
     // Hold the turret at its intended starting angle until another command asks
     // for a different target.
-    public double setAngle = STARTING_TURRET_ANGLE_DEGREES;
+    private double requestedTurretAimAngleDegrees;
+    private double requestedTurretTravelAngleDegrees;
 
     // Controllers *These PID values need to be changed*
     private final PIDController turretController = new PIDController(.04, 0.0, 0.0);
@@ -139,7 +146,8 @@ public class TurretSubsystem extends SubsystemBase {
      * the smallest circular angle error instead of the raw travel-coordinate error.
      */
     public boolean isAtRequestedAngle() {
-        double angleErrorDegrees = Math.abs(((getTurretAngleDeg() - setAngle + 540.0) % 360.0) - 180.0);
+        double angleErrorDegrees = Math.abs(
+                normalizeSignedAimAngleDegrees(getTurretAngleDegrees() - requestedTurretAimAngleDegrees));
         return angleErrorDegrees <= SHOT_READY_ANGLE_TOLERANCE_DEGREES;
     }
 
@@ -149,10 +157,23 @@ public class TurretSubsystem extends SubsystemBase {
     // current codebase.
     public Command changeSetAngle(double newSetpoint) {
         return runOnce(() -> {
-            setAngle = clamp(setAngle + newSetpoint, MIN_TRACKING_ANGLE_DEGREES, MAX_TRACKING_ANGLE_DEGREES);
+            setRequestedAngle(requestedTurretAimAngleDegrees + newSetpoint);
         });
     }
 
+    /**
+     * Commands a new turret aim angle using WPILib's signed robot-relative
+     * convention.
+     *
+     * Public callers should think in normal FRC geometry:
+     * - 0 = forward
+     * - +90 = left
+     * - -90 = right
+     * - 180 = straight backward
+     *
+     * The subsystem converts that signed aim angle into the mechanism's private
+     * 0-360 travel coordinates before applying motor control.
+     */
     public Command setAngle(double setPosition) {
         return runOnce(() -> {
             setRequestedAngle(setPosition);
@@ -180,7 +201,7 @@ public class TurretSubsystem extends SubsystemBase {
         return runOnce(() -> {
             // The current start angle is also our handoff/stowed angle, so one
             // command keeps the auton API from exposing two names for the same state.
-            setRequestedAngle(STARTING_TURRET_ANGLE_DEGREES);
+            setRequestedAngle(STARTING_TURRET_AIM_ANGLE_DEGREES);
         });
     }
 
@@ -230,22 +251,36 @@ public class TurretSubsystem extends SubsystemBase {
         return distanceFeet;
     }
 
-    public double getTurretAngleDeg() {
+    private double getTurretTravelAngleDegrees() {
         // Get rotor position in motor rotations
         double motorRot = turretMotor.getRotorPosition().getValueAsDouble();
 
         // Convert motor rotations into the turret's linear 0-360 travel coordinate.
         double turretDeg = motorRot * TURRET_DEGREES_PER_MOTOR_ROTATION;
 
-        return clamp(turretDeg, MIN_TRACKING_ANGLE_DEGREES, MAX_TRACKING_ANGLE_DEGREES);
+        return clamp(turretDeg, MIN_TRAVEL_ANGLE_DEGREES, MAX_TRAVEL_ANGLE_DEGREES);
+    }
+
+    /**
+     * Returns the turret's current robot-relative aim angle in WPILib convention.
+     *
+     * This is the angle students should use for geometry reasoning, logs, and
+     * command setpoints:
+     * - 0 = forward
+     * - +90 = left
+     * - -90 = right
+     * - 180 = straight backward
+     */
+    public double getTurretAngleDegrees() {
+        return convertTravelAngleToSignedAimAngle(getTurretTravelAngleDegrees());
     }
 
     /**
      * Calculates the turret angle needed to face the field target.
      *
      * The turret aims by comparing the robot's corrected field pose to the target's
-     * field coordinates. This lets vision-based pose corrections improve aiming
-     * immediately instead of waiting for a separate odometry-only estimate.
+     * field coordinates. The returned value uses the normal signed WPILib
+     * robot-relative convention so it is easy to compare with other FRC geometry.
      */
     // Review note 2026-03-15 10:15:26 -04:00: this method may be unused in the
     // current codebase.
@@ -259,20 +294,19 @@ public class TurretSubsystem extends SubsystemBase {
         double dy = target.getY() - robotPose.getY();
         double fieldAngle = Math.toDegrees(Math.atan2(dy, dx));
         double robotHeading = robotPose.getRotation().getDegrees();
-        double signedRobotRelativeAngle = normalizeSignedRobotRelativeAngle(fieldAngle - robotHeading);
-        return convertSignedAimToTravelAngle(signedRobotRelativeAngle);
+        return normalizeSignedAimAngleDegrees(fieldAngle - robotHeading);
     }
 
     /**
-     * Converts any direct turret travel request into the turret's linear 0-360
-     * travel range.
+     * Converts any direct internal travel-angle request into the turret's linear
+     * 0-360 travel range.
      *
      * Examples:
      * - -55 becomes 305
      * - 370 becomes 10
      * - 360 stays 360 so the code can still command the upper travel limit
      */
-    private double normalizeToTravelAngle(double angleDeg) {
+    private double normalizeTravelAngle(double angleDeg) {
         double normalizedAngle = angleDeg % 360.0;
         if (normalizedAngle < 0.0) {
             normalizedAngle += 360.0;
@@ -281,28 +315,28 @@ public class TurretSubsystem extends SubsystemBase {
         // If the request was exactly one full rotation, keep it at the top end of the
         // legal range instead of collapsing it back to zero.
         if (Math.abs(normalizedAngle) < 1e-9 && angleDeg > 0.0) {
-            return MAX_TRACKING_ANGLE_DEGREES;
+            return MAX_TRAVEL_ANGLE_DEGREES;
         }
 
         return normalizedAngle;
     }
 
     /**
-     * Wraps a robot-relative aim angle into the normal signed range used by field
-     * geometry.
+     * Wraps a robot-relative aim angle into the standard signed range used by FRC
+     * field geometry.
      *
-     * In this signed frame:
+     * In this signed WPILib-style frame:
      * - 0 means straight ahead
      * - +90 means left
      * - -90 means right
-     * - +/-180 means directly behind the robot
+     * - 180 means directly behind the robot
      */
-    private double normalizeSignedRobotRelativeAngle(double angleDeg) {
+    private double normalizeSignedAimAngleDegrees(double angleDeg) {
         double normalizedAngle = angleDeg % 360.0;
-        if (normalizedAngle >= 180.0) {
+        if (normalizedAngle > 180.0) {
             normalizedAngle -= 360.0;
         }
-        if (normalizedAngle < -180.0) {
+        if (normalizedAngle <= -180.0) {
             normalizedAngle += 360.0;
         }
 
@@ -310,25 +344,49 @@ public class TurretSubsystem extends SubsystemBase {
     }
 
     /**
-     * Converts a signed robot-relative aim angle into the turret's rear-zero travel
+     * Converts a signed WPILib-style aim angle into the turret's internal travel
      * coordinates.
      *
-     * In the turret travel model:
+     * Public aim math uses:
+     * - 0 = forward
+     * - +90 = left
+     * - -90 = right
+     * - 180 = rear
+     *
+     * The internal travel model uses:
      * - rear = 0 or 360
      * - left = 90
      * - front = 180
      * - right = 270
      */
     private double convertSignedAimToTravelAngle(double signedAimAngleDegrees) {
+        double normalizedAimAngle = normalizeSignedAimAngleDegrees(signedAimAngleDegrees);
+
         // If the target is very close to straight rear, prefer the current side of
         // the rear seam so tiny pose jitter does not bounce the turret between the
         // two travel endpoints.
-        double distanceFromRearDegrees = 180.0 - Math.abs(signedAimAngleDegrees);
+        double distanceFromRearDegrees = 180.0 - Math.abs(normalizedAimAngle);
         if (distanceFromRearDegrees <= REAR_SEAM_DEADBAND_DEGREES) {
-            return getTurretAngleDeg() > 180.0 ? MAX_TRACKING_ANGLE_DEGREES : MIN_TRACKING_ANGLE_DEGREES;
+            return getTurretTravelAngleDegrees() > 180.0
+                    ? MAX_TRAVEL_ANGLE_DEGREES
+                    : MIN_TRAVEL_ANGLE_DEGREES;
         }
 
-        return normalizeToTravelAngle(180.0 - signedAimAngleDegrees);
+        return normalizeTravelAngle(180.0 - normalizedAimAngle);
+    }
+
+    /**
+     * Converts the mechanism's internal travel coordinates back into a standard
+     * signed WPILib-style aim angle.
+     *
+     * This is the inverse of {@link #convertSignedAimToTravelAngle(double)} for all
+     * non-seam directions. For the rear seam, both travel endpoints map back to the
+     * same public answer: 180 degrees means "straight backward."
+     */
+    private double convertTravelAngleToSignedAimAngle(double travelAngleDegrees) {
+        double normalizedTravelAngle = normalizeTravelAngle(travelAngleDegrees);
+        double signedAimAngleDegrees = 180.0 - normalizedTravelAngle;
+        return normalizeSignedAimAngleDegrees(signedAimAngleDegrees);
     }
 
     /**
@@ -350,8 +408,11 @@ public class TurretSubsystem extends SubsystemBase {
      * same physical limits.
      */
     private void setRequestedAngle(double requestedAngleDegrees) {
-        double normalizedAngle = normalizeToTravelAngle(requestedAngleDegrees);
-        setAngle = clamp(normalizedAngle, MIN_TRACKING_ANGLE_DEGREES, MAX_TRACKING_ANGLE_DEGREES);
+        requestedTurretAimAngleDegrees = normalizeSignedAimAngleDegrees(requestedAngleDegrees);
+        requestedTurretTravelAngleDegrees = clamp(
+                convertSignedAimToTravelAngle(requestedTurretAimAngleDegrees),
+                MIN_TRAVEL_ANGLE_DEGREES,
+                MAX_TRAVEL_ANGLE_DEGREES);
     }
 
     public double getBallVelocity() {
@@ -421,7 +482,7 @@ public class TurretSubsystem extends SubsystemBase {
      * motion during the shot's time of flight.
      *
      * Even though the method name says "offset", the value returned here is the
-     * full robot-relative angle that the turret should try to reach.
+     * full signed robot-relative aim angle that the turret should try to reach.
      */
     public double calculateTurretOffset() {
 
@@ -461,11 +522,11 @@ public class TurretSubsystem extends SubsystemBase {
         // Time of flight
         double timeOfFlight = calculateBallTimeOfFlight();
 
-        double signedRobotRelativeAngleDegrees = normalizeSignedRobotRelativeAngle(
+        double signedRobotRelativeAngleDegrees = normalizeSignedAimAngleDegrees(
                 Math.toDegrees(targetYawRelative));
 
         if (timeOfFlight <= 0.0) {
-            return convertSignedAimToTravelAngle(signedRobotRelativeAngleDegrees);
+            return signedRobotRelativeAngleDegrees;
         }
 
         // Build a unit vector perpendicular to the shot line.
@@ -489,10 +550,10 @@ public class TurretSubsystem extends SubsystemBase {
         // Final turret offset
         double turretOffsetRadians = targetYawRelative + leadRadians;
 
-        double signedLeadAdjustedAngleDegrees = normalizeSignedRobotRelativeAngle(
+        double signedLeadAdjustedAngleDegrees = normalizeSignedAimAngleDegrees(
                 Math.toDegrees(turretOffsetRadians));
 
-        return convertSignedAimToTravelAngle(signedLeadAdjustedAngleDegrees);
+        return signedLeadAdjustedAngleDegrees;
     }
 
     double voltage;
@@ -510,30 +571,33 @@ public class TurretSubsystem extends SubsystemBase {
 
     public Command setAngleLeftCorner() {
         return  runOnce(() -> {
-            // The left corner preset lives on the rear-left side of travel.
-            setRequestedAngle(LEFT_CORNER_PRESET_DEGREES);
+            // This preset points into the back-left corner in the standard
+            // robot-relative WPILib frame.
+            setRequestedAngle(REAR_LEFT_CORNER_PRESET_AIM_DEGREES);
         });
     }
 
     public Command setAngleRightCorner() {
         return  runOnce(() -> {
-            // The right corner preset lives on the rear-right side of travel.
-            setRequestedAngle(RIGHT_CORNER_PRESET_DEGREES);
+            // This preset points into the back-right corner in the standard
+            // robot-relative WPILib frame.
+            setRequestedAngle(REAR_RIGHT_CORNER_PRESET_AIM_DEGREES);
         });
     }
 
     public Command setAngleRight() {
         return  runOnce(() -> {
-            // This preset parks the turret on the robot's right side in the
-            // rear-zero travel model.
-            setRequestedAngle(RIGHT_PRESET_DEGREES);
+            // This preset points directly to the robot's right side.
+            setRequestedAngle(RIGHT_PRESET_AIM_DEGREES);
         });
     }
 
-    public Command setAngleZero() {
+    public Command setAngleRear() {
         return  runOnce(() -> {
-            // Zero is the rear-left end of travel in this turret convention.
-            setRequestedAngle(0);
+            // This preset points straight backward. The internal seam-handling
+            // helper will choose whether the mechanism should stay on the 0-degree
+            // side or the 360-degree side of travel.
+            setRequestedAngle(REAR_PRESET_AIM_DEGREES);
         });
     }
 
@@ -593,9 +657,10 @@ public class TurretSubsystem extends SubsystemBase {
     /**
      * Calculates the turret angle needed to face a field coordinate.
      *
-     * We first compute the normal signed robot-relative aim angle, then convert it
-     * into the turret's rear-zero travel coordinate. This keeps the field math easy
-     * to reason about while still honoring the mechanism's 0/360 rear seam.
+     * This helper returns the standard signed robot-relative aim angle used by
+     * WPILib geometry. The caller can then hand that angle to
+     * {@link #setRequestedAngle(double)}, which will convert it into the internal
+     * travel coordinates needed by the real mechanism.
      */
     private double calculateTurretAngleForFieldPoint(Translation2d fieldPoint) {
         Pose2d robotPose = drivetrainSubsys.getEstimatedPose();
@@ -604,10 +669,7 @@ public class TurretSubsystem extends SubsystemBase {
         double deltaY = fieldPoint.getY() - robotPose.getY();
         double fieldAngleToPoint = Math.toDegrees(Math.atan2(deltaY, deltaX));
         double robotHeading = robotPose.getRotation().getDegrees();
-        double signedRobotRelativeAngle = normalizeSignedRobotRelativeAngle(fieldAngleToPoint - robotHeading);
-        double turretTravelAngle = convertSignedAimToTravelAngle(signedRobotRelativeAngle);
-
-        return clamp(turretTravelAngle, MIN_TRACKING_ANGLE_DEGREES, MAX_TRACKING_ANGLE_DEGREES);
+        return normalizeSignedAimAngleDegrees(fieldAngleToPoint - robotHeading);
     }
 
     public Command aimToDesiredAngle() {
@@ -632,7 +694,7 @@ public class TurretSubsystem extends SubsystemBase {
      * alliance-tower tracking command so they use the same motor-control behavior.
      */
     private void applyTurretPositionControl() {
-        var pidEffort = turretController.calculate(getTurretAngleDeg(), setAngle);
+        var pidEffort = turretController.calculate(getTurretTravelAngleDegrees(), requestedTurretTravelAngleDegrees);
         turretMotor.setVoltage(pidEffort);
     }
 
@@ -648,7 +710,8 @@ public class TurretSubsystem extends SubsystemBase {
     public void periodic() {
         // SmartDashboard.putNumber("Turret Encoder", getEncoder());
         // SmartDashboard.putNumber("Turret Voltage", voltage);
-        // SmartDashboard.putNumber("Set Angle", setAngle);
+        // SmartDashboard.putNumber("Turret Aim Angle Degrees", getTurretAngleDegrees());
+        // SmartDashboard.putNumber("Requested Turret Aim Degrees", requestedTurretAimAngleDegrees);
         // turretFeedForward = turnFeedforward();
         // SmartDashboard.putNumber("Turret Feedforward", turretFeedForward); // Bruh
         SmartDashboard.putData(startChooser);
