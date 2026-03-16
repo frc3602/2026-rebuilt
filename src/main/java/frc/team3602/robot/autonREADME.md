@@ -400,7 +400,7 @@ This gives the robot time to:
 
 Example simple autonomous sequence:
 
-1. `path: ShootBetaDrive`
+1. `path: ShootTowerDrive`
 2. `named: autonPrepareTowerShot`
 3. `named: autonFireShot`
 4. `named: autonStopShooter`
