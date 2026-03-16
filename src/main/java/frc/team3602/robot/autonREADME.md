@@ -89,15 +89,25 @@ These combine a few small actions into one useful step.
 
 Example:
 
+- `autonRunIntake`
 - `autonPrepareTowerShot`
 
-This command is a good setup command because it:
+These commands are good setup commands because they:
 
-- starts the shooter
-- tracks the tower
-- waits for the shooter to be ready
+- combine a few smaller steps into one readable action
+- save space in PathPlanner when the team uses the same combo often
+- still leave later timing decisions in PathPlanner
 
-but it still does not feed the fuel yet.
+For example:
+
+- `autonRunIntake`
+  - lowers the intake and starts the roller
+- `autonPrepareTowerShot`
+  - starts the shooter
+  - tracks the tower
+  - waits for the shooter to be ready
+
+but neither one tries to do the entire autonomous routine by itself.
 
 That is a good balance between:
 
@@ -143,6 +153,7 @@ number of tiny one-line commands in every auto.
 ### Intake / Fuel Collection Setup
 
 - `autonLowerIntake`
+- `autonRunIntake`
 - `autonRaiseIntake`
 - `autonStartIntake`
 - `autonStopIntake`
@@ -197,6 +208,31 @@ Best use:
 
 - Starting a fuel collection routine
 - Preparing for future intake autos
+
+### `autonRunIntake`
+
+Use this when you want one simple command that puts the intake system into its
+normal collection state.
+
+What it does:
+
+1. Sends the pivot toward the lowered intake preset.
+2. Starts the intake roller.
+
+Important note:
+
+- This command ends immediately after sending those requests.
+- The pivot continues moving because its default hold command keeps driving to
+  the lowered setpoint.
+- The intake roller keeps running until a later command such as
+  `autonStopIntake`.
+
+Best use:
+
+- Starting a simple collection path with one named command
+- PathPlanner autos where lowering and starting the intake almost always happen
+  together
+- Keeping the auto graph readable without losing the smaller commands
 
 ### `autonRaiseIntake`
 
@@ -466,7 +502,6 @@ Before adding a new autonomous routine, ask:
 
 These do not exist yet, but would make full autonomous routines easier to build:
 
-- `autonRunIntake`
 - `autonCollectFuel`
 - `autonPrepareLerpShot`
 - `autonFeedShot`

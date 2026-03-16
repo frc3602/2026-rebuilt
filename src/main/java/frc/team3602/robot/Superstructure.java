@@ -204,6 +204,24 @@ public class Superstructure {
     }
 
     /**
+     * Puts the intake system into its normal autonomous collection state.
+     *
+     * This is a convenience macro for PathPlanner when an auto almost always wants
+     * the same two actions together:
+     * - send the pivot toward the lowered intake preset
+     * - start the intake roller
+     *
+     * The command ends immediately after those requests are sent. The pivot keeps
+     * moving because its default hold command continues driving toward the lowered
+     * setpoint, and the intake roller keeps running until a later stop command.
+     */
+    public Command autonRunIntake() {
+        return Commands.sequence(
+                autonLowerIntake(),
+                autonStartIntake());
+    }
+
+    /**
      * Raises or stows the intake path for autonomous.
      *
      * We keep this separate from autonStopIntake() because some autos may want to

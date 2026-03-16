@@ -253,6 +253,7 @@ The most important current autonomous helpers are:
 
 - `autonShootTower`
 - `autonLowerIntake`
+- `autonRunIntake`
 - `autonRaiseIntake`
 - `autonStartIntake`
 - `autonStopIntake`

@@ -107,6 +107,9 @@ public class RobotContainer {
                 // name from the GUI.
                 NamedCommands.registerCommand("autonShootTower", superStructure.autonShootTower());
                 NamedCommands.registerCommand("autonLowerIntake", superStructure.autonLowerIntake());
+                // Convenience macro for the common "start collecting now" state:
+                // drop the intake path and start the roller together.
+                NamedCommands.registerCommand("autonRunIntake", superStructure.autonRunIntake());
                 NamedCommands.registerCommand("autonRaiseIntake", superStructure.autonRaiseIntake());
                 NamedCommands.registerCommand("autonStartIntake", superStructure.autonStartIntake());
                 NamedCommands.registerCommand("autonStopIntake", superStructure.autonStopIntake());
