@@ -25,6 +25,21 @@ Use these files together:
   - Important conventions
   - Common starting points for debugging
 
+- `ARCHITECTURE.md`
+  - Software structure
+  - Subsystem ownership
+  - Pose, vision, and command data flow
+
+- `MECHANISMS.md`
+  - Physical subsystem summary
+  - Hardware assumptions
+  - Common mechanism test priorities
+
+- `CONTROLS.md`
+  - Driver/operator bindings
+  - Shot mode behavior
+  - Current autonomous named commands
+
 - `deploymentREADME.md`
   - What to check right after deploying code
   - Safe bring-up order

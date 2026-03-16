@@ -15,6 +15,21 @@ The most useful project references live here:
   - Important conventions
   - Best "start here" document
 
+- `src/main/java/frc/team3602/robot/ARCHITECTURE.md`
+  - Software structure
+  - Subsystem ownership
+  - Data flow between pose, vision, aiming, and auton
+
+- `src/main/java/frc/team3602/robot/MECHANISMS.md`
+  - Physical mechanism summary
+  - Hardware assumptions
+  - Common mechanism failure points
+
+- `src/main/java/frc/team3602/robot/CONTROLS.md`
+  - Driver/operator bindings
+  - Shot mode behavior
+  - Current autonomous named commands
+
 - `src/main/java/frc/team3602/robot/deploymentREADME.md`
   - Safe post-deploy bring-up and checklists
 
