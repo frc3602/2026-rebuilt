@@ -267,6 +267,19 @@ For how those commands are intended to be combined, use `autonREADME.md`.
 These are not reasons to avoid the robot. They are the main assumptions to keep
 in mind while testing and debugging.
 
+## Post-Competition TODOs
+
+- Build a dashboard-based service mode for pit use.
+  - Use a dedicated Shuffleboard or SmartDashboard tab instead of spending more
+    match controller buttons.
+  - Add a clear service-mode arm or enable control so test actions are
+    intentional.
+  - Add one-shot test buttons for common checks such as turret presets, small
+    turret nudges, fixed shooter tests, feed tests, and drivetrain heading
+    reset.
+  - Keep the live status values on the same tab so students, mentors, and CSAs
+    can compare requested values against measured values while testing.
+
 ## Quick Debugging Guide
 
 If the robot problem is mostly about:
