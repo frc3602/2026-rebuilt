@@ -67,13 +67,14 @@ These do one job only.
 
 Examples:
 
+- `autonLowerIntake`
+- `autonRaiseIntake`
 - `autonStartIntake`
 - `autonStopIntake`
 - `autonSpinUpBetaShot`
 - `autonFeedBetaShot`
 - `autonStopShooting`
 - `autonTrackTower`
-- `autonLowerIntake`
 
 Why these are useful:
 
@@ -142,6 +143,7 @@ number of tiny one-line commands in every auto.
 ### Intake / Fuel Collection Setup
 
 - `autonLowerIntake`
+- `autonRaiseIntake`
 - `autonStartIntake`
 - `autonStopIntake`
 
@@ -195,6 +197,21 @@ Best use:
 
 - Starting a fuel collection routine
 - Preparing for future intake autos
+
+### `autonRaiseIntake`
+
+Use this when you want to bring the intake path back up during autonomous
+without changing the intake roller state.
+
+What it does:
+
+1. Sends the pivot to the team's current raised or stowed preset.
+
+Best use:
+
+- Before shooting so the intake path is out of the way
+- Before crossing back into a protected zone or traffic area
+- Any time an auto wants to separate "stop collecting" from "stow the mechanism"
 
 ### `autonStartIntake`
 

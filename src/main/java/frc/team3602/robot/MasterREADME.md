@@ -246,6 +246,10 @@ PathPlanner named commands are registered in `RobotContainer.java`.
 
 The most important current autonomous helpers are:
 
+- `autonLowerIntake`
+- `autonRaiseIntake`
+- `autonStartIntake`
+- `autonStopIntake`
 - `autonPrepareBetaShot`
 - `autonFeedBetaShot`
 - `autonStopShooting`

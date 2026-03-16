@@ -204,6 +204,17 @@ public class Superstructure {
     }
 
     /**
+     * Raises or stows the intake path for autonomous.
+     *
+     * We keep this separate from autonStopIntake() because some autos may want to
+     * stop the roller first, finish driving, and only then lift the mechanism for a
+     * shot or a protected return path.
+     */
+    public Command autonRaiseIntake() {
+        return pivotSubsys.dumbRaiseIntake();
+    }
+
+    /**
      * Starts only the intake roller for autonomous.
      *
      * This is intentionally separate from pivot motion so PathPlanner can decide

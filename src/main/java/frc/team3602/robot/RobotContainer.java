@@ -107,6 +107,7 @@ public class RobotContainer {
                 // name from the GUI.
                 NamedCommands.registerCommand("autonRunBetaShot", superStructure.autonRunBetaShot());
                 NamedCommands.registerCommand("autonLowerIntake", superStructure.autonLowerIntake());
+                NamedCommands.registerCommand("autonRaiseIntake", superStructure.autonRaiseIntake());
                 NamedCommands.registerCommand("autonStartIntake", superStructure.autonStartIntake());
                 NamedCommands.registerCommand("autonStopIntake", superStructure.autonStopIntake());
                 // Start the shooter for the simple beta autonomous shot without
