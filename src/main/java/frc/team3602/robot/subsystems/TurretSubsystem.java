@@ -55,6 +55,7 @@ public class TurretSubsystem extends SubsystemBase {
     private static final double ASSUMED_SHOOTER_HEIGHT_METERS = Units.inchesToMeters(20.0);
     private static final double TOWER_TARGET_HEIGHT_METERS = Units.inchesToMeters(72.0);
     private static final double SHOT_READY_ANGLE_TOLERANCE_DEGREES = 1.0;
+    private static final double MIN_TARGET_DISTANCE_FOR_LEAD_METERS = 1e-3;
 
     public CommandSwerveDrivetrain drivetrainSubsys;
     public ShooterSubsystem shooter;
@@ -533,6 +534,13 @@ public class TurretSubsystem extends SubsystemBase {
 
         // Distance to target
         double distanceToTarget = robotToTarget.getNorm();
+
+        // If the target point and robot point collapse onto nearly the same field
+        // position, the shot direction is effectively undefined. Keep the current
+        // request instead of dividing by a tiny number and creating invalid math.
+        if (distanceToTarget <= MIN_TARGET_DISTANCE_FOR_LEAD_METERS) {
+            return requestedTurretAimAngleDegrees;
+        }
 
         // Angle to target (field relative)
         Rotation2d angleToTarget = robotToTarget.getAngle();

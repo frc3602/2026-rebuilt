@@ -248,6 +248,8 @@ public class Limelight_Pose extends SubsystemBase {
       PoseEstimate megaTag1Estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue(cameraName);
       PoseEstimate megaTag2Estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cameraName);
       PoseEstimate freshestEstimate = getFreshestEstimate(megaTag1Estimate, megaTag2Estimate);
+      boolean megaTag1Fresh = isEstimateFresh(megaTag1Estimate, previousTimestamp);
+      boolean megaTag2Fresh = isEstimateFresh(megaTag2Estimate, previousTimestamp);
 
       if (freshestEstimate == null) {
         decision.statusMessage = "No pose data available from the camera";
@@ -283,11 +285,16 @@ public class Limelight_Pose extends SubsystemBase {
         return decision;
       }
 
-      if (isMegaTag1Reliable(megaTag1Estimate)
+      // Check freshness per pose mode instead of only once per camera. This keeps
+      // an older MegaTag1 or MegaTag2 result from being reused just because the
+      // other mode happened to update more recently.
+      if (megaTag1Fresh
+          && isMegaTag1Reliable(megaTag1Estimate)
           && passesDriveStateValidation(megaTag1Estimate, true, decision)) {
         fillDecisionFromEstimate(decision, megaTag1Estimate, true);
         decision.statusMessage = "Accepted fresh MegaTag1 frame";
-      } else if (isMegaTag2Reliable(megaTag2Estimate)
+      } else if (megaTag2Fresh
+          && isMegaTag2Reliable(megaTag2Estimate)
           && passesDriveStateValidation(megaTag2Estimate, false, decision)) {
         fillDecisionFromEstimate(decision, megaTag2Estimate, false);
         decision.statusMessage = "Accepted fresh MegaTag2 translation update";
@@ -326,6 +333,17 @@ public class Limelight_Pose extends SubsystemBase {
     }
 
     return megaTag1Estimate;
+  }
+
+  /**
+   * Returns whether a specific pose mode produced a new estimate this loop.
+   *
+   * We track freshness per pose mode because MegaTag1 and MegaTag2 may not update
+   * at exactly the same time. A newer result in one mode should not make an older
+   * result in the other mode look fresh by accident.
+   */
+  private boolean isEstimateFresh(PoseEstimate estimate, double previousTimestamp) {
+    return estimate != null && estimate.timestampSeconds > previousTimestamp;
   }
 
   /**
