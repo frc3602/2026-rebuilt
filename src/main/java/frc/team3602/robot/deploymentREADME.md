@@ -21,8 +21,10 @@ full teleop or autonomous routines.
 - Verify the robot is on blocks if any mechanism may move unexpectedly.
 - Verify the turret is physically placed in the team's expected start position
   of `90` degrees.
-- Verify the team is still using the current turret direction map:
-  rear = `0` / `360`, left = `90`, front = `180`, right = `270`.
+- Verify the team is still using the current public turret direction map:
+  forward = `0`, left = `90`, right = `-90`, rear = `180`.
+- Remember that the software still keeps a private `0` through `360` internal
+  travel model so it can handle the rear seam correctly.
 - Verify fuel is removed from the robot for the first motion checks.
 - Verify the turret lead-math assumptions still match the current shooter setup:
   `70` degree launch angle and `20` inch shooter height.
@@ -69,7 +71,7 @@ Shooting:
 - `X` = fixed `-44.0` shooter preset
 - `Y` = manual spindexer / transfer feed
 - Left trigger = failsafe shot
-- Failsafe shot = turret `0.0` degrees (rear) and shooter `-62.5` RPS
+- Failsafe shot = turret `180.0` degrees (rear) and shooter `-62.5` RPS
 
 Intake / Pivot Support:
 
@@ -101,6 +103,10 @@ Intake / Pivot Support:
 - Hold operator right trigger and confirm the turret actively tracks the alliance
   tower.
 - Release operator right trigger and confirm the turret stays stable.
+- While doing these checks, watch:
+  `Turret/MeasuredAimDegrees`, `Turret/RequestedAimDegrees`,
+  `Turret/AimErrorDegrees`, `Turret/MeasuredTravelDegrees`,
+  `Turret/RequestedTravelDegrees`, and `Turret/MotorVoltage`.
 
 ## Phase 4: Shooter Check
 
@@ -176,8 +182,8 @@ Then also verify the older split workflow still works:
 ## Phase 8: Failsafe Shot Check
 
 - Press and hold operator left trigger.
-- Confirm the turret moves to `0.0` degrees, which is the rear direction in the
-  current rear-zero turret map.
+- Confirm the turret moves to `180.0` degrees, which is the rear direction in
+  the public signed turret convention.
 - Confirm the shooter spins up to the fixed failsafe target of `-62.5` RPS.
 - Confirm feeding starts only after the built-in delay.
 - Confirm the routine stops the shooter and feed on its own after the fixed feed window.
@@ -208,6 +214,12 @@ Then also verify the older split workflow still works:
 - `Pose Distance`
 - `Shooter Lerp Speed`
 - `Pigeon Angle`
+- `Turret/MeasuredAimDegrees`
+- `Turret/RequestedAimDegrees`
+- `Turret/AimErrorDegrees`
+- `Turret/MeasuredTravelDegrees`
+- `Turret/RequestedTravelDegrees`
+- `Turret/MotorVoltage`
 
 These values help separate aiming problems from feed problems.
 

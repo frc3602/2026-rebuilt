@@ -276,6 +276,39 @@ public class TurretSubsystem extends SubsystemBase {
     }
 
     /**
+     * Returns the turret's currently requested public aim angle.
+     *
+     * This is the student-facing setpoint in the standard signed WPILib
+     * convention, so it is the easiest number to compare against the real turret
+     * direction during commissioning.
+     */
+    public double getRequestedTurretAimAngleDegrees() {
+        return requestedTurretAimAngleDegrees;
+    }
+
+    /**
+     * Returns the turret's currently requested internal travel angle.
+     *
+     * This is mainly useful when debugging rear-seam behavior. Most day-to-day
+     * tuning should focus on the public signed aim angle instead.
+     */
+    public double getRequestedTurretTravelAngleDegrees() {
+        return requestedTurretTravelAngleDegrees;
+    }
+
+    /**
+     * Returns the signed aiming error between the requested and measured turret
+     * direction.
+     *
+     * A positive value means the turret still needs to move farther left in the
+     * public WPILib convention. A negative value means it still needs to move
+     * farther right.
+     */
+    public double getTurretAimErrorDegrees() {
+        return normalizeSignedAimAngleDegrees(requestedTurretAimAngleDegrees - getTurretAngleDegrees());
+    }
+
+    /**
      * Calculates the turret angle needed to face the field target.
      *
      * The turret aims by comparing the robot's corrected field pose to the target's
@@ -708,12 +741,23 @@ public class TurretSubsystem extends SubsystemBase {
     // Periodic
     @Override
     public void periodic() {
-        // SmartDashboard.putNumber("Turret Encoder", getEncoder());
-        // SmartDashboard.putNumber("Turret Voltage", voltage);
-        // SmartDashboard.putNumber("Turret Aim Angle Degrees", getTurretAngleDegrees());
-        // SmartDashboard.putNumber("Requested Turret Aim Degrees", requestedTurretAimAngleDegrees);
-        // turretFeedForward = turnFeedforward();
-        // SmartDashboard.putNumber("Turret Feedforward", turretFeedForward); // Bruh
+        // Publish a small set of high-value tuning numbers every loop.
+        //
+        // We expose both the public signed aim angles and the private travel
+        // angles:
+        // - Aim angles are easiest for students and operators to reason about.
+        // - Travel angles help when debugging behavior around the rear seam.
+        //
+        // Angle error and motor voltage answer the two most common pit questions:
+        // "Is the turret being asked to go where I think?" and
+        // "Is the controller actually trying to move it there?"
+        SmartDashboard.putNumber("Turret/MeasuredAimDegrees", getTurretAngleDegrees());
+        SmartDashboard.putNumber("Turret/RequestedAimDegrees", getRequestedTurretAimAngleDegrees());
+        SmartDashboard.putNumber("Turret/AimErrorDegrees", getTurretAimErrorDegrees());
+        SmartDashboard.putNumber("Turret/MeasuredTravelDegrees", getTurretTravelAngleDegrees());
+        SmartDashboard.putNumber("Turret/RequestedTravelDegrees", getRequestedTurretTravelAngleDegrees());
+        SmartDashboard.putBoolean("Turret/AtRequestedAngle", isAtRequestedAngle());
+        SmartDashboard.putNumber("Turret/MotorVoltage", turretMotor.getMotorVoltage().getValueAsDouble());
         SmartDashboard.putData(startChooser);
     }
 

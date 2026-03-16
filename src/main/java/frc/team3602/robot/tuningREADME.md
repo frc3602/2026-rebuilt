@@ -216,6 +216,13 @@ These questions usually narrow the bug much faster than changing gains randomly.
 
 Useful values already published by the robot include:
 
+- `Turret/MeasuredAimDegrees`
+- `Turret/RequestedAimDegrees`
+- `Turret/AimErrorDegrees`
+- `Turret/MeasuredTravelDegrees`
+- `Turret/RequestedTravelDegrees`
+- `Turret/AtRequestedAngle`
+- `Turret/MotorVoltage`
 - `Robot X`
 - `Robot Y`
 - `Robot Angle`
@@ -231,7 +238,23 @@ Useful values already published by the robot include:
 - `Vision/Right/TranslationErrorMeters`
 - `Vision/Left/TranslationErrorMeters`
 
-These are especially helpful when fixed turret commands work but field tracking does not.
+How to use the turret values:
+
+- `Turret/MeasuredAimDegrees` is the real turret direction in the public WPILib
+  signed convention.
+- `Turret/RequestedAimDegrees` is the direction the software is asking for.
+- `Turret/AimErrorDegrees` should move toward `0` as the turret settles.
+- `Turret/MeasuredTravelDegrees` and `Turret/RequestedTravelDegrees` are the
+  internal seam-aware angles. These are most useful when debugging motion near
+  the rear of the robot.
+- `Turret/AtRequestedAngle` should turn true when the turret is within the
+  current ready-to-shoot tolerance.
+- `Turret/MotorVoltage` tells you whether the controller is actually trying to
+  move the mechanism or if the problem is more likely a bad setpoint or sensor
+  assumption.
+
+These are especially helpful when fixed turret commands work but field tracking
+does not.
 
 ## Drivetrain Commissioning Checklist
 
