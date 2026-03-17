@@ -64,7 +64,7 @@ public class ShooterSubsystem extends SubsystemBase {
      * control behavior.
      */
     private void applyVelocityTarget(double rotationsPerSecond) {
-        restoreFollowerControl();
+        //restoreFollowerControl();
         shootermotor1.setControl(m_request.withVelocity(rotationsPerSecond));
     }
 
