@@ -179,6 +179,17 @@ public class Superstructure {
 
     }
 
+    /**
+     * Continuously tracks the current alliance tower with the turret.
+     *
+     * Keeping this small wrapper in the superstructure makes operator bindings and
+     * autonomous code read the same way even though the turret subsystem owns the
+     * actual aiming math.
+     */
+    public Command trackAllianceTower() {
+        return turretSubsys.trackAllianceTower();
+    }
+
     // Intake
     // Review note 2026-03-15 10:15:26 -04:00: this method may be unused in the
     // current codebase.

@@ -304,6 +304,18 @@ public class TurretSubsystem extends SubsystemBase {
     }
 
     /**
+     * Returns the field position of the tower target currently selected for turret
+     * tracking.
+     *
+     * Publishing this as a helper keeps the SmartDashboard code easy to read and
+     * gives operators a direct way to confirm which alliance-side target the turret
+     * believes it should be aiming at.
+     */
+    public Translation2d getCurrentTargetFieldPosition() {
+        return getTargetPose();
+    }
+
+    /**
      * Returns the signed aiming error between the requested and measured turret
      * direction.
      *
@@ -313,6 +325,18 @@ public class TurretSubsystem extends SubsystemBase {
      */
     public double getTurretAimErrorDegrees() {
         return normalizeSignedAimAngleDegrees(requestedTurretAimAngleDegrees - getTurretAngleDegrees());
+    }
+
+    /**
+     * Returns the current direct robot-relative angle from the turret to the alliance
+     * tower.
+     *
+     * This value does not include moving-shot lead. It is useful for dashboard
+     * debugging because it answers the simple question, "where does the code think
+     * the tower is right now?"
+     */
+    public double getCurrentTowerAimAngleDegrees() {
+        return calculateDesiredAngle();
     }
 
     /**
@@ -835,6 +859,9 @@ public class TurretSubsystem extends SubsystemBase {
         SmartDashboard.putNumber("Turret/AimErrorDegrees", getTurretAimErrorDegrees());
         SmartDashboard.putNumber("Turret/MeasuredTravelDegrees", getTurretTravelAngleDegrees());
         SmartDashboard.putNumber("Turret/RequestedTravelDegrees", getRequestedTurretTravelAngleDegrees());
+        SmartDashboard.putNumber("Turret/TargetFieldX", getCurrentTargetFieldPosition().getX());
+        SmartDashboard.putNumber("Turret/TargetFieldY", getCurrentTargetFieldPosition().getY());
+        SmartDashboard.putNumber("Turret/TowerAimDegrees", getCurrentTowerAimAngleDegrees());
         SmartDashboard.putBoolean("Turret/AtRequestedAngle", isAtRequestedAngle());
         SmartDashboard.putNumber("Turret/MotorVoltage", turretMotor.getMotorVoltage().getValueAsDouble());
         SmartDashboard.putData(startChooser);

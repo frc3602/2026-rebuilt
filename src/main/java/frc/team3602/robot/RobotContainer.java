@@ -216,7 +216,8 @@ public class RobotContainer {
                 // While the operator holds the right trigger, keep the turret pointed
                 // at the current alliance tower. Releasing the trigger returns
                 // control to the turret's default hold-position command.
-                operatorController.rightTrigger().and(trackedShotNotHeld).whileTrue(turret.trackOperatorFieldPoint());
+                operatorController.rightTrigger().and(trackedShotNotHeld)
+                                .whileTrue(superStructure.trackAllianceTower());
                 // Hold B for the full tracked lerp shot. This keeps the turret on the
                 // tower, updates the shooter from the lerp table, and feeds
                 // automatically once the shot is ready.
