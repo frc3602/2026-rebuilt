@@ -135,6 +135,7 @@ public class TurretSubsystem extends SubsystemBase {
     // for a different target.
     private double requestedTurretAimAngleDegrees;
     private double requestedTurretTravelAngleDegrees;
+    private double requestedTurretControlTravelAngleDegrees;
 
     // Controllers *These PID values need to be changed*
     private final PIDController turretController = new PIDController(.04, 0.0, 0.0);
@@ -253,14 +254,18 @@ public class TurretSubsystem extends SubsystemBase {
         return distanceFeet;
     }
 
-    private double getTurretTravelAngleDegrees() {
+    private double getTurretUnwrappedTravelAngleDegrees() {
         // Get rotor position in motor rotations
         double motorRot = turretMotor.getRotorPosition().getValueAsDouble();
 
-        // Convert motor rotations into the turret's linear 0-360 travel coordinate.
-        double turretDeg = motorRot * TURRET_DEGREES_PER_MOTOR_ROTATION;
+        // Convert motor rotations into the turret's continuous travel coordinate.
+        // We keep this unwrapped for control so the turret can move smoothly across
+        // the rear seam without the measurement snapping from 0 to 360 or back.
+        return motorRot * TURRET_DEGREES_PER_MOTOR_ROTATION;
+    }
 
-        return clamp(turretDeg, MIN_TRAVEL_ANGLE_DEGREES, MAX_TRAVEL_ANGLE_DEGREES);
+    private double getTurretTravelAngleDegrees() {
+        return normalizeTravelAngle(getTurretUnwrappedTravelAngleDegrees());
     }
 
     /**
@@ -448,47 +453,65 @@ public class TurretSubsystem extends SubsystemBase {
                 convertSignedAimToTravelAngle(requestedTurretAimAngleDegrees),
                 MIN_TRAVEL_ANGLE_DEGREES,
                 MAX_TRAVEL_ANGLE_DEGREES);
+        requestedTurretControlTravelAngleDegrees = chooseLegalEquivalentTravelAngle(
+                getTurretUnwrappedTravelAngleDegrees(),
+                requestedTurretTravelAngleDegrees);
     }
 
     /**
-     * Returns whether the direct non-wrapping travel segment would pass through the
-     * front of the robot.
+     * Returns whether the direct travel segment would pass through the front of the
+     * robot.
      *
-     * In the turret's motor-space travel model, 180 degrees is straight forward.
-     * The mechanism can aim at that direction, but it should not shortcut through
-     * the front when moving between left and right. If the direct path would cross
-     * 180, we instead command the wrapped path through the rear seam at 0/360.
+     * In the turret's travel model, every angle of the form 180 + 360k points
+     * straight forward. The turret is allowed to aim there, but it should not cut
+     * through that front direction while moving between two rear-side positions.
      */
     private boolean directPathCrossesFront(double currentTravelDegrees, double targetTravelDegrees) {
         double lowerBound = Math.min(currentTravelDegrees, targetTravelDegrees);
         double upperBound = Math.max(currentTravelDegrees, targetTravelDegrees);
+        int firstFrontIndex = (int) Math.ceil((lowerBound - 180.0) / 360.0);
+        int lastFrontIndex = (int) Math.floor((upperBound - 180.0) / 360.0);
 
-        if (Math.abs(targetTravelDegrees - 180.0) < 1e-9 || Math.abs(currentTravelDegrees - 180.0) < 1e-9) {
-            return false;
+        for (int frontIndex = firstFrontIndex; frontIndex <= lastFrontIndex; frontIndex++) {
+            double frontAngleDegrees = 180.0 + (360.0 * frontIndex);
+            if (frontAngleDegrees > lowerBound + 1e-9 && frontAngleDegrees < upperBound - 1e-9) {
+                return true;
+            }
         }
 
-        return lowerBound < 180.0 && upperBound > 180.0;
+        return false;
     }
 
     /**
-     * Calculates the signed travel error that obeys the turret's legal path.
+     * Chooses the equivalent travel target that obeys the turret's legal path.
      *
-     * Most setpoints can use the direct travel difference. When that direct path
-     * would cross the front of the robot, we intentionally wrap the error through
-     * the rear seam instead so the mechanism stays on the legal side of travel.
+     * A rear-facing target can be represented as ..., -55, 305, 665, ... in the
+     * continuous travel frame. We search a few nearby equivalents and pick the
+     * closest one whose direct path does not cross the front of the robot.
      */
-    private double calculateLegalTravelErrorDegrees(double currentTravelDegrees, double targetTravelDegrees) {
-        double directErrorDegrees = targetTravelDegrees - currentTravelDegrees;
+    private double chooseLegalEquivalentTravelAngle(double currentTravelDegrees, double normalizedTargetTravelDegrees) {
+        double bestTargetTravelDegrees = normalizedTargetTravelDegrees;
+        double bestDistanceDegrees = Double.POSITIVE_INFINITY;
+        int nearestTurnIndex = (int) Math.round((currentTravelDegrees - normalizedTargetTravelDegrees) / 360.0);
 
-        if (!directPathCrossesFront(currentTravelDegrees, targetTravelDegrees)) {
-            return directErrorDegrees;
+        for (int turnOffset = -2; turnOffset <= 2; turnOffset++) {
+            double candidateTargetDegrees = normalizedTargetTravelDegrees + (360.0 * (nearestTurnIndex + turnOffset));
+            if (directPathCrossesFront(currentTravelDegrees, candidateTargetDegrees)) {
+                continue;
+            }
+
+            double candidateDistanceDegrees = Math.abs(candidateTargetDegrees - currentTravelDegrees);
+            if (candidateDistanceDegrees < bestDistanceDegrees) {
+                bestDistanceDegrees = candidateDistanceDegrees;
+                bestTargetTravelDegrees = candidateTargetDegrees;
+            }
         }
 
-        if (targetTravelDegrees > currentTravelDegrees) {
-            return (targetTravelDegrees - 360.0) - currentTravelDegrees;
+        if (bestDistanceDegrees < Double.POSITIVE_INFINITY) {
+            return bestTargetTravelDegrees;
         }
 
-        return (targetTravelDegrees + 360.0) - currentTravelDegrees;
+        return normalizedTargetTravelDegrees;
     }
 
     public double getBallVelocity() {
@@ -779,15 +802,11 @@ public class TurretSubsystem extends SubsystemBase {
      * alliance-tower tracking command so they use the same motor-control behavior.
      */
     private void applyTurretPositionControl() {
-        double currentTravelDegrees = getTurretTravelAngleDegrees();
-        double legalTravelErrorDegrees = calculateLegalTravelErrorDegrees(
-                currentTravelDegrees,
-                requestedTurretTravelAngleDegrees);
+        double currentTravelDegrees = getTurretUnwrappedTravelAngleDegrees();
 
-        // Feed the controller the legal signed error instead of the raw setpoint so
-        // the turret wraps through the rear seam and avoids shortcutting across the
-        // front of the robot.
-        var pidEffort = turretController.calculate(0.0, legalTravelErrorDegrees);
+        // Control against the unwrapped travel measurement so the turret can cross
+        // the rear seam smoothly without losing position continuity at 0/360.
+        var pidEffort = turretController.calculate(currentTravelDegrees, requestedTurretControlTravelAngleDegrees);
         turretMotor.setVoltage(pidEffort);
     }
 
