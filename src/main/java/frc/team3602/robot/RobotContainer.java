@@ -228,7 +228,7 @@ public class RobotContainer {
                 // not fight each other.
                 operatorController.a().and(trackedShotNotHeld).onTrue(shooter.setShootVelocity(-41.5))
                                 .onFalse(shooter.stopShooter());
-                operatorController.x().and(trackedShotNotHeld).onTrue(shooter.setShootVelocity(-50))
+                operatorController.x().and(trackedShotNotHeld).onTrue(shooter.setShootVelocity(-53))
                                 .onFalse(shooter.stopShooter());
                 // Left bumper raises/stows the intake path through the superstructure.
                 operatorController.leftBumper().onTrue(superStructure.stopIntake());
