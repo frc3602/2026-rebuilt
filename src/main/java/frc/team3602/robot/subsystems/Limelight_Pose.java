@@ -9,6 +9,8 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import java.util.ArrayList;
+import java.util.List;
 import frc.team3602.robot.LimelightHelpers;
 import frc.team3602.robot.LimelightHelpers.PoseEstimate;
 import frc.team3602.robot.LimelightHelpers.RawFiducial;
@@ -43,6 +45,29 @@ public class Limelight_Pose extends SubsystemBase {
     public String statusMessage = "No measurement processed yet";
   }
 
+  /**
+   * This small data object describes one accepted vision measurement that is ready
+   * to be fused into the drivetrain estimator.
+   *
+   * We keep the estimator inputs bundled together so the drivetrain can apply both
+   * accepted camera updates without re-computing trust values or re-reading
+   * Limelight data.
+   */
+  public static class AcceptedVisionMeasurement {
+    public final String cameraName;
+    public final PoseEstimate poseEstimate;
+    public final double xyStdDev;
+    public final double thetaStdDev;
+
+    public AcceptedVisionMeasurement(String cameraName, PoseEstimate poseEstimate,
+        double xyStdDev, double thetaStdDev) {
+      this.cameraName = cameraName;
+      this.poseEstimate = poseEstimate;
+      this.xyStdDev = xyStdDev;
+      this.thetaStdDev = thetaStdDev;
+    }
+  }
+
   private static final String CAMERA_RIGHT = "limelight-right";
   private static final String CAMERA_LEFT = "limelight-left";
 
@@ -50,16 +75,16 @@ public class Limelight_Pose extends SubsystemBase {
   // estimator. We keep the names explicit so students can connect the number with
   // the estimator behavior.
   private static final double LARGE_ROTATION_STD_DEV = 999999999.0;
-  private static final double MIN_MT2_TAG_AREA = 0.05;
+  private static final double MIN_MT2_TAG_AREA = 0.12;
   private static final double MIN_MT1_TAG_AREA = 0.20;
-  private static final double MAX_MT2_TAG_DISTANCE_METERS = 6.0;
+  private static final double MAX_MT2_TAG_DISTANCE_METERS = 4.5;
   private static final double MAX_MT1_TAG_DISTANCE_METERS = 5.0;
-  private static final double MAX_MT2_AMBIGUITY = 0.60;
+  private static final double MAX_MT2_AMBIGUITY = 0.35;
   private static final double MAX_MT1_AMBIGUITY = 0.35;
   private static final double MAX_LATENCY_MILLISECONDS = 90.0;
   private static final double MAX_MEASUREMENT_AGE_SECONDS = 0.20;
   private static final double MAX_MT1_TRANSLATION_JUMP_METERS = 2.0;
-  private static final double MAX_MT2_TRANSLATION_JUMP_METERS = 1.5;
+  private static final double MAX_MT2_TRANSLATION_JUMP_METERS = 1.0;
   private static final double MAX_MT1_HEADING_JUMP_DEGREES = 50.0;
   private static final double CAMERA_SWITCH_QUALITY_MARGIN = 1.50;
   private static final double STATIONARY_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND = 0.15;
@@ -178,11 +203,12 @@ public class Limelight_Pose extends SubsystemBase {
   }
 
   /**
-   * Chooses the best accepted camera measurement for the drivetrain to fuse.
+   * Chooses the best accepted camera measurement to publish as the shared
+   * "selected" vision pose.
    *
-   * We compare both cameras in the same loop and forward only the strongest fresh
-   * measurement. This prevents "first camera wins" behavior and makes better use of
-   * having two Limelights mounted on the robot.
+   * The drivetrain estimator can now fuse both accepted camera updates, but the
+   * rest of the robot still benefits from having one clearly labeled "best" pose
+   * for dashboards and aiming debug readouts.
    */
   public void SetPoseEstimateForDrive() {
     poseUpdateAvailable = false;
@@ -202,10 +228,38 @@ public class Limelight_Pose extends SubsystemBase {
   }
 
   /**
+   * Returns every accepted camera measurement from the current loop.
+   *
+   * We return both accepted camera updates here so the drivetrain estimator can
+   * benefit from each valid Limelight solve instead of throwing one away.
+   */
+  public List<AcceptedVisionMeasurement> getAcceptedMeasurements() {
+    List<AcceptedVisionMeasurement> acceptedMeasurements = new ArrayList<>();
+
+    if (cam1Decision.acceptedMeasurement && cam1Decision.selectedEstimate != null) {
+      acceptedMeasurements.add(new AcceptedVisionMeasurement(
+          cam1Decision.cameraName,
+          cam1Decision.selectedEstimate,
+          cam1Decision.xyStdDev,
+          cam1Decision.thetaStdDev));
+    }
+
+    if (cam2Decision.acceptedMeasurement && cam2Decision.selectedEstimate != null) {
+      acceptedMeasurements.add(new AcceptedVisionMeasurement(
+          cam2Decision.cameraName,
+          cam2Decision.selectedEstimate,
+          cam2Decision.xyStdDev,
+          cam2Decision.thetaStdDev));
+    }
+
+    return acceptedMeasurements;
+  }
+
+  /**
    * Marks the currently selected vision correction as consumed.
    *
-   * The drivetrain calls this after it fuses the selected measurement so we do not
-   * accidentally apply the same camera frame again on a later loop.
+   * The drivetrain calls this after it fuses the accepted measurements so we do
+   * not accidentally apply the same camera frames again on a later loop.
    */
   public void UpdateVisionCorrectionAdded() {
     poseUpdateAvailable = false;
@@ -444,7 +498,22 @@ public class Limelight_Pose extends SubsystemBase {
       return false;
     }
 
-    return getMaxAmbiguity(estimate) <= MAX_MT2_AMBIGUITY;
+    double maxAmbiguity = getMaxAmbiguity(estimate);
+    if (maxAmbiguity > MAX_MT2_AMBIGUITY) {
+      return false;
+    }
+
+    // For tower aiming, a weak single-tag MegaTag2 solve usually hurts more than
+    // it helps. We only accept one-tag MT2 frames when the tag is large, close,
+    // and very unambiguous.
+    if (estimate.tagCount == 1) {
+      boolean singleTagIsStrong = estimate.avgTagArea >= 0.20
+          && estimate.avgTagDist <= 3.0
+          && maxAmbiguity <= 0.20;
+      return singleTagIsStrong;
+    }
+
+    return true;
   }
 
   /**

@@ -439,16 +439,21 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 currentYawDegreesPerSecond,
                 currentLinearSpeedMetersPerSecond);
 
-        if (Limelight_Pose.getInstance().poseUpdateAvailable){
-            // Feed the accepted Limelight measurement into the drivetrain's built-in
-            // estimator so every subsystem reads the same corrected pose.
-            addVisionMeasurement(
-                Limelight_Pose.getInstance().poseCamEstimate.pose,
-                Limelight_Pose.getInstance().poseCamEstimate.timestampSeconds,
-                VecBuilder.fill(
-                    Limelight_Pose.getInstance().poseUpdateXYTrustFactor,
-                    Limelight_Pose.getInstance().poseUpdateXYTrustFactor,
-                    Limelight_Pose.getInstance().poseUpdateRotTrustFactor));
+        var acceptedVisionMeasurements = Limelight_Pose.getInstance().getAcceptedMeasurements();
+        if (!acceptedVisionMeasurements.isEmpty()){
+            // Feed every accepted Limelight measurement into the drivetrain's built-in
+            // estimator. This lets the pose estimator benefit from both rear cameras
+            // in the same loop when each one has a valid AprilTag solve.
+            for (var measurement : acceptedVisionMeasurements) {
+                addVisionMeasurement(
+                    measurement.poseEstimate.pose,
+                    measurement.poseEstimate.timestampSeconds,
+                    VecBuilder.fill(
+                        measurement.xyStdDev,
+                        measurement.xyStdDev,
+                        measurement.thetaStdDev));
+            }
+
             Limelight_Pose.getInstance().UpdateVisionCorrectionAdded();
         }
 
