@@ -14,6 +14,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -57,6 +58,9 @@ public class TurretSubsystem extends SubsystemBase {
     private static final double TOWER_TARGET_HEIGHT_METERS = Units.inchesToMeters(72.0);
     private static final double SHOT_READY_ANGLE_TOLERANCE_DEGREES = 1.0;
     private static final double MIN_TARGET_DISTANCE_FOR_LEAD_METERS = 1e-3;
+    private static final double AIM_VISION_POSE_MAX_AGE_SECONDS = 0.20;
+    private static final double AIM_VISION_MAX_LINEAR_SPEED_METERS_PER_SECOND = 0.75;
+    private static final double AIM_VISION_MAX_YAW_RATE_DEGREES_PER_SECOND = 120.0;
 
     public CommandSwerveDrivetrain drivetrainSubsys;
     public ShooterSubsystem shooter;
@@ -238,7 +242,7 @@ public class TurretSubsystem extends SubsystemBase {
     public double getDistanceToTarget() {
 
         // Robot pose from the drivetrain's shared estimate.
-        Pose2d robotPose = drivetrainSubsys.getEstimatedPose();
+        Pose2d robotPose = getPoseForTurretAiming();
 
         // Target field location (meters).
         Translation2d targetPosition = getTargetPose();
@@ -350,7 +354,7 @@ public class TurretSubsystem extends SubsystemBase {
     // current codebase.
     public double calculateDesiredAngle() {
 
-        Pose2d robotPose = drivetrainSubsys.getEstimatedPose();
+        Pose2d robotPose = getPoseForTurretAiming();
 
         Translation2d target = getTargetPose();
 
@@ -609,8 +613,8 @@ public class TurretSubsystem extends SubsystemBase {
      */
     public double calculateTurretOffset() {
 
-        // Get the latest shared robot pose.
-        Pose2d robotPose = drivetrainSubsys.getEstimatedPose();
+        // Get the freshest pose we want turret aiming to trust right now.
+        Pose2d robotPose = getPoseForTurretAiming();
 
         // Target position on field (meters)
         Translation2d targetPosition = getTargetPose();
@@ -795,7 +799,7 @@ public class TurretSubsystem extends SubsystemBase {
      * travel coordinates needed by the real mechanism.
      */
     private double calculateTurretAngleForFieldPoint(Translation2d fieldPoint) {
-        Pose2d robotPose = drivetrainSubsys.getEstimatedPose();
+        Pose2d robotPose = getPoseForTurretAiming();
 
         double deltaX = fieldPoint.getX() - robotPose.getX();
         double deltaY = fieldPoint.getY() - robotPose.getY();
@@ -862,9 +866,84 @@ public class TurretSubsystem extends SubsystemBase {
         SmartDashboard.putNumber("Turret/TargetFieldX", getCurrentTargetFieldPosition().getX());
         SmartDashboard.putNumber("Turret/TargetFieldY", getCurrentTargetFieldPosition().getY());
         SmartDashboard.putNumber("Turret/TowerAimDegrees", getCurrentTowerAimAngleDegrees());
+        SmartDashboard.putString("Turret/AimPoseSource", getAimPoseSourceLabel());
+        SmartDashboard.putNumber("Turret/AimPoseAgeSeconds", getAimPoseAgeSeconds());
         SmartDashboard.putBoolean("Turret/AtRequestedAngle", isAtRequestedAngle());
         SmartDashboard.putNumber("Turret/MotorVoltage", turretMotor.getMotorVoltage().getValueAsDouble());
         SmartDashboard.putData(startChooser);
+    }
+
+    /**
+     * Returns the pose source the turret should use for aiming right now.
+     *
+     * We normally want all robot systems to agree on the drivetrain estimator pose,
+     * but turret aiming benefits from a fresher camera correction when one is
+     * available. If a recent accepted Limelight pose exists, we use it directly for
+     * turret geometry so the requested angle reacts immediately instead of waiting
+     * for the estimator to blend that correction in over several loops.
+     */
+    private Pose2d getPoseForTurretAiming() {
+        Limelight_Pose limelightPose = Limelight_Pose.getInstance();
+
+        if (canUseVisionPoseForAiming(limelightPose)) {
+            return limelightPose.poseCamEstimate.pose;
+        }
+
+        return drivetrainSubsys.getEstimatedPose();
+    }
+
+    /**
+     * Returns whether the latest accepted Limelight pose is fresh enough to use for
+     * turret aiming.
+     *
+     * We keep this separate from the drivetrain estimator on purpose. A turret only
+     * needs the newest believable robot pose so it can point quickly, while the full
+     * estimator is intentionally smoother because it also supports driving and
+     * autonomous path following.
+     */
+    private boolean canUseVisionPoseForAiming(Limelight_Pose limelightPose) {
+        if (limelightPose.poseCamEstimate == null) {
+            return false;
+        }
+
+        double poseAgeSeconds = Timer.getFPGATimestamp() - limelightPose.poseCamEstimate.timestampSeconds;
+        if (poseAgeSeconds > AIM_VISION_POSE_MAX_AGE_SECONDS) {
+            return false;
+        }
+
+        ChassisSpeeds robotRelativeSpeeds = drivetrainSubsys.getState().Speeds;
+        double linearSpeedMetersPerSecond = Math.hypot(
+                robotRelativeSpeeds.vxMetersPerSecond,
+                robotRelativeSpeeds.vyMetersPerSecond);
+        double yawRateDegreesPerSecond = Math.abs(
+                drivetrainSubsys.getPigeon2().getAngularVelocityZWorld().getValueAsDouble());
+
+        return linearSpeedMetersPerSecond <= AIM_VISION_MAX_LINEAR_SPEED_METERS_PER_SECOND
+                && yawRateDegreesPerSecond <= AIM_VISION_MAX_YAW_RATE_DEGREES_PER_SECOND;
+    }
+
+    /**
+     * Returns a short label describing whether turret aiming is currently using the
+     * freshest Limelight pose or the drivetrain estimator pose.
+     */
+    private String getAimPoseSourceLabel() {
+        return canUseVisionPoseForAiming(Limelight_Pose.getInstance()) ? "Vision" : "Estimator";
+    }
+
+    /**
+     * Returns the age of the current accepted vision pose.
+     *
+     * This helps pit-side debugging because the team can tell whether turret aiming
+     * is falling back to the drivetrain estimate due to stale camera data.
+     */
+    private double getAimPoseAgeSeconds() {
+        Limelight_Pose limelightPose = Limelight_Pose.getInstance();
+
+        if (limelightPose.poseCamEstimate == null) {
+            return -1.0;
+        }
+
+        return Math.max(0.0, Timer.getFPGATimestamp() - limelightPose.poseCamEstimate.timestampSeconds);
     }
 
     // Config
