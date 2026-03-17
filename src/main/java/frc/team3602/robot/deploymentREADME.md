@@ -24,7 +24,7 @@ full teleop or autonomous routines.
 - Verify the team is still using the current public turret direction map:
   forward = `0`, left = `90`, right = `-90`, rear = `180`.
 - Remember that the software still keeps a private `0` through `360` internal
-  travel model so it can handle the rear seam correctly.
+  travel model so it can handle the front seam correctly.
 - Verify fuel is removed from the robot for the first motion checks.
 - Verify the turret lead-math assumptions still match the current shooter setup:
   `70` degree launch angle and `20` inch shooter height.
@@ -99,7 +99,7 @@ Intake / Pivot Support:
 - Press operator POV down and confirm the turret goes to the right-side preset.
 - Press operator POV left and confirm the turret goes to the left corner preset.
 - Press operator POV right and confirm the turret goes to the right corner preset.
-- If the turret moves near the rear seam, confirm it goes around the `0` / `360`
+- If the turret moves near the front seam, confirm it goes around the `0` / `360`
   boundary instead of trying to wrap across it.
 - Hold operator right trigger and confirm the turret actively tracks the alliance
   tower.
@@ -240,7 +240,7 @@ These values help separate aiming problems from feed problems.
 - Stop and test with no fuel first.
 - If only one shooter motor seems active, re-check shooter follower behavior.
 - If the turret drifts while shooting, re-check turret brake mode and turret hold behavior.
-- If the turret takes a shortcut across the rear seam, re-check the new
+- If the turret takes a shortcut across the front seam, re-check the new
   `0` through `360` travel model and startup-angle assumptions.
 - If shots consistently arc high or low, re-check the turret lead-math
   assumptions for shooter height and launch angle.
