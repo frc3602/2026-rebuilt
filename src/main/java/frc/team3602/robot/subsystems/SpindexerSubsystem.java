@@ -12,9 +12,10 @@ import frc.team3602.robot.Constants.spindexerConstants;
 
 public class SpindexerSubsystem extends SubsystemBase {
     // The spindexer wheel is about 4 inches in diameter while the transfer/X44
-    // wheel is about 1 inch in diameter. To keep their surface speeds matched,
-    // the smaller transfer wheel needs to spin about 4x faster than the spindexer.
-    private static final double TRANSFER_TO_SPINDEXER_DIAMETER_RATIO = 0.25;
+    // wheel is about 1 inch in diameter. In practice, running the transfer wheel a
+    // little slower than the pure diameter math can be gentler on game pieces and
+    // reduce the chance of over-driving the handoff into the shooter.
+    private static final double TRANSFER_TO_SPINDEXER_DIAMETER_RATIO = 0.30;
 
     /* Motors */
 
