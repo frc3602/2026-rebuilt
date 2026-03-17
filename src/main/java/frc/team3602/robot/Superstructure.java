@@ -7,6 +7,7 @@
 package frc.team3602.robot;
 
 import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.team3602.robot.Constants.ShooterConstants;
@@ -34,9 +35,10 @@ public class Superstructure {
     private static final double FAILSAFE_SHOOTER_SPINUP_SECONDS = 4.0;
     private static final double FAILSAFE_FEED_RPS = -62.5;
     private static final double FAILSAFE_FEED_TIME_SECONDS = 1.0;
-    private static final double TRACKED_LERP_FEED_RPS = -35.0;
-    private static final double TRACKED_LERP_READY_TOLERANCE_RPS = 1.0;
-    private static final double TRACKED_LERP_READY_DEBOUNCE_SECONDS = 0.10;
+    private static final double TRACKED_LERP_FEED_RPS = -26.25;
+    private static final double TRACKED_LERP_READY_SHOOTER_TOLERANCE_RPS = 2.5;
+    private static final double TRACKED_LERP_READY_TURRET_TOLERANCE_DEGREES = 2.5;
+    private static final double TRACKED_LERP_READY_DEBOUNCE_SECONDS = 0.05;
 
 
     public IntakeSubsystem intakeSubsys;
@@ -113,8 +115,17 @@ public class Superstructure {
      * is first pressed.
      */
     private boolean isTrackedLerpShotRawReady() {
-        return shooterSubsys.isNearLerpVelocity(TRACKED_LERP_READY_TOLERANCE_RPS)
-                && turretSubsys.isAtRequestedAngle();
+        boolean shooterReady = shooterSubsys.isNearLerpVelocity(TRACKED_LERP_READY_SHOOTER_TOLERANCE_RPS);
+        double turretAimErrorDegrees = Math.abs(turretSubsys.getTurretAimErrorDegrees());
+        boolean turretReady = turretAimErrorDegrees <= TRACKED_LERP_READY_TURRET_TOLERANCE_DEGREES;
+
+        // Publish the two readiness checks separately so the team can see whether
+        // the B-button shot is waiting on flywheel speed or turret angle.
+        SmartDashboard.putBoolean("TrackedShot/ShooterReady", shooterReady);
+        SmartDashboard.putBoolean("TrackedShot/TurretReady", turretReady);
+        SmartDashboard.putNumber("TrackedShot/TurretAimErrorDegrees", turretAimErrorDegrees);
+
+        return shooterReady && turretReady;
     }
 
     /**
@@ -127,6 +138,7 @@ public class Superstructure {
     private void resetTrackedLerpShotState() {
         trackedLerpShotReadyLatched = false;
         trackedLerpReadyDebouncer.calculate(false);
+        SmartDashboard.putBoolean("TrackedShot/ReadyLatched", false);
     }
 
     /**
@@ -142,6 +154,7 @@ public class Superstructure {
             trackedLerpShotReadyLatched = true;
         }
 
+        SmartDashboard.putBoolean("TrackedShot/ReadyLatched", trackedLerpShotReadyLatched);
         return trackedLerpShotReadyLatched;
     }
 
