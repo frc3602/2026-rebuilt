@@ -75,22 +75,25 @@ public class Limelight_Pose extends SubsystemBase {
   // estimator. We keep the names explicit so students can connect the number with
   // the estimator behavior.
   private static final double LARGE_ROTATION_STD_DEV = 999999999.0;
-  private static final double MIN_MT2_TAG_AREA = 0.12;
-  private static final double MIN_MT1_TAG_AREA = 0.20;
-  private static final double MAX_MT2_TAG_DISTANCE_METERS = 4.5;
-  private static final double MAX_MT1_TAG_DISTANCE_METERS = 5.0;
-  private static final double MAX_MT2_AMBIGUITY = 0.35;
-  private static final double MAX_MT1_AMBIGUITY = 0.35;
-  private static final double MAX_LATENCY_MILLISECONDS = 90.0;
-  private static final double MAX_MEASUREMENT_AGE_SECONDS = 0.20;
-  private static final double MAX_MT1_TRANSLATION_JUMP_METERS = 2.0;
-  private static final double MAX_MT2_TRANSLATION_JUMP_METERS = 1.0;
-  private static final double MAX_MT1_HEADING_JUMP_DEGREES = 50.0;
+  // These thresholds are intentionally conservative. A frame must be fairly clean
+  // before we let it pull the robot pose, because a slightly delayed or slightly
+  // wrong solve is worse than a slower correction when we are trying to aim.
+  private static final double MIN_MT2_TAG_AREA = 0.18;
+  private static final double MIN_MT1_TAG_AREA = 0.28;
+  private static final double MAX_MT2_TAG_DISTANCE_METERS = 3.5;
+  private static final double MAX_MT1_TAG_DISTANCE_METERS = 4.5;
+  private static final double MAX_MT2_AMBIGUITY = 0.22;
+  private static final double MAX_MT1_AMBIGUITY = 0.25;
+  private static final double MAX_LATENCY_MILLISECONDS = 70.0;
+  private static final double MAX_MEASUREMENT_AGE_SECONDS = 0.12;
+  private static final double MAX_MT1_TRANSLATION_JUMP_METERS = 1.0;
+  private static final double MAX_MT2_TRANSLATION_JUMP_METERS = 0.60;
+  private static final double MAX_MT1_HEADING_JUMP_DEGREES = 20.0;
   private static final double CAMERA_SWITCH_QUALITY_MARGIN = 1.50;
   private static final double STATIONARY_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND = 0.15;
   private static final double STATIONARY_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND = 12.0;
-  private static final double STATIONARY_XY_STD_DEV_BONUS = 0.30;
-  private static final double STATIONARY_THETA_STD_DEV_BONUS = 0.12;
+  private static final double STATIONARY_XY_STD_DEV_BONUS = 0.10;
+  private static final double STATIONARY_THETA_STD_DEV_BONUS = 0.05;
   // MegaTag1 is the full AprilTag pose solve that can contribute both translation
   // and rotation corrections. We keep this toggle in the code so the team can
   // temporarily disable MegaTag1 during troubleshooting without rewriting the
@@ -612,14 +615,24 @@ public class Limelight_Pose extends SubsystemBase {
    * when ambiguity grows.
    */
   private double calculateXYStdDev(PoseEstimate estimate, boolean usingMegaTag1) {
-    double xyStdDev = 1.20;
+    // Start from a more cautious baseline so even accepted frames still have to
+    // "earn" trust with good tag geometry.
+    double xyStdDev = 1.45;
 
     if (estimate.tagCount >= 2) {
       xyStdDev -= 0.25;
     }
 
+    if (estimate.tagCount >= 3) {
+      xyStdDev -= 0.10;
+    }
+
     if (estimate.avgTagArea >= 0.20) {
       xyStdDev -= 0.20;
+    }
+
+    if (estimate.avgTagArea < 0.30) {
+      xyStdDev += 0.15;
     }
 
     if (estimate.avgTagDist > 3.0) {
@@ -637,7 +650,7 @@ public class Limelight_Pose extends SubsystemBase {
     if (!usingMegaTag1) {
       // MegaTag2 translation is useful, but we stay a little more conservative than
       // a strong MegaTag1 solution.
-      xyStdDev += 0.15;
+      xyStdDev += 0.30;
     }
 
     // Fast motion makes camera measurements less reliable, so we automatically
@@ -653,7 +666,7 @@ public class Limelight_Pose extends SubsystemBase {
       xyStdDev -= STATIONARY_XY_STD_DEV_BONUS;
     }
 
-    return clamp(xyStdDev, 0.35, 2.50);
+    return clamp(xyStdDev, 0.60, 3.00);
   }
 
   /**
@@ -667,10 +680,16 @@ public class Limelight_Pose extends SubsystemBase {
       return LARGE_ROTATION_STD_DEV;
     }
 
-    double thetaStdDev = 0.50;
+    // Rotation mistakes are especially painful for turret aiming, so keep vision
+    // heading corrections conservative unless the frame looks excellent.
+    double thetaStdDev = 0.65;
 
     if (estimate.tagCount >= 3) {
       thetaStdDev -= 0.10;
+    }
+
+    if (estimate.tagCount < 3) {
+      thetaStdDev += 0.10;
     }
 
     if (estimate.avgTagArea < 0.30) {
@@ -692,7 +711,7 @@ public class Limelight_Pose extends SubsystemBase {
       thetaStdDev -= STATIONARY_THETA_STD_DEV_BONUS;
     }
 
-    return clamp(thetaStdDev, 0.35, 1.50);
+    return clamp(thetaStdDev, 0.45, 1.80);
   }
 
   /**
