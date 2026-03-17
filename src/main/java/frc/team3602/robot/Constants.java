@@ -68,11 +68,12 @@ public final class Constants {
         // - +X points toward the red alliance wall
         // - +Y points left across the field
         //
-        // The field is about 16.54 m long and 8.07 m wide.
-        // Both towers are centered across the width of the field, so they share
-        // Y = 4.035 m. Each tower sits about 2.03 m from its alliance wall.
-        public final static Translation2d kBlueTowerPosition = new Translation2d(2.03, 4.035);
-        public final static Translation2d kRedTowerPosition = new Translation2d(14.51, 4.035);
+        // These tower positions are the team's measured field targets in meters.
+        // Keeping the measured numbers here lets turret aiming, distance
+        // calculations, and autonomous tower shots all use the same real-world
+        // reference points.
+        public final static Translation2d kBlueTowerPosition = new Translation2d(4.634, 4.029);
+        public final static Translation2d kRedTowerPosition = new Translation2d(11.919, 4.029);
     }
 
     
