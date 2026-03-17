@@ -49,7 +49,7 @@ public class TurretSubsystem extends SubsystemBase {
     // When the target direction is very close to the rear seam, keep the turret on
     // its current side of travel instead of letting tiny pose noise flip the
     // setpoint from 0 to 360 or back again.
-    private static final double REAR_SEAM_DEADBAND_DEGREES = 5.0;
+    private static final double REAR_SEAM_DEADBAND_DEGREES = 2.0;
     // These values are the current best estimates for the turret's moving-shot
     // lead math. They should be updated whenever on-robot testing gives us better
     // measured numbers for the shooter exit angle or release height.
@@ -58,6 +58,8 @@ public class TurretSubsystem extends SubsystemBase {
     private static final double TOWER_TARGET_HEIGHT_METERS = Units.inchesToMeters(72.0);
     private static final double SHOT_READY_ANGLE_TOLERANCE_DEGREES = 1.0;
     private static final double MIN_TARGET_DISTANCE_FOR_LEAD_METERS = 1e-3;
+    private static final double MIN_ACTIVE_CORRECTION_ERROR_DEGREES = 2.0;
+    private static final double MIN_ACTIVE_CORRECTION_VOLTAGE = 0.9;
     private static final double AIM_VISION_POSE_MAX_AGE_SECONDS = 0.20;
     private static final double AIM_VISION_MAX_LINEAR_SPEED_METERS_PER_SECOND = 0.75;
     private static final double AIM_VISION_MAX_YAW_RATE_DEGREES_PER_SECOND = 120.0;
@@ -141,8 +143,11 @@ public class TurretSubsystem extends SubsystemBase {
     private double requestedTurretTravelAngleDegrees;
     private double requestedTurretControlTravelAngleDegrees;
 
-    // Controllers *These PID values need to be changed*
-    private final PIDController turretController = new PIDController(.04, 0.0, 0.0);
+    // Controllers
+    // The turret was holding too much steady-state error while tracking the tower,
+    // so we keep the simple PID structure but allow a slightly stronger proportional
+    // response than before.
+    private final PIDController turretController = new PIDController(.06, 0.0, 0.0);
 
     /**
      * Checks whether the turret is pointed close enough to the requested angle for
@@ -831,10 +836,21 @@ public class TurretSubsystem extends SubsystemBase {
      */
     private void applyTurretPositionControl() {
         double currentTravelDegrees = getTurretUnwrappedTravelAngleDegrees();
+        double travelErrorDegrees = requestedTurretControlTravelAngleDegrees - currentTravelDegrees;
 
         // Control against the unwrapped travel measurement so the turret can cross
         // the rear seam smoothly without losing position continuity at 0/360.
         var pidEffort = turretController.calculate(currentTravelDegrees, requestedTurretControlTravelAngleDegrees);
+
+        // If the turret is still clearly off target but the pure PID effort is too
+        // small to overcome friction, enforce a small minimum correction voltage.
+        // This helps the turret finish the move instead of stalling several degrees
+        // away from the tower.
+        if (Math.abs(travelErrorDegrees) > MIN_ACTIVE_CORRECTION_ERROR_DEGREES
+                && Math.abs(pidEffort) < MIN_ACTIVE_CORRECTION_VOLTAGE) {
+            pidEffort = Math.copySign(MIN_ACTIVE_CORRECTION_VOLTAGE, travelErrorDegrees);
+        }
+
         turretMotor.setVoltage(pidEffort);
     }
 
