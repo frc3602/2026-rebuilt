@@ -62,6 +62,17 @@ public class Limelight_Pose extends SubsystemBase {
   private static final double MAX_MT2_TRANSLATION_JUMP_METERS = 1.5;
   private static final double MAX_MT1_HEADING_JUMP_DEGREES = 50.0;
   private static final double CAMERA_SWITCH_QUALITY_MARGIN = 1.50;
+  // Field-side workaround:
+  // MegaTag1 is the full AprilTag pose solve that becomes active when the camera
+  // sees strong multi-tag geometry. Right now those multi-tag solves are showing a
+  // mirrored robot pose on the field, so we temporarily disable MegaTag1 and keep
+  // using MegaTag2 translation updates instead.
+  //
+  // MegaTag2 still uses AprilTags, but it leans on the drivetrain heading we send
+  // into the Limelight each loop. That makes it a safer fallback for match play
+  // while we track down the underlying camera mounting or Limelight configuration
+  // issue after the event.
+  private static final boolean ALLOW_MEGATAG1_UPDATES = false;
 
   /** Creates a new Limelight pose subsystem. */
 
@@ -288,7 +299,8 @@ public class Limelight_Pose extends SubsystemBase {
       // Check freshness per pose mode instead of only once per camera. This keeps
       // an older MegaTag1 or MegaTag2 result from being reused just because the
       // other mode happened to update more recently.
-      if (megaTag1Fresh
+      if (ALLOW_MEGATAG1_UPDATES
+          && megaTag1Fresh
           && isMegaTag1Reliable(megaTag1Estimate)
           && passesDriveStateValidation(megaTag1Estimate, true, decision)) {
         fillDecisionFromEstimate(decision, megaTag1Estimate, true);
@@ -673,6 +685,7 @@ public class Limelight_Pose extends SubsystemBase {
     SmartDashboard.putBoolean("Vision/Selected/Available", poseUpdateAvailable);
     SmartDashboard.putString("Vision/Selected/Camera", getSelectedCameraLabel());
     SmartDashboard.putString("Vision/Selected/PreferredCamera", preferredCameraName);
+    SmartDashboard.putBoolean("Vision/Config/AllowMegaTag1", ALLOW_MEGATAG1_UPDATES);
     SmartDashboard.putNumber("Vision/Selected/XYStdDev", poseUpdateXYTrustFactor);
     SmartDashboard.putNumber("Vision/Selected/ThetaStdDev", poseUpdateRotTrustFactor);
     SmartDashboard.putNumber("Vision/Drive/YawRateDegPerSec", currentDriveYawRate);
