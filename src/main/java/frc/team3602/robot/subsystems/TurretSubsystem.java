@@ -58,8 +58,9 @@ public class TurretSubsystem extends SubsystemBase {
     private static final double TOWER_TARGET_HEIGHT_METERS = Units.inchesToMeters(72.0);
     private static final double SHOT_READY_ANGLE_TOLERANCE_DEGREES = 1.0;
     private static final double MIN_TARGET_DISTANCE_FOR_LEAD_METERS = 1e-3;
-    private static final double MIN_ACTIVE_CORRECTION_ERROR_DEGREES = 2.0;
-    private static final double MIN_ACTIVE_CORRECTION_VOLTAGE = 0.9;
+    private static final double MIN_ACTIVE_CORRECTION_ERROR_DEGREES = 3.0;
+    private static final double MIN_ACTIVE_CORRECTION_VOLTAGE = 0.45;
+    private static final boolean ALLOW_DIRECT_VISION_POSE_FOR_AIMING = false;
     private static final double AIM_VISION_POSE_MAX_AGE_SECONDS = 0.20;
     private static final double AIM_VISION_MAX_LINEAR_SPEED_METERS_PER_SECOND = 0.75;
     private static final double AIM_VISION_MAX_YAW_RATE_DEGREES_PER_SECOND = 120.0;
@@ -144,10 +145,10 @@ public class TurretSubsystem extends SubsystemBase {
     private double requestedTurretControlTravelAngleDegrees;
 
     // Controllers
-    // The turret was holding too much steady-state error while tracking the tower,
-    // so we keep the simple PID structure but allow a slightly stronger proportional
-    // response than before.
-    private final PIDController turretController = new PIDController(.06, 0.0, 0.0);
+    // Tracking was starting to oscillate once the turret began following live pose
+    // updates, so we back the proportional gain down to keep the mechanism calmer
+    // around the target instead of aggressively chasing every small angle change.
+    private final PIDController turretController = new PIDController(.04, 0.0, 0.0);
 
     /**
      * Checks whether the turret is pointed close enough to the requested angle for
@@ -901,7 +902,7 @@ public class TurretSubsystem extends SubsystemBase {
     private Pose2d getPoseForTurretAiming() {
         Limelight_Pose limelightPose = Limelight_Pose.getInstance();
 
-        if (canUseVisionPoseForAiming(limelightPose)) {
+        if (ALLOW_DIRECT_VISION_POSE_FOR_AIMING && canUseVisionPoseForAiming(limelightPose)) {
             return limelightPose.poseCamEstimate.pose;
         }
 
@@ -943,7 +944,11 @@ public class TurretSubsystem extends SubsystemBase {
      * freshest Limelight pose or the drivetrain estimator pose.
      */
     private String getAimPoseSourceLabel() {
-        return canUseVisionPoseForAiming(Limelight_Pose.getInstance()) ? "Vision" : "Estimator";
+        if (ALLOW_DIRECT_VISION_POSE_FOR_AIMING && canUseVisionPoseForAiming(Limelight_Pose.getInstance())) {
+            return "Vision";
+        }
+
+        return "Estimator";
     }
 
     /**
