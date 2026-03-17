@@ -770,6 +770,7 @@ public class Limelight_Pose extends SubsystemBase {
     SmartDashboard.putBoolean("Vision/Config/AllowMegaTag1", ALLOW_MEGATAG1_UPDATES);
     SmartDashboard.putNumber("Vision/Selected/XYStdDev", poseUpdateXYTrustFactor);
     SmartDashboard.putNumber("Vision/Selected/ThetaStdDev", poseUpdateRotTrustFactor);
+    publishSelectedPoseTelemetry();
     SmartDashboard.putNumber("Vision/Drive/YawRateDegPerSec", currentDriveYawRate);
     SmartDashboard.putNumber("Vision/Drive/LinearSpeedMetersPerSecond", currentDriveLinearSpeedMetersPerSecond);
 
@@ -777,6 +778,26 @@ public class Limelight_Pose extends SubsystemBase {
     SmartDashboard.putBoolean("Vision/Right/UsingMT2", usingCam1MT2);
     SmartDashboard.putBoolean("Vision/Left/UsingMT1", usingCam2MT1);
     SmartDashboard.putBoolean("Vision/Left/UsingMT2", usingCam2MT2);
+  }
+
+  /**
+   * Publishes the currently selected vision pose as explicit X/Y/heading numbers.
+   *
+   * Having these values next to the drivetrain's fused pose makes it much easier
+   * to tell whether a bad field position is coming from the raw Limelight solve or
+   * from how the estimator is blending that solve with odometry and gyro data.
+   */
+  private void publishSelectedPoseTelemetry() {
+    if (poseCamEstimate == null) {
+      SmartDashboard.putNumber("Vision/Selected/PoseX", Double.NaN);
+      SmartDashboard.putNumber("Vision/Selected/PoseY", Double.NaN);
+      SmartDashboard.putNumber("Vision/Selected/PoseAngle", Double.NaN);
+      return;
+    }
+
+    SmartDashboard.putNumber("Vision/Selected/PoseX", poseCamEstimate.pose.getX());
+    SmartDashboard.putNumber("Vision/Selected/PoseY", poseCamEstimate.pose.getY());
+    SmartDashboard.putNumber("Vision/Selected/PoseAngle", poseCamEstimate.pose.getRotation().getDegrees());
   }
 
   /**
