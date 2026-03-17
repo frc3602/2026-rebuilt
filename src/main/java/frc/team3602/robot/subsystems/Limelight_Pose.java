@@ -62,6 +62,10 @@ public class Limelight_Pose extends SubsystemBase {
   private static final double MAX_MT2_TRANSLATION_JUMP_METERS = 1.5;
   private static final double MAX_MT1_HEADING_JUMP_DEGREES = 50.0;
   private static final double CAMERA_SWITCH_QUALITY_MARGIN = 1.50;
+  private static final double STATIONARY_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND = 0.15;
+  private static final double STATIONARY_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND = 12.0;
+  private static final double STATIONARY_XY_STD_DEV_BONUS = 0.30;
+  private static final double STATIONARY_THETA_STD_DEV_BONUS = 0.12;
   // MegaTag1 is the full AprilTag pose solve that can contribute both translation
   // and rotation corrections. We keep this toggle in the code so the team can
   // temporarily disable MegaTag1 during troubleshooting without rewriting the
@@ -572,6 +576,14 @@ public class Limelight_Pose extends SubsystemBase {
     xyStdDev += Math.abs(currentDriveYawRate) * 0.003;
     xyStdDev += Math.abs(currentDriveLinearSpeedMetersPerSecond) * 0.12;
 
+    // When the robot is sitting still, a clean AprilTag frame should pull the pose
+    // estimate in faster. This helps dashboard aim angles and turret tracking
+    // settle promptly instead of visibly lagging behind the stationary camera view.
+    if (Math.abs(currentDriveYawRate) <= STATIONARY_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND
+        && Math.abs(currentDriveLinearSpeedMetersPerSecond) <= STATIONARY_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND) {
+      xyStdDev -= STATIONARY_XY_STD_DEV_BONUS;
+    }
+
     return clamp(xyStdDev, 0.35, 2.50);
   }
 
@@ -603,6 +615,13 @@ public class Limelight_Pose extends SubsystemBase {
     // When the robot is spinning quickly, it is safer to lean more heavily on the
     // gyro for heading and be less aggressive with vision rotation corrections.
     thetaStdDev += Math.abs(currentDriveYawRate) * 0.002;
+
+    // A stationary robot is the safest time to accept a strong MegaTag1 heading
+    // correction, so we tighten the rotation standard deviation a bit here too.
+    if (Math.abs(currentDriveYawRate) <= STATIONARY_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND
+        && Math.abs(currentDriveLinearSpeedMetersPerSecond) <= STATIONARY_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND) {
+      thetaStdDev -= STATIONARY_THETA_STD_DEV_BONUS;
+    }
 
     return clamp(thetaStdDev, 0.35, 1.50);
   }
