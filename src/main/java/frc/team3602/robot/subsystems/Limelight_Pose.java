@@ -62,17 +62,11 @@ public class Limelight_Pose extends SubsystemBase {
   private static final double MAX_MT2_TRANSLATION_JUMP_METERS = 1.5;
   private static final double MAX_MT1_HEADING_JUMP_DEGREES = 50.0;
   private static final double CAMERA_SWITCH_QUALITY_MARGIN = 1.50;
-  // Field-side workaround:
-  // MegaTag1 is the full AprilTag pose solve that becomes active when the camera
-  // sees strong multi-tag geometry. Right now those multi-tag solves are showing a
-  // mirrored robot pose on the field, so we temporarily disable MegaTag1 and keep
-  // using MegaTag2 translation updates instead.
-  //
-  // MegaTag2 still uses AprilTags, but it leans on the drivetrain heading we send
-  // into the Limelight each loop. That makes it a safer fallback for match play
-  // while we track down the underlying camera mounting or Limelight configuration
-  // issue after the event.
-  private static final boolean ALLOW_MEGATAG1_UPDATES = false;
+  // MegaTag1 is the full AprilTag pose solve that can contribute both translation
+  // and rotation corrections. We keep this toggle in the code so the team can
+  // temporarily disable MegaTag1 during troubleshooting without rewriting the
+  // measurement-selection logic.
+  private static final boolean ALLOW_MEGATAG1_UPDATES = true;
 
   /** Creates a new Limelight pose subsystem. */
 
