@@ -823,6 +823,28 @@ public class Limelight_Pose extends SubsystemBase {
     SmartDashboard.putNumber(dashboardPrefix + "/QualityScore", decision.qualityScore);
     SmartDashboard.putNumber(dashboardPrefix + "/XYStdDev", decision.xyStdDev);
     SmartDashboard.putNumber(dashboardPrefix + "/ThetaStdDev", decision.thetaStdDev);
+    publishDecisionPoseTelemetry(dashboardPrefix, decision);
+  }
+
+  /**
+   * Publishes the raw pose stored in one camera decision.
+   *
+   * These numbers let us compare the left and right Limelight solves directly. If
+   * one camera is consistently wrong while the other looks reasonable, that usually
+   * points to a camera-specific robot-space configuration issue.
+   */
+  private void publishDecisionPoseTelemetry(String dashboardPrefix, CameraMeasurementDecision decision) {
+    if (decision.selectedEstimate == null) {
+      SmartDashboard.putNumber(dashboardPrefix + "/PoseX", Double.NaN);
+      SmartDashboard.putNumber(dashboardPrefix + "/PoseY", Double.NaN);
+      SmartDashboard.putNumber(dashboardPrefix + "/PoseAngle", Double.NaN);
+      return;
+    }
+
+    SmartDashboard.putNumber(dashboardPrefix + "/PoseX", decision.selectedEstimate.pose.getX());
+    SmartDashboard.putNumber(dashboardPrefix + "/PoseY", decision.selectedEstimate.pose.getY());
+    SmartDashboard.putNumber(dashboardPrefix + "/PoseAngle",
+        decision.selectedEstimate.pose.getRotation().getDegrees());
   }
 
   /**
