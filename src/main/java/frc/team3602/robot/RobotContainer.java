@@ -206,7 +206,7 @@ public class RobotContainer {
                 // .whileFalse(superStructure.stopShoot());
                 // Manual feed for testing or recovery when the tracked shot is not
                 // active.
-                operatorController.y().and(trackedShotNotHeld).whileTrue(spindexer.setFeedVelocity(-23.125))
+                operatorController.y().and(trackedShotNotHeld).whileTrue(spindexer.setFeedVelocity(-56.125))
                                 .onFalse(spindexer.stopSpindexer());
                 // Fixed fallback shot with a known turret angle and fixed shooter
                 // speed. This gives the team a simple backup when vision/tracking is

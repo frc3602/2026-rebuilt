@@ -39,7 +39,7 @@ public class TurretSubsystem extends SubsystemBase {
     private static final double MIN_TRAVEL_ANGLE_DEGREES = 0.0;
     private static final double MAX_TRAVEL_ANGLE_DEGREES = 360.0;
     private static final double STARTING_TURRET_AIM_ANGLE_DEGREES = 90.0;
-    private static final double REAR_LEFT_CORNER_PRESET_AIM_DEGREES = 125.0;
+    private static final double REAR_LEFT_CORNER_PRESET_AIM_DEGREES = 130.0;
     private static final double REAR_RIGHT_CORNER_PRESET_AIM_DEGREES = -125.0;
     private static final double RIGHT_PRESET_AIM_DEGREES = -90.0;
     private static final double REAR_PRESET_AIM_DEGREES = 180.0;
