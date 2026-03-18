@@ -305,6 +305,24 @@ public class Superstructure {
     }
 
     /**
+     * Waits until the autonomous tower shot is ready to release.
+     *
+     * We require both:
+     * - shooter at the expected autonomous speed
+     * - turret settled at its currently requested angle
+     *
+     * Keeping this as one helper prevents PathPlanner sequences from advancing to
+     * feed before turret aim has actually finished settling.
+     */
+    public Command autonWaitForTowerShotReady() {
+        return Commands.waitUntil(() -> {
+            boolean shooterReady = shooterSubsys.getVelocity() <= AUTON_TOWER_SHOT_READY_THRESHOLD_RPS;
+            boolean turretReady = turretSubsys.isAtRequestedAngle();
+            return shooterReady && turretReady;
+        }).withTimeout(AUTON_TOWER_SHOT_READY_TIMEOUT_SECONDS);
+    }
+
+    /**
      * Feeds one autonomous shot using the spindexer, then stops the feed motors.
      *
      * We keep feeding separate from spin-up so PathPlanner can decide exactly when
@@ -333,14 +351,15 @@ public class Superstructure {
      * Prepares the simple autonomous tower shot.
      *
      * This command starts the shooter, keeps the turret tracking the alliance
-     * tower, and ends once the flywheel is ready or the timeout expires. It is a
-     * good "next step after driving" block for simple autonomous routines.
+         * tower, and ends once both flywheel speed and turret aim are ready (or the
+         * timeout expires). It is a good "next step after driving" block for simple
+         * autonomous routines.
      */
     public Command autonPrepareTowerShot() {
         return Commands.sequence(
                 autonStartShooter(),
                 Commands.deadline(
-                        autonWaitForShooterReady(),
+                autonWaitForTowerShotReady(),
                         turretSubsys.trackAllianceTower()));
     }
 
