@@ -30,8 +30,8 @@ public class TurretSubsystem extends SubsystemBase {
     // Public turret angles follow WPILib's normal robot-relative convention:
     // 0 degrees = forward, +90 = left, -90 = right, and 180 = directly backward.
     //
-    // The mechanism still has a numerical seam at the rear, though. Physically,
-    // the turret can point backward by traveling to 0 degrees or to 360 degrees,
+    // The mechanism still has a numerical seam at the front, though. Physically,
+    // the turret can point forward by traveling to 0 degrees or to 360 degrees,
     // and those
     // are different legal endpoints for the motor. To keep that seam behavior
     // explicit, the subsystem uses two angle representations:
@@ -47,10 +47,10 @@ public class TurretSubsystem extends SubsystemBase {
     private static final double MOTOR_ROTATIONS_PER_TURRET_ROTATION = 30.0;
     private static final double TURRET_DEGREES_PER_MOTOR_ROTATION = 360.0
             / MOTOR_ROTATIONS_PER_TURRET_ROTATION;
-    // When the target direction is very close to the rear seam, keep the turret on
+    // When the target direction is very close to the front seam, keep the turret on
     // its current side of travel instead of letting tiny pose noise flip the
     // setpoint from 0 to 360 or back again.
-    private static final double REAR_SEAM_DEADBAND_DEGREES = 2.0;
+    private static final double FRONT_SEAM_DEADBAND_DEGREES = 2.0;
     // These values are the current best estimates for the turret's moving-shot
     // lead math. They should be updated whenever on-robot testing gives us better
     // measured numbers for the shooter exit angle or release height.
@@ -271,7 +271,7 @@ public class TurretSubsystem extends SubsystemBase {
 
         // Convert motor rotations into the turret's continuous travel coordinate.
         // We keep this unwrapped for control so the turret can move smoothly across
-        // the rear seam without the measurement snapping from 0 to 360 or back.
+        // the front seam without the measurement snapping from 0 to 360 or back.
         return motorRot * TURRET_DEGREES_PER_MOTOR_ROTATION;
     }
 
@@ -307,7 +307,7 @@ public class TurretSubsystem extends SubsystemBase {
     /**
      * Returns the turret's currently requested internal travel angle.
      *
-     * This is mainly useful when debugging rear-seam behavior. Most day-to-day
+     * This is mainly useful when debugging front-seam behavior. Most day-to-day
      * tuning should focus on the public signed aim angle instead.
      */
     public double getRequestedTurretTravelAngleDegrees() {
@@ -432,25 +432,25 @@ public class TurretSubsystem extends SubsystemBase {
      * - 180 = rear
      *
      * The internal travel model uses:
-     * - rear = 0 or 360
+     * - front = 0 or 360
      * - left = 90
-     * - front = 180
+     * - rear = 180
      * - right = 270
      */
     private double convertSignedAimToTravelAngle(double signedAimAngleDegrees) {
         double normalizedAimAngle = normalizeSignedAimAngleDegrees(signedAimAngleDegrees);
 
-        // If the target is very close to straight rear, prefer the current side of
-        // the rear seam so tiny pose jitter does not bounce the turret between the
+        // If the target is very close to straight front, prefer the current side of
+        // the front seam so tiny pose jitter does not bounce the turret between the
         // two travel endpoints.
-        double distanceFromRearDegrees = 180.0 - Math.abs(normalizedAimAngle);
-        if (distanceFromRearDegrees <= REAR_SEAM_DEADBAND_DEGREES) {
+        double distanceFromFrontDegrees = Math.abs(normalizedAimAngle);
+        if (distanceFromFrontDegrees <= FRONT_SEAM_DEADBAND_DEGREES) {
             return getTurretTravelAngleDegrees() > 180.0
                     ? MAX_TRAVEL_ANGLE_DEGREES
                     : MIN_TRAVEL_ANGLE_DEGREES;
         }
 
-        return normalizeTravelAngle(180.0 - normalizedAimAngle);
+        return normalizeTravelAngle(normalizedAimAngle);
     }
 
     /**
@@ -458,13 +458,12 @@ public class TurretSubsystem extends SubsystemBase {
      * signed WPILib-style aim angle.
      *
      * This is the inverse of {@link #convertSignedAimToTravelAngle(double)} for all
-     * non-seam directions. For the rear seam, both travel endpoints map back to the
-     * same public answer: 180 degrees means "straight backward."
+     * non-seam directions. For the front seam, both travel endpoints map back to the
+     * same public answer: 0 degrees means "straight forward."
      */
     private double convertTravelAngleToSignedAimAngle(double travelAngleDegrees) {
         double normalizedTravelAngle = normalizeTravelAngle(travelAngleDegrees);
-        double signedAimAngleDegrees = 180.0 - normalizedTravelAngle;
-        return normalizeSignedAimAngleDegrees(signedAimAngleDegrees);
+        return normalizeSignedAimAngleDegrees(normalizedTravelAngle);
     }
 
     /**
@@ -497,71 +496,20 @@ public class TurretSubsystem extends SubsystemBase {
     }
 
     /**
-     * Returns whether the direct travel segment would pass through the front of the
-     * robot.
+     * Chooses a legal travel target while avoiding the 0/360 seam crossing.
      *
-     * In the turret's travel model, every angle of the form 180 + 360k points
-     * straight forward. The turret is allowed to aim there, but it should not cut
-     * through that front direction while moving between two rear-side positions.
-     */
-    private boolean directPathCrossesFront(double currentTravelDegrees, double targetTravelDegrees) {
-        double lowerBound = Math.min(currentTravelDegrees, targetTravelDegrees);
-        double upperBound = Math.max(currentTravelDegrees, targetTravelDegrees);
-        int firstFrontIndex = (int) Math.ceil((lowerBound - 180.0) / 360.0);
-        int lastFrontIndex = (int) Math.floor((upperBound - 180.0) / 360.0);
-
-        for (int frontIndex = firstFrontIndex; frontIndex <= lastFrontIndex; frontIndex++) {
-            double frontAngleDegrees = 180.0 + (360.0 * frontIndex);
-            if (frontAngleDegrees > lowerBound + 1e-9 && frontAngleDegrees < upperBound - 1e-9) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Chooses the equivalent travel target that obeys the turret's legal path.
-     *
-     * A rear-facing target can be represented as ..., -55, 305, 665, ... in the
-     * continuous travel frame. We search a few nearby equivalents and pick the
-     * closest one whose direct path does not cross the front of the robot.
+     * The turret's legal travel lives in a single 0-360 window, but 0 and 360 are
+     * physically the same edge of travel. When a request lands on the opposite side
+     * of that seam, we keep the far-side target and let the position controller
+     * drive the long way around through the middle of travel instead of trying to
+     * "wrap" through 0.
      */
     private double chooseLegalEquivalentTravelAngle(double currentTravelDegrees, double normalizedTargetTravelDegrees) {
-        double bestTargetTravelDegrees = normalizedTargetTravelDegrees;
-        double bestDistanceDegrees = Double.POSITIVE_INFINITY;
-        int nearestTurnIndex = (int) Math.round((currentTravelDegrees - normalizedTargetTravelDegrees) / 360.0);
-
-        for (int turnOffset = -2; turnOffset <= 2; turnOffset++) {
-            double candidateTargetDegrees = normalizedTargetTravelDegrees + (360.0 * (nearestTurnIndex + turnOffset));
-
-            // The real turret has a legal 0-360 travel window.
-            // Reject any mathematically equivalent target outside that window so we
-            // do not command the motor into a hard stop while trying to "unwrap"
-            // across the rear seam.
-            if (candidateTargetDegrees < MIN_TRAVEL_ANGLE_DEGREES
-                    || candidateTargetDegrees > MAX_TRAVEL_ANGLE_DEGREES) {
-                continue;
-            }
-
-            if (directPathCrossesFront(currentTravelDegrees, candidateTargetDegrees)) {
-                continue;
-            }
-
-            double candidateDistanceDegrees = Math.abs(candidateTargetDegrees - currentTravelDegrees);
-            if (candidateDistanceDegrees < bestDistanceDegrees) {
-                bestDistanceDegrees = candidateDistanceDegrees;
-                bestTargetTravelDegrees = candidateTargetDegrees;
-            }
-        }
-
-        if (bestDistanceDegrees < Double.POSITIVE_INFINITY) {
-            return bestTargetTravelDegrees;
-        }
-
-        // If we could not find an in-range candidate that also avoids crossing the
-        // front, prefer a safe in-range target over driving beyond physical limits.
-        return clamp(normalizedTargetTravelDegrees, MIN_TRAVEL_ANGLE_DEGREES, MAX_TRAVEL_ANGLE_DEGREES);
+        double clampedTargetTravelDegrees = clamp(
+                normalizedTargetTravelDegrees,
+                MIN_TRAVEL_ANGLE_DEGREES,
+                MAX_TRAVEL_ANGLE_DEGREES);
+        return clampedTargetTravelDegrees;
     }
 
     public double getBallVelocity() {
@@ -856,7 +804,7 @@ public class TurretSubsystem extends SubsystemBase {
         double travelErrorDegrees = requestedTurretControlTravelAngleDegrees - currentTravelDegrees;
 
         // Control against the unwrapped travel measurement so the turret can cross
-        // the rear seam smoothly without losing position continuity at 0/360.
+        // the front seam smoothly without losing position continuity at 0/360.
         var pidEffort = turretController.calculate(currentTravelDegrees, requestedTurretControlTravelAngleDegrees);
 
         // If the turret is still clearly off target but the pure PID effort is too
@@ -886,7 +834,7 @@ public class TurretSubsystem extends SubsystemBase {
         // We expose both the public signed aim angles and the private travel
         // angles:
         // - Aim angles are easiest for students and operators to reason about.
-        // - Travel angles help when debugging behavior around the rear seam.
+        // - Travel angles help when debugging behavior around the front seam.
         //
         // Angle error and motor voltage answer the two most common pit questions:
         // "Is the turret being asked to go where I think?" and
