@@ -30,8 +30,8 @@ public class TurretSubsystem extends SubsystemBase {
     // Public turret angles follow WPILib's normal robot-relative convention:
     // 0 degrees = forward, +90 = left, -90 = right, and 180 = directly backward.
     //
-    // The mechanism still has a numerical seam at the front, though. Physically,
-    // the turret can point forward by traveling to 0 degrees or to 360 degrees,
+    // The mechanism still has a numerical seam at the rear, though. Physically,
+    // the turret can point backward by traveling to 0 degrees or to 360 degrees,
     // and those
     // are different legal endpoints for the motor. To keep that seam behavior
     // explicit, the subsystem uses two angle representations:
@@ -47,10 +47,10 @@ public class TurretSubsystem extends SubsystemBase {
     private static final double MOTOR_ROTATIONS_PER_TURRET_ROTATION = 30.0;
     private static final double TURRET_DEGREES_PER_MOTOR_ROTATION = 360.0
             / MOTOR_ROTATIONS_PER_TURRET_ROTATION;
-    // When the target direction is very close to the front seam, keep the turret on
+    // When the target direction is very close to the rear seam, keep the turret on
     // its current side of travel instead of letting tiny pose noise flip the
     // setpoint from 0 to 360 or back again.
-    private static final double FRONT_SEAM_DEADBAND_DEGREES = 2.0;
+    private static final double REAR_SEAM_DEADBAND_DEGREES = 2.0;
     // These values are the current best estimates for the turret's moving-shot
     // lead math. They should be updated whenever on-robot testing gives us better
     // measured numbers for the shooter exit angle or release height.
@@ -271,7 +271,7 @@ public class TurretSubsystem extends SubsystemBase {
 
         // Convert motor rotations into the turret's continuous travel coordinate.
         // We keep this unwrapped for control so the turret can move smoothly across
-        // the front seam without the measurement snapping from 0 to 360 or back.
+        // the rear seam without the measurement snapping from 0 to 360 or back.
         return motorRot * TURRET_DEGREES_PER_MOTOR_ROTATION;
     }
 
@@ -307,7 +307,7 @@ public class TurretSubsystem extends SubsystemBase {
     /**
      * Returns the turret's currently requested internal travel angle.
      *
-     * This is mainly useful when debugging front-seam behavior. Most day-to-day
+     * This is mainly useful when debugging rear-seam behavior. Most day-to-day
      * tuning should focus on the public signed aim angle instead.
      */
     public double getRequestedTurretTravelAngleDegrees() {
@@ -432,25 +432,25 @@ public class TurretSubsystem extends SubsystemBase {
      * - 180 = rear
      *
      * The internal travel model uses:
-     * - front = 0 or 360
+     * - rear = 0 or 360
      * - left = 90
-     * - rear = 180
+     * - front = 180
      * - right = 270
      */
     private double convertSignedAimToTravelAngle(double signedAimAngleDegrees) {
         double normalizedAimAngle = normalizeSignedAimAngleDegrees(signedAimAngleDegrees);
 
-        // If the target is very close to straight front, prefer the current side of
-        // the front seam so tiny pose jitter does not bounce the turret between the
+        // If the target is very close to straight rear, prefer the current side of
+        // the rear seam so tiny pose jitter does not bounce the turret between the
         // two travel endpoints.
-        double distanceFromFrontDegrees = Math.abs(normalizedAimAngle);
-        if (distanceFromFrontDegrees <= FRONT_SEAM_DEADBAND_DEGREES) {
+        double distanceFromRearDegrees = 180.0 - Math.abs(normalizedAimAngle);
+        if (distanceFromRearDegrees <= REAR_SEAM_DEADBAND_DEGREES) {
             return getTurretTravelAngleDegrees() > 180.0
                     ? MAX_TRAVEL_ANGLE_DEGREES
                     : MIN_TRAVEL_ANGLE_DEGREES;
         }
 
-        return normalizeTravelAngle(normalizedAimAngle);
+        return normalizeTravelAngle(180.0 - normalizedAimAngle);
     }
 
     /**
@@ -458,12 +458,13 @@ public class TurretSubsystem extends SubsystemBase {
      * signed WPILib-style aim angle.
      *
      * This is the inverse of {@link #convertSignedAimToTravelAngle(double)} for all
-     * non-seam directions. For the front seam, both travel endpoints map back to the
-     * same public answer: 0 degrees means "straight forward."
+     * non-seam directions. For the rear seam, both travel endpoints map back to the
+     * same public answer: 180 degrees means "straight backward."
      */
     private double convertTravelAngleToSignedAimAngle(double travelAngleDegrees) {
         double normalizedTravelAngle = normalizeTravelAngle(travelAngleDegrees);
-        return normalizeSignedAimAngleDegrees(normalizedTravelAngle);
+        double signedAimAngleDegrees = 180.0 - normalizedTravelAngle;
+        return normalizeSignedAimAngleDegrees(signedAimAngleDegrees);
     }
 
     /**
@@ -804,7 +805,7 @@ public class TurretSubsystem extends SubsystemBase {
         double travelErrorDegrees = requestedTurretControlTravelAngleDegrees - currentTravelDegrees;
 
         // Control against the unwrapped travel measurement so the turret can cross
-        // the front seam smoothly without losing position continuity at 0/360.
+        // the rear seam smoothly without losing position continuity at 0/360.
         var pidEffort = turretController.calculate(currentTravelDegrees, requestedTurretControlTravelAngleDegrees);
 
         // If the turret is still clearly off target but the pure PID effort is too
@@ -834,7 +835,7 @@ public class TurretSubsystem extends SubsystemBase {
         // We expose both the public signed aim angles and the private travel
         // angles:
         // - Aim angles are easiest for students and operators to reason about.
-        // - Travel angles help when debugging behavior around the front seam.
+        // - Travel angles help when debugging behavior around the rear seam.
         //
         // Angle error and motor voltage answer the two most common pit questions:
         // "Is the turret being asked to go where I think?" and
