@@ -117,6 +117,9 @@ public class RobotContainer {
                 // feeding yet. This is useful while finishing a short path or aiming
                 // step.
                 NamedCommands.registerCommand("autonStartShooter", superStructure.autonStartShooter());
+                // Fixed autonomous corner shot that uses the operator's POV-right
+                // turret preset and a tested fixed shooter speed.
+                NamedCommands.registerCommand("autonShootRightCorner", superStructure.autonShootRightCorner());
                 // Wait until the shooter is near the autonomous tower-shot target
                 // speed.
                 // The command times out so the auto cannot hang forever.

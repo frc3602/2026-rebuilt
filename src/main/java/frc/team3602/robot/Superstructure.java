@@ -28,6 +28,8 @@ public class Superstructure {
     private static final double AUTON_TOWER_SHOT_READY_TIMEOUT_SECONDS = 2.0;
     private static final double AUTON_TOWER_SHOT_FEED_TIME_SECONDS = 2.0;
     private static final double AUTON_TURRET_TRACK_SETTLE_SECONDS = 2.0;
+    private static final double AUTON_RIGHT_CORNER_SHOT_SHOOTER_SPEED_RPS = -55.0;
+    private static final double AUTON_RIGHT_CORNER_SHOT_READY_THRESHOLD_RPS = -54.75;
     // The fallback shot still points to the rear of the robot, but turret command
     // APIs now use WPILib's signed convention where 180 degrees means "backward."
     private static final double FAILSAFE_TURRET_ANGLE_DEGREES = 180.0;
@@ -349,6 +351,21 @@ public class Superstructure {
     }
 
     /**
+     * Waits until the fixed right-corner autonomous shot is ready to fire.
+     *
+     * This shot uses a preset turret angle instead of live pose tracking, but we
+     * still wait for both the flywheel and the turret so the robot does not release
+     * fuel before the corner-shot setup has actually settled.
+     */
+    public Command autonWaitForRightCornerShotReady() {
+        return Commands.waitUntil(() -> {
+            boolean shooterReady = shooterSubsys.getVelocity() <= AUTON_RIGHT_CORNER_SHOT_READY_THRESHOLD_RPS;
+            boolean turretReady = turretSubsys.isAtRequestedAngle();
+            return shooterReady && turretReady;
+        }).withTimeout(AUTON_TOWER_SHOT_READY_TIMEOUT_SECONDS);
+    }
+
+    /**
      * Prepares the simple autonomous tower shot.
      *
      * This command starts the shooter, keeps the turret tracking the alliance
@@ -373,6 +390,22 @@ public class Superstructure {
     public Command autonShootTower() {
         return Commands.sequence(
                 autonPrepareTowerShot(),
+                autonFireShot(),
+                autonStopShooter());
+    }
+
+    /**
+     * Runs a fixed autonomous shot from the right corner preset.
+     *
+     * This is the autonomous equivalent of using the operator POV-right turret
+     * preset with a tested fixed shooter speed. Because it is a preset shot, it does
+     * not use live pose tracking while preparing to fire.
+     */
+    public Command autonShootRightCorner() {
+        return Commands.sequence(
+                turretSubsys.setAngleRightCorner(),
+                shooterSubsys.setShootVelocity(AUTON_RIGHT_CORNER_SHOT_SHOOTER_SPEED_RPS),
+                autonWaitForRightCornerShotReady(),
                 autonFireShot(),
                 autonStopShooter());
     }
