@@ -1,6 +1,7 @@
 package frc.team3602.robot.subsystems;
 
 import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
@@ -11,12 +12,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.team3602.robot.Constants.spindexerConstants;
 
 public class SpindexerSubsystem extends SubsystemBase {
-    // The spindexer wheel is about 4 inches in diameter while the transfer/X44
-    // wheel is about 1 inch in diameter. In practice, running the transfer wheel a
-    // little slower than the pure diameter math can be gentler on game pieces and
-    // reduce the chance of over-driving the handoff into the shooter.
-    private static final double TRANSFER_TO_SPINDEXER_DIAMETER_RATIO = 0.30;
-
     /* Motors */
 
     private final TalonFX spindexerMotor;
@@ -42,15 +37,20 @@ public class SpindexerSubsystem extends SubsystemBase {
     /* Commands */
 
     /**
-     * Applies one closed-loop velocity request to both feed motors.
+     * Applies scaled feed velocities derived from the current shooter target/speed.
      *
-     * Keeping this in one helper makes sure every scoring path uses the same ratio
-     * between the main spindexer wheel and the smaller transfer/X44 wheel.
+     * The requested shooter speed is the "top" speed. From that:
+     * - receiver runs slower than shooter
+     * - spindexer runs slower than receiver
      */
-    private void applyFeedVelocityRequest(double rotationsPerSecond) {
-        receiveMotor.setControl(
-                m_request.withVelocity(rotationsPerSecond / TRANSFER_TO_SPINDEXER_DIAMETER_RATIO));
-        spindexerMotor.setControl(m_request.withVelocity(rotationsPerSecond));
+    private void applyFeedVelocityFromShooter(double shooterRotationsPerSecond) {
+        double receiverRotationsPerSecond = shooterRotationsPerSecond
+            * spindexerConstants.kReceiverToShooterSpeedRatio;
+        double spindexerRotationsPerSecond = receiverRotationsPerSecond
+            * spindexerConstants.kSpindexerToReceiverSpeedRatio;
+
+        receiveMotor.setControl(m_request.withVelocity(receiverRotationsPerSecond));
+        spindexerMotor.setControl(m_request.withVelocity(spindexerRotationsPerSecond));
     }
 
     /**
@@ -75,15 +75,24 @@ public class SpindexerSubsystem extends SubsystemBase {
     /**
      * Runs the spindexer and transfer motor together in closed-loop velocity mode.
      *
-     * This is the preferred way to move fuel through the spindexer system because
-     * both motors hold a requested velocity instead of relying on battery-dependent
-     * percent output. The receive motor is automatically scaled so the small X44
-     * transfer wheel stays close to the same surface speed as the larger spindexer
-     * wheel.
+     * The input speed is treated as the shooter speed reference. This method then
+     * scales the feed path so receiver < shooter and spindexer < receiver.
      */
-    public Command setFeedVelocity(double rotationsPerSecond) {
+    public Command setFeedVelocity(double shooterRotationsPerSecond) {
         return runEnd(
-                () -> applyFeedVelocityRequest(rotationsPerSecond),
+                () -> applyFeedVelocityFromShooter(shooterRotationsPerSecond),
+                this::stopFeedMotors);
+    }
+
+    /**
+     * Runs feed using a live shooter-velocity supplier.
+     *
+     * This keeps feed scaling tied to the shooter's current speed in real time,
+     * which helps handoff stay consistent as flywheel speed changes during tracking.
+     */
+    public Command setFeedVelocityScaledFromShooter(DoubleSupplier shooterVelocitySupplier) {
+        return runEnd(
+                () -> applyFeedVelocityFromShooter(shooterVelocitySupplier.getAsDouble()),
                 this::stopFeedMotors);
     }
 
@@ -94,10 +103,24 @@ public class SpindexerSubsystem extends SubsystemBase {
      * and spinning up first, then begin feeding automatically once the shooter is
      * ready.
      */
-    public Command setFeedVelocityWhen(BooleanSupplier shouldFeed, double rotationsPerSecond) {
+    public Command setFeedVelocityWhen(BooleanSupplier shouldFeed, double shooterRotationsPerSecond) {
         return runEnd(() -> {
             if (shouldFeed.getAsBoolean()) {
-                applyFeedVelocityRequest(rotationsPerSecond);
+                applyFeedVelocityFromShooter(shooterRotationsPerSecond);
+            } else {
+                stopFeedMotors();
+            }
+        }, this::stopFeedMotors);
+    }
+
+    /**
+     * Runs feed only while the ready condition is true, using live shooter speed.
+     */
+    public Command setFeedVelocityScaledFromShooterWhen(BooleanSupplier shouldFeed,
+            DoubleSupplier shooterVelocitySupplier) {
+        return runEnd(() -> {
+            if (shouldFeed.getAsBoolean()) {
+                applyFeedVelocityFromShooter(shooterVelocitySupplier.getAsDouble());
             } else {
                 stopFeedMotors();
             }

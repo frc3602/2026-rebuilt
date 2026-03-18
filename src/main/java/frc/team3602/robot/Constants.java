@@ -57,6 +57,14 @@ public final class Constants {
         public final static int kSpindexerMotorID = 12;
         public final static int kReceiveMotorID = 11;
 
+        // Feed scaling model:
+        // shooter is fastest, receiver is slower than shooter, and spindexer is
+        // slower than receiver.
+        //
+        // These are ratios (unitless), so 0.65 means "65% of the upstream speed".
+        public final static double kReceiverToShooterSpeedRatio = 0.65;
+        public final static double kSpindexerToReceiverSpeedRatio = 0.80;
+
         public final static double kSpindexerMotorSpeed = -.65;
 
         public final static double kRecieveFuelSpeed = .75;//.65

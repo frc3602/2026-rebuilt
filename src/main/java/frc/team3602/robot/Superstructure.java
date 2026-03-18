@@ -25,7 +25,6 @@ public class Superstructure {
     // easier for students to tune without digging through each command body.
     private static final double AUTON_TOWER_SHOT_SHOOTER_SPEED_RPS = -41.5;
     private static final double AUTON_TOWER_SHOT_READY_THRESHOLD_RPS = -41.25;
-    private static final double AUTON_TOWER_SHOT_SPINDEXER_FEED_RPS = -30.0;
     private static final double AUTON_TOWER_SHOT_READY_TIMEOUT_SECONDS = 2.0;
     private static final double AUTON_TOWER_SHOT_FEED_TIME_SECONDS = 2.0;
     private static final double AUTON_TURRET_TRACK_SETTLE_SECONDS = 2.0;
@@ -33,9 +32,7 @@ public class Superstructure {
     // APIs now use WPILib's signed convention where 180 degrees means "backward."
     private static final double FAILSAFE_TURRET_ANGLE_DEGREES = 180.0;
     private static final double FAILSAFE_SHOOTER_SPINUP_SECONDS = 4.0;
-    private static final double FAILSAFE_FEED_RPS = -62.5;
     private static final double FAILSAFE_FEED_TIME_SECONDS = 1.0;
-    private static final double TRACKED_LERP_FEED_RPS = -26.25;
     private static final double TRACKED_LERP_READY_SHOOTER_TOLERANCE_RPS = 2.5;
     private static final double TRACKED_LERP_READY_TURRET_TOLERANCE_DEGREES = 2.5;
     private static final double TRACKED_LERP_READY_DEBOUNCE_SECONDS = 0.05;
@@ -74,7 +71,8 @@ public class Superstructure {
                         Commands.waitSeconds(1.7),
                         // Feed for a short fixed window so this command can finish on
                         // its own in teleop or autonomous.
-                        spindexerSubsys.setFeedVelocity(-62.5).withTimeout(1.0)),
+                        spindexerSubsys.setFeedVelocityScaledFromShooter(shooterSubsys::getVelocity)
+                            .withTimeout(1.0)),
                 turretSubsys.aimCommand())
                 .andThen(stopShoot());
     }
@@ -100,7 +98,8 @@ public class Superstructure {
                 // forever at the final command.
                 shooterSubsys.setShootVelocity(ShooterConstants.kShooterFailsafeSpeed),
                 Commands.waitSeconds(FAILSAFE_SHOOTER_SPINUP_SECONDS),
-                spindexerSubsys.setFeedVelocity(FAILSAFE_FEED_RPS).withTimeout(FAILSAFE_FEED_TIME_SECONDS),
+                spindexerSubsys.setFeedVelocityScaledFromShooter(shooterSubsys::getVelocity)
+                    .withTimeout(FAILSAFE_FEED_TIME_SECONDS),
                 stopShoot());
     }
 
@@ -181,7 +180,9 @@ public class Superstructure {
         return Commands.parallel(
                 turretSubsys.trackAllianceTower(),
                 shooterSubsys.holdShootVLerp(),
-                spindexerSubsys.setFeedVelocityWhen(this::updateTrackedLerpShotReadyState, TRACKED_LERP_FEED_RPS))
+            spindexerSubsys.setFeedVelocityScaledFromShooterWhen(
+                this::updateTrackedLerpShotReadyState,
+                shooterSubsys::getVelocity))
                 .beforeStarting(this::resetTrackedLerpShotState)
                 .finallyDo(interrupted -> resetTrackedLerpShotState());
     }
@@ -330,7 +331,7 @@ public class Superstructure {
      */
     public Command autonFireShot() {
         return Commands.sequence(
-                spindexerSubsys.setFeedVelocity(AUTON_TOWER_SHOT_SPINDEXER_FEED_RPS)
+            spindexerSubsys.setFeedVelocityScaledFromShooter(shooterSubsys::getVelocity)
                         .withTimeout(AUTON_TOWER_SHOT_FEED_TIME_SECONDS),
                 spindexerSubsys.stopSpindexer());
     }
