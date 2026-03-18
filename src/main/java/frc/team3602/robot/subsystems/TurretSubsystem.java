@@ -5,7 +5,6 @@ import java.util.Optional;
 import com.ctre.phoenix6.configs.CurrentLimitsConfigs;
 import com.ctre.phoenix6.configs.MagnetSensorConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
-import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
@@ -506,11 +505,36 @@ public class TurretSubsystem extends SubsystemBase {
      * "wrap" through 0.
      */
     private double chooseLegalEquivalentTravelAngle(double currentTravelDegrees, double normalizedTargetTravelDegrees) {
+<<<<<<< HEAD
         double clampedTargetTravelDegrees = clamp(
                 normalizedTargetTravelDegrees,
                 MIN_TRAVEL_ANGLE_DEGREES,
                 MAX_TRAVEL_ANGLE_DEGREES);
         return clampedTargetTravelDegrees;
+=======
+        double bestTargetTravelDegrees = normalizedTargetTravelDegrees;
+        double bestDistanceDegrees = Double.POSITIVE_INFINITY;
+        int nearestTurnIndex = (int) Math.round((currentTravelDegrees - normalizedTargetTravelDegrees) / 360.0);
+
+        for (int turnOffset = -2; turnOffset <= 2; turnOffset++) {
+            double candidateTargetDegrees = normalizedTargetTravelDegrees + (360.0 * (nearestTurnIndex + turnOffset));
+            if (directPathCrossesFront(currentTravelDegrees, candidateTargetDegrees)) {
+                continue;
+            }
+
+            double candidateDistanceDegrees = Math.abs(candidateTargetDegrees - currentTravelDegrees);
+            if (candidateDistanceDegrees < bestDistanceDegrees) {
+                bestDistanceDegrees = candidateDistanceDegrees;
+                bestTargetTravelDegrees = candidateTargetDegrees;
+            }
+        }
+
+        if (bestDistanceDegrees < Double.POSITIVE_INFINITY) {
+            return bestTargetTravelDegrees;
+        }
+
+        return normalizedTargetTravelDegrees;
+>>>>>>> parent of aae1a77 (Fix turret stall protection and auton tower-shot readiness gating)
     }
 
     public double getBallVelocity() {
@@ -955,7 +979,6 @@ public class TurretSubsystem extends SubsystemBase {
         // Motor configs
         var motorConfigs = new MotorOutputConfigs();
         var limitConfigs = new CurrentLimitsConfigs();
-        var softwareLimitConfigs = new SoftwareLimitSwitchConfigs();
 
         limitConfigs.StatorCurrentLimit = 30;
         limitConfigs.SupplyCurrentLimit = 30;
@@ -963,18 +986,6 @@ public class TurretSubsystem extends SubsystemBase {
         limitConfigs.StatorCurrentLimitEnable = true;
 
         turretMotor.getConfigurator().apply(limitConfigs);
-
-        // Software limits mirror the turret's 0-360 travel model.
-        // This is a safety backstop: if any command math ever requests motion
-        // outside the legal turret window, Talon firmware will block that output
-        // instead of pushing the mechanism into a hard stop.
-        softwareLimitConfigs.ReverseSoftLimitEnable = true;
-        softwareLimitConfigs.ForwardSoftLimitEnable = true;
-        softwareLimitConfigs.ReverseSoftLimitThreshold = MIN_TRAVEL_ANGLE_DEGREES
-            / TURRET_DEGREES_PER_MOTOR_ROTATION;
-        softwareLimitConfigs.ForwardSoftLimitThreshold = MAX_TRAVEL_ANGLE_DEGREES
-            / TURRET_DEGREES_PER_MOTOR_ROTATION;
-        turretMotor.getConfigurator().apply(softwareLimitConfigs);
 
         // Brake mode helps the turret hold its angle when shooter vibration or
         // robot motion tries to nudge the mechanism.
