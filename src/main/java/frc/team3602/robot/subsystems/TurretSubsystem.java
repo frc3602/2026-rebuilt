@@ -494,20 +494,71 @@ public class TurretSubsystem extends SubsystemBase {
     }
 
     /**
-     * Chooses a legal travel target while avoiding the 0/360 seam crossing.
+     * Returns whether the direct travel segment would pass through the front of the
+     * robot.
      *
-     * The turret's legal travel lives in a single 0-360 window, but 0 and 360 are
-     * physically the same edge of travel. When a request lands on the opposite side
-     * of that seam, we keep the far-side target and let the position controller
-     * drive the long way around through the middle of travel instead of trying to
-     * "wrap" through 0.
+     * In the turret's travel model, every angle of the form 180 + 360k points
+     * straight forward. The turret is allowed to aim there, but it should not cut
+     * through that front direction while moving between two rear-side positions.
+     */
+    private boolean directPathCrossesFront(double currentTravelDegrees, double targetTravelDegrees) {
+        double lowerBound = Math.min(currentTravelDegrees, targetTravelDegrees);
+        double upperBound = Math.max(currentTravelDegrees, targetTravelDegrees);
+        int firstFrontIndex = (int) Math.ceil((lowerBound - 180.0) / 360.0);
+        int lastFrontIndex = (int) Math.floor((upperBound - 180.0) / 360.0);
+
+        for (int frontIndex = firstFrontIndex; frontIndex <= lastFrontIndex; frontIndex++) {
+            double frontAngleDegrees = 180.0 + (360.0 * frontIndex);
+            if (frontAngleDegrees > lowerBound + 1e-9 && frontAngleDegrees < upperBound - 1e-9) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Chooses the equivalent travel target that obeys the turret's legal path.
+     *
+     * A rear-facing target can be represented as ..., -55, 305, 665, ... in the
+     * continuous travel frame. We search a few nearby equivalents and pick the
+     * closest one whose direct path does not cross the front of the robot.
      */
     private double chooseLegalEquivalentTravelAngle(double currentTravelDegrees, double normalizedTargetTravelDegrees) {
-        double clampedTargetTravelDegrees = clamp(
-                normalizedTargetTravelDegrees,
-                MIN_TRAVEL_ANGLE_DEGREES,
-                MAX_TRAVEL_ANGLE_DEGREES);
-        return clampedTargetTravelDegrees;
+        double bestTargetTravelDegrees = normalizedTargetTravelDegrees;
+        double bestDistanceDegrees = Double.POSITIVE_INFINITY;
+        int nearestTurnIndex = (int) Math.round((currentTravelDegrees - normalizedTargetTravelDegrees) / 360.0);
+
+        for (int turnOffset = -2; turnOffset <= 2; turnOffset++) {
+            double candidateTargetDegrees = normalizedTargetTravelDegrees + (360.0 * (nearestTurnIndex + turnOffset));
+
+            // The real turret has a legal 0-360 travel window.
+            // Reject any mathematically equivalent target outside that window so we
+            // do not command the motor into a hard stop while trying to "unwrap"
+            // across the rear seam.
+            if (candidateTargetDegrees < MIN_TRAVEL_ANGLE_DEGREES
+                    || candidateTargetDegrees > MAX_TRAVEL_ANGLE_DEGREES) {
+                continue;
+            }
+
+            if (directPathCrossesFront(currentTravelDegrees, candidateTargetDegrees)) {
+                continue;
+            }
+
+            double candidateDistanceDegrees = Math.abs(candidateTargetDegrees - currentTravelDegrees);
+            if (candidateDistanceDegrees < bestDistanceDegrees) {
+                bestDistanceDegrees = candidateDistanceDegrees;
+                bestTargetTravelDegrees = candidateTargetDegrees;
+            }
+        }
+
+        if (bestDistanceDegrees < Double.POSITIVE_INFINITY) {
+            return bestTargetTravelDegrees;
+        }
+
+        // If we could not find an in-range candidate that also avoids crossing the
+        // front, prefer a safe in-range target over driving beyond physical limits.
+        return clamp(normalizedTargetTravelDegrees, MIN_TRAVEL_ANGLE_DEGREES, MAX_TRAVEL_ANGLE_DEGREES);
     }
 
     public double getBallVelocity() {
