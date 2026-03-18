@@ -411,7 +411,10 @@ public class TurretSubsystem extends SubsystemBase {
         if (normalizedAngle > 180.0) {
             normalizedAngle -= 360.0;
         }
-        if (normalizedAngle <= -180.0) {
+        // Preserve an exact -180 request so code can intentionally choose the
+        // negative rear-side direction instead of collapsing both rear endpoints
+        // into +180.
+        if (normalizedAngle < -180.0) {
             normalizedAngle += 360.0;
         }
 
