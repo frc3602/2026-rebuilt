@@ -229,7 +229,7 @@ public class RobotContainer {
                 // not fight each other.
 
                 //Corner shot likes -53.0, -90 is max power for a test
-                operatorController.a().and(trackedShotNotHeld).onTrue(shooter.setShootVelocity(-53.0))
+                operatorController.a().and(trackedShotNotHeld).onTrue(shooter.setShootVelocity(-56.0))
                                 .onFalse(shooter.stopShooter());
                 operatorController.x().and(trackedShotNotHeld).onTrue(shooter.setShootVelocity(-90))
                                 .onFalse(shooter.stopShooter());

@@ -1,0 +1,25 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Drive to Shoot Left Short"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "autonShootTower"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": "Left Autons",
+  "choreoAuto": false
+}

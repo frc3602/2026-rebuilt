@@ -23,7 +23,7 @@ public class Superstructure {
     // These constants define the team's current simple autonomous tower shot.
     // Keeping them here makes the named PathPlanner commands easier to read and
     // easier for students to tune without digging through each command body.
-    private static final double AUTON_TOWER_SHOT_SHOOTER_SPEED_RPS = -41.5;
+    private static final double AUTON_TOWER_SHOT_SHOOTER_SPEED_RPS = -44.5;
     private static final double AUTON_TOWER_SHOT_READY_THRESHOLD_RPS = -41.25;
     private static final double AUTON_TOWER_SHOT_READY_TIMEOUT_SECONDS = 2.0;
     private static final double AUTON_TOWER_SHOT_FEED_TIME_SECONDS = 2.0;
