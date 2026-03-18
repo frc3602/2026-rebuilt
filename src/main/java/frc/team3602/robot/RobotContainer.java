@@ -230,6 +230,7 @@ public class RobotContainer {
                                 .onFalse(shooter.stopShooter());
                 operatorController.x().and(trackedShotNotHeld).onTrue(shooter.setShootVelocity(-53))
                                 .onFalse(shooter.stopShooter());
+                                //Feed
                 // Left bumper raises/stows the intake path through the superstructure.
                 operatorController.leftBumper().onTrue(superStructure.stopIntake());
                 // POV buttons are turret presets for common manual aiming positions.
