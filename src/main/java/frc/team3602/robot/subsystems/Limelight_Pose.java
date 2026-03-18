@@ -78,18 +78,17 @@ public class Limelight_Pose extends SubsystemBase {
   // These thresholds lean toward accepting a little more valid tag data so the
   // drivetrain estimator does not slowly wander away from the field while the
   // Limelights are already reporting believable X/Y values.
-  private static final double MIN_MT2_TAG_AREA = 0.08;
-  private static final double MIN_MT1_TAG_AREA = 0.12;
-  private static final double MAX_MT2_TAG_DISTANCE_METERS = 5.5;
-  private static final double MAX_MT1_TAG_DISTANCE_METERS = 5.5;
-  private static final double MAX_MT2_AMBIGUITY = 0.36;
-  private static final double MAX_MT1_AMBIGUITY = 0.33;
-  private static final double MAX_LATENCY_MILLISECONDS = 95.0;
-  private static final double MAX_MEASUREMENT_AGE_SECONDS = 0.22;
-  private static final double MAX_MT1_TRANSLATION_JUMP_METERS = 2.8;
-  private static final double MAX_MT2_TRANSLATION_JUMP_METERS = 1.9;
-  private static final double MAX_MT1_HEADING_JUMP_DEGREES = 65.0;
-  private static final double MAX_MT2_YAW_RATE_DEGREES_PER_SECOND = 720.0;
+  private static final double MIN_MT2_TAG_AREA = 0.12;
+  private static final double MIN_MT1_TAG_AREA = 0.20;
+  private static final double MAX_MT2_TAG_DISTANCE_METERS = 4.5;
+  private static final double MAX_MT1_TAG_DISTANCE_METERS = 5.0;
+  private static final double MAX_MT2_AMBIGUITY = 0.35;
+  private static final double MAX_MT1_AMBIGUITY = 0.32;
+  private static final double MAX_LATENCY_MILLISECONDS = 90.0;
+  private static final double MAX_MEASUREMENT_AGE_SECONDS = 0.20;
+  private static final double MAX_MT1_TRANSLATION_JUMP_METERS = 1.8;
+  private static final double MAX_MT2_TRANSLATION_JUMP_METERS = 1.10;
+  private static final double MAX_MT1_HEADING_JUMP_DEGREES = 40.0;
   private static final double CAMERA_SWITCH_QUALITY_MARGIN = 1.50;
   private static final double STATIONARY_LINEAR_SPEED_THRESHOLD_METERS_PER_SECOND = 0.15;
   private static final double STATIONARY_YAW_RATE_THRESHOLD_DEGREES_PER_SECOND = 12.0;
@@ -138,7 +137,7 @@ public class Limelight_Pose extends SubsystemBase {
 
   private Pose2d currentDrivePose = Pose2d.kZero;
   private boolean driveStateAvailable = false;
-  public double currentGyroHeadingDegrees;
+  public double currentDriveTheta;
   public double currentDriveYawRate;
   public double currentDriveLinearSpeedMetersPerSecond;
   private String preferredCameraName = "None";
@@ -279,45 +278,12 @@ public class Limelight_Pose extends SubsystemBase {
    * estimate. Passing the full drive state in here once per loop lets us reject
    * late or unreasonable camera frames more safely.
    */
-  public void CollectDriveState(Pose2d drivePose, double gyroHeadingDegrees,
-      double driveYawRate, double driveLinearSpeedMetersPerSecond) {
+  public void CollectDriveState(Pose2d drivePose, double driveYawRate, double driveLinearSpeedMetersPerSecond) {
     currentDrivePose = drivePose;
     driveStateAvailable = true;
-    currentGyroHeadingDegrees = gyroHeadingDegrees;
+    currentDriveTheta = drivePose.getRotation().getDegrees();
     currentDriveYawRate = driveYawRate;
     currentDriveLinearSpeedMetersPerSecond = driveLinearSpeedMetersPerSecond;
-  }
-
-  /**
-   * Refreshes the Limelight pose decisions using the drivetrain's newest state.
-   *
-   * The drivetrain calls this once per loop before it asks for accepted camera
-   * measurements. Keeping the whole read-and-decide sequence in one method makes
-   * the timing easier to understand and avoids relying on another subsystem's
-   * periodic order.
-   */
-  public void RefreshVisionMeasurements(Pose2d drivePose, double gyroHeadingDegrees,
-      double driveYawRate, double driveLinearSpeedMetersPerSecond) {
-    CollectDriveState(drivePose, gyroHeadingDegrees, driveYawRate, driveLinearSpeedMetersPerSecond);
-
-    if (!poseUpdatesFromCameraActive) {
-      poseUpdateAvailable = false;
-      poseUpdateAvailableCam1 = false;
-      poseUpdateAvailableCam2 = false;
-      usingCam1MT1 = false;
-      usingCam1MT2 = false;
-      usingCam2MT1 = false;
-      usingCam2MT2 = false;
-      poseCamEstimate = null;
-      poseUpdateXYTrustFactor = 0.0;
-      poseUpdateRotTrustFactor = LARGE_ROTATION_STD_DEV;
-      return;
-    }
-
-    updateMegaTag2Orientation();
-    SetPoseEstimateInfoCam1();
-    SetPoseEstimateInfoCam2();
-    SetPoseEstimateForDrive();
   }
 
   /**
@@ -327,9 +293,9 @@ public class Limelight_Pose extends SubsystemBase {
    * cameras before asking them for new pose estimates.
    */
   private void updateMegaTag2Orientation() {
-    LimelightHelpers.SetRobotOrientation(CAMERA_RIGHT, currentGyroHeadingDegrees, currentDriveYawRate, 0, 0, 0, 0);
+    LimelightHelpers.SetRobotOrientation(CAMERA_RIGHT, currentDriveTheta, currentDriveYawRate, 0, 0, 0, 0);
     LimelightHelpers.SetIMUMode(CAMERA_RIGHT, 0);
-    LimelightHelpers.SetRobotOrientation(CAMERA_LEFT, currentGyroHeadingDegrees, currentDriveYawRate, 0, 0, 0, 0);
+    LimelightHelpers.SetRobotOrientation(CAMERA_LEFT, currentDriveTheta, currentDriveYawRate, 0, 0, 0, 0);
     LimelightHelpers.SetIMUMode(CAMERA_LEFT, 0);
   }
 
@@ -627,11 +593,6 @@ public class Limelight_Pose extends SubsystemBase {
       return true;
     }
 
-    if (!usingMegaTag1 && Math.abs(currentDriveYawRate) > MAX_MT2_YAW_RATE_DEGREES_PER_SECOND) {
-      decision.statusMessage = "Rejected fresh frame because the robot was spinning too fast";
-      return false;
-    }
-
     double maxTranslationJumpMeters = usingMegaTag1 ? MAX_MT1_TRANSLATION_JUMP_METERS : MAX_MT2_TRANSLATION_JUMP_METERS;
     if (decision.translationErrorMeters > maxTranslationJumpMeters) {
       decision.statusMessage = "Rejected fresh frame because pose jump was too large";
@@ -713,7 +674,7 @@ public class Limelight_Pose extends SubsystemBase {
       xyStdDev -= STATIONARY_XY_STD_DEV_BONUS;
     }
 
-    return clamp(xyStdDev, 0.18, 2.40);
+    return clamp(xyStdDev, 0.35, 2.40);
   }
 
   /**
@@ -955,9 +916,24 @@ public class Limelight_Pose extends SubsystemBase {
 
   @Override
   public void periodic() {
-    // The drivetrain now refreshes camera decisions explicitly so students can
-    // follow the timing in one place. This periodic method only publishes the
-    // latest telemetry snapshot to the dashboard.
+    // This method runs every scheduler loop and decides whether a brand new
+    // Limelight frame should be forwarded to the drivetrain's pose estimator.
+    if (poseUpdatesFromCameraActive) {
+      updateMegaTag2Orientation();
+      SetPoseEstimateInfoCam1();
+      SetPoseEstimateInfoCam2();
+      SetPoseEstimateForDrive();
+    } else {
+      poseUpdateAvailable = false;
+      poseUpdateAvailableCam1 = false;
+      poseUpdateAvailableCam2 = false;
+      usingCam1MT1 = false;
+      usingCam1MT2 = false;
+      usingCam2MT1 = false;
+      usingCam2MT2 = false;
+      poseCamEstimate = null;
+    }
+
     updateShuffleboard();
   }
 }

@@ -426,24 +426,16 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         // Read fresh gyro values every loop so MegaTag2 can use the latest drivetrain
         // heading information before we ask the Limelights for a pose estimate.
         Pose2d currentEstimatedPose = getEstimatedPose();
-        double currentHeadingDegrees = getPigeon2().getYaw().getValueAsDouble();
         double currentLinearSpeedMetersPerSecond = Math.hypot(
                 getState().Speeds.vxMetersPerSecond,
                 getState().Speeds.vyMetersPerSecond);
         double currentYawDegreesPerSecond = getPigeon2().getAngularVelocityZWorld().getValueAsDouble();
 
-        // Ask the Limelight pose subsystem to evaluate both cameras right now using
-        // the newest drivetrain state from this same loop.
-        //
-        // We pass two kinds of heading information on purpose:
-        // - the fused drivetrain pose for "does this pose jump make sense?"
-        // - the raw gyro heading for MegaTag2 orientation input
-        //
-        // Keeping the read/decide/apply flow in one loop makes the behavior easier
-        // for students to trace while tuning.
-        Limelight_Pose.getInstance().RefreshVisionMeasurements(
+        // Pass the current drivetrain state to the Limelight pose subsystem.
+        // MegaTag2 uses the heading data directly, and the reliability filters use
+        // the robot's current pose and speed to reject stale or unreasonable frames.
+        Limelight_Pose.getInstance().CollectDriveState(
                 currentEstimatedPose,
-                currentHeadingDegrees,
                 currentYawDegreesPerSecond,
                 currentLinearSpeedMetersPerSecond);
 
