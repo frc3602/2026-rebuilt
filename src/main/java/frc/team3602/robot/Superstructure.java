@@ -373,7 +373,12 @@ public class Superstructure {
     public Command autonShootTower() {
         return Commands.sequence(
                 autonPrepareTowerShot(),
+            // Keep turret tracking active during the feed window so shot recoil,
+            // drivetrain settling, or tiny pose changes do not let the turret
+            // drift away while fuel is being released.
+            Commands.deadline(
                 autonFireShot(),
+                turretSubsys.trackAllianceTower()),
                 autonStopShooter());
     }
 
