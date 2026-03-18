@@ -226,7 +226,7 @@ public class RobotContainer {
                 // A and X are quick fixed-speed shooter test buttons. They are gated
                 // off while the tracked shot is active so two shooter commands do
                 // not fight each other.
-                operatorController.a().and(trackedShotNotHeld).onTrue(shooter.setShootVelocity(-39.5))
+                operatorController.a().and(trackedShotNotHeld).onTrue(shooter.setShootVelocity(-40.5))
                                 .onFalse(shooter.stopShooter());
                 operatorController.x().and(trackedShotNotHeld).onTrue(shooter.setShootVelocity(-53))
                                 .onFalse(shooter.stopShooter());
