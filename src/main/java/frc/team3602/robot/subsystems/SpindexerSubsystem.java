@@ -40,14 +40,14 @@ public class SpindexerSubsystem extends SubsystemBase {
      * Applies scaled feed velocities derived from the current shooter target/speed.
      *
      * The requested shooter speed is the "top" speed. From that:
-     * - receiver runs slower than shooter
-     * - spindexer runs slower than receiver
+         * - spindexer runs slower than shooter
+         * - feeder/receiver runs slower than spindexer
      */
     private void applyFeedVelocityFromShooter(double shooterRotationsPerSecond) {
-        double receiverRotationsPerSecond = shooterRotationsPerSecond
-            * spindexerConstants.kReceiverToShooterSpeedRatio;
-        double spindexerRotationsPerSecond = receiverRotationsPerSecond
-            * spindexerConstants.kSpindexerToReceiverSpeedRatio;
+        double spindexerRotationsPerSecond = shooterRotationsPerSecond
+            * spindexerConstants.kSpindexerToShooterSpeedRatio;
+        double receiverRotationsPerSecond = spindexerRotationsPerSecond
+            * spindexerConstants.kFeederToSpindexerSpeedRatio;
 
         receiveMotor.setControl(m_request.withVelocity(receiverRotationsPerSecond));
         spindexerMotor.setControl(m_request.withVelocity(spindexerRotationsPerSecond));
