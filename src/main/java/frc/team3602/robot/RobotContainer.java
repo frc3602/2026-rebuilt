@@ -226,9 +226,11 @@ public class RobotContainer {
                 // A and X are quick fixed-speed shooter test buttons. They are gated
                 // off while the tracked shot is active so two shooter commands do
                 // not fight each other.
-                operatorController.a().and(trackedShotNotHeld).onTrue(shooter.setShootVelocity(-40.5))
+
+                //Corner shot likes -53.0, -90 is max power for a test
+                operatorController.a().and(trackedShotNotHeld).onTrue(shooter.setShootVelocity(-53.0))
                                 .onFalse(shooter.stopShooter());
-                operatorController.x().and(trackedShotNotHeld).onTrue(shooter.setShootVelocity(-53))
+                operatorController.x().and(trackedShotNotHeld).onTrue(shooter.setShootVelocity(-90))
                                 .onFalse(shooter.stopShooter());
                                 //Feed
                 // Left bumper raises/stows the intake path through the superstructure.
