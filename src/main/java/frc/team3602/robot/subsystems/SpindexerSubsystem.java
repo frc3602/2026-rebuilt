@@ -73,18 +73,6 @@ public class SpindexerSubsystem extends SubsystemBase {
     }
 
     /**
-     * Runs the spindexer and transfer motor together in closed-loop velocity mode.
-     *
-     * The input speed is treated as the shooter speed reference. This method then
-     * scales the feed path so receiver < shooter and spindexer < receiver.
-     */
-    public Command setFeedVelocity(double shooterRotationsPerSecond) {
-        return runEnd(
-                () -> applyFeedVelocityFromShooter(shooterRotationsPerSecond),
-                this::stopFeedMotors);
-    }
-
-    /**
      * Runs feed using a live shooter-velocity supplier.
      *
      * This keeps feed scaling tied to the shooter's current speed in real time,
@@ -94,23 +82,6 @@ public class SpindexerSubsystem extends SubsystemBase {
         return runEnd(
                 () -> applyFeedVelocityFromShooter(shooterVelocitySupplier.getAsDouble()),
                 this::stopFeedMotors);
-    }
-
-    /**
-     * Runs the feed path only while a separate ready condition is true.
-     *
-     * This is useful for a single-button shot command. The robot can keep aiming
-     * and spinning up first, then begin feeding automatically once the shooter is
-     * ready.
-     */
-    public Command setFeedVelocityWhen(BooleanSupplier shouldFeed, double shooterRotationsPerSecond) {
-        return runEnd(() -> {
-            if (shouldFeed.getAsBoolean()) {
-                applyFeedVelocityFromShooter(shooterRotationsPerSecond);
-            } else {
-                stopFeedMotors();
-            }
-        }, this::stopFeedMotors);
     }
 
     /**
