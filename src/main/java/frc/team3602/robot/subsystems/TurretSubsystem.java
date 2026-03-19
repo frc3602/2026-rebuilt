@@ -40,10 +40,10 @@ public class TurretSubsystem extends SubsystemBase {
     private static final double MAX_TRAVEL_ANGLE_DEGREES = 360.0;
     private static final double STARTING_TURRET_AIM_ANGLE_DEGREES = 90.0;
     private static final double REAR_LEFT_CORNER_PRESET_AIM_DEGREES = 130.0;
-    private static final double REAR_RIGHT_CORNER_PRESET_AIM_DEGREES = -130.0;
+    private static final double REAR_RIGHT_CORNER_PRESET_AIM_DEGREES = -130; // Was -130
     private static final double RIGHT_PRESET_AIM_DEGREES = -90.0;
     private static final double REAR_PRESET_AIM_DEGREES = 180.0;
-    private static final double MOTOR_ROTATIONS_PER_TURRET_ROTATION = 30.0;
+    private static final double MOTOR_ROTATIONS_PER_TURRET_ROTATION = 90.0; //was 30.0 due to 3-1 gearbox change to a 9-1
     private static final double TURRET_DEGREES_PER_MOTOR_ROTATION = 360.0
             / MOTOR_ROTATIONS_PER_TURRET_ROTATION;
     // When the target direction is very close to the rear seam, keep the turret on
@@ -148,7 +148,7 @@ public class TurretSubsystem extends SubsystemBase {
     // Tracking was starting to oscillate once the turret began following live pose
     // updates, so we back the proportional gain down to keep the mechanism calmer
     // around the target instead of aggressively chasing every small angle change.
-    private final PIDController turretController = new PIDController(.04, 0.0, 0.0);
+    private final PIDController turretController = new PIDController(.08, 0.0, 0.0);
 
     /**
      * Checks whether the turret is pointed close enough to the requested angle for
@@ -991,8 +991,8 @@ public class TurretSubsystem extends SubsystemBase {
         var motorConfigs = new MotorOutputConfigs();
         var limitConfigs = new CurrentLimitsConfigs();
 
-        limitConfigs.StatorCurrentLimit = 30;
-        limitConfigs.SupplyCurrentLimit = 30;
+        limitConfigs.StatorCurrentLimit = 50;
+        limitConfigs.SupplyCurrentLimit = 50;
         limitConfigs.SupplyCurrentLimitEnable = true;
         limitConfigs.StatorCurrentLimitEnable = true;
 
