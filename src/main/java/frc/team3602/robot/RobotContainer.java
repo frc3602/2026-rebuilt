@@ -241,7 +241,7 @@ public class RobotContainer {
                 operatorController.leftBumper().onTrue(superStructure.stopIntake());
                 // POV buttons are turret presets for common manual aiming positions.
                 operatorController.povUp().and(trackedShotNotHeld).onTrue(turret.setAngleRear());
-                operatorController.povDown().and(trackedShotNotHeld).onTrue(turret.setAngleRight());
+                operatorController.povDown().and(trackedShotNotHeld).onTrue(turret.setAngleLeft());
                 operatorController.povLeft().and(trackedShotNotHeld).onTrue(turret.setAngleLeftCorner());
                 operatorController.povRight().and(trackedShotNotHeld).onTrue(turret.setAngleRightCorner());
 

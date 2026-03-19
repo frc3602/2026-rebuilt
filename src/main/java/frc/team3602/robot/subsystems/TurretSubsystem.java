@@ -42,8 +42,9 @@ public class TurretSubsystem extends SubsystemBase {
     private static final double REAR_LEFT_CORNER_PRESET_AIM_DEGREES = 130.0;
     private static final double REAR_RIGHT_CORNER_PRESET_AIM_DEGREES = -130.0;
     private static final double RIGHT_PRESET_AIM_DEGREES = -90.0;
+    private static final double LEFT_PRESET_AIM_DEGREES = 90.0;
     private static final double REAR_PRESET_AIM_DEGREES = 180.0;
-    private static final double MOTOR_ROTATIONS_PER_TURRET_ROTATION = 30.0;
+    private static final double MOTOR_ROTATIONS_PER_TURRET_ROTATION = 90.0;
     private static final double TURRET_DEGREES_PER_MOTOR_ROTATION = 360.0
             / MOTOR_ROTATIONS_PER_TURRET_ROTATION;
     // When the target direction is very close to the rear seam, keep the turret on
@@ -148,7 +149,7 @@ public class TurretSubsystem extends SubsystemBase {
     // Tracking was starting to oscillate once the turret began following live pose
     // updates, so we back the proportional gain down to keep the mechanism calmer
     // around the target instead of aggressively chasing every small angle change.
-    private final PIDController turretController = new PIDController(.04, 0.0, 0.0);
+    private final PIDController turretController = new PIDController(.08, 0.0, 0.0);
 
     /**
      * Checks whether the turret is pointed close enough to the requested angle for
@@ -505,36 +506,11 @@ public class TurretSubsystem extends SubsystemBase {
      * "wrap" through 0.
      */
     private double chooseLegalEquivalentTravelAngle(double currentTravelDegrees, double normalizedTargetTravelDegrees) {
-<<<<<<< HEAD
         double clampedTargetTravelDegrees = clamp(
                 normalizedTargetTravelDegrees,
                 MIN_TRAVEL_ANGLE_DEGREES,
                 MAX_TRAVEL_ANGLE_DEGREES);
         return clampedTargetTravelDegrees;
-=======
-        double bestTargetTravelDegrees = normalizedTargetTravelDegrees;
-        double bestDistanceDegrees = Double.POSITIVE_INFINITY;
-        int nearestTurnIndex = (int) Math.round((currentTravelDegrees - normalizedTargetTravelDegrees) / 360.0);
-
-        for (int turnOffset = -2; turnOffset <= 2; turnOffset++) {
-            double candidateTargetDegrees = normalizedTargetTravelDegrees + (360.0 * (nearestTurnIndex + turnOffset));
-            if (directPathCrossesFront(currentTravelDegrees, candidateTargetDegrees)) {
-                continue;
-            }
-
-            double candidateDistanceDegrees = Math.abs(candidateTargetDegrees - currentTravelDegrees);
-            if (candidateDistanceDegrees < bestDistanceDegrees) {
-                bestDistanceDegrees = candidateDistanceDegrees;
-                bestTargetTravelDegrees = candidateTargetDegrees;
-            }
-        }
-
-        if (bestDistanceDegrees < Double.POSITIVE_INFINITY) {
-            return bestTargetTravelDegrees;
-        }
-
-        return normalizedTargetTravelDegrees;
->>>>>>> parent of aae1a77 (Fix turret stall protection and auton tower-shot readiness gating)
     }
 
     public double getBallVelocity() {
@@ -720,6 +696,13 @@ public class TurretSubsystem extends SubsystemBase {
         return  runOnce(() -> {
             // This preset points directly to the robot's right side.
             setRequestedAngle(RIGHT_PRESET_AIM_DEGREES);
+        });
+    }
+
+        public Command setAngleLeft() {
+        return  runOnce(() -> {
+            // This preset points directly to the robot's right side.
+            setRequestedAngle(LEFT_PRESET_AIM_DEGREES);
         });
     }
 
