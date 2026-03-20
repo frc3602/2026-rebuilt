@@ -5,21 +5,15 @@
     "data": {
       "commands": [
         {
-          "type": "named",
-          "data": {
-            "name": "autonLowerIntake"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 3.0
-          }
-        },
-        {
           "type": "path",
           "data": {
-            "pathName": "RightTrenchToCenter"
+            "pathName": "Shoot Right Corner Blue"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "autonShootTower"
           }
         }
       ]

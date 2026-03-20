@@ -42,6 +42,7 @@ public class TurretSubsystem extends SubsystemBase {
     private static final double REAR_LEFT_CORNER_PRESET_AIM_DEGREES = 130.0;
     private static final double REAR_RIGHT_CORNER_PRESET_AIM_DEGREES = -130; // Was -130
     private static final double RIGHT_PRESET_AIM_DEGREES = -90.0;
+    private static final double LEFT_PRESET_AIM_DEGREES = 90.0;
     private static final double REAR_PRESET_AIM_DEGREES = 180.0;
     private static final double MOTOR_ROTATIONS_PER_TURRET_ROTATION = 90.0; //was 30.0 due to 3-1 gearbox change to a 9-1
     private static final double TURRET_DEGREES_PER_MOTOR_ROTATION = 360.0
@@ -733,6 +734,14 @@ public class TurretSubsystem extends SubsystemBase {
             setRequestedAngle(RIGHT_PRESET_AIM_DEGREES);
         });
     }
+
+      public Command setAngleLeft() {
+        return  runOnce(() -> {
+            // This preset points directly to the robot's left side.
+            setRequestedAngle(LEFT_PRESET_AIM_DEGREES);
+        });
+    }
+
 
     public Command setAngleRear() {
         return  runOnce(() -> {

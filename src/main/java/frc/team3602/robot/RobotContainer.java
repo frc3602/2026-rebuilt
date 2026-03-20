@@ -211,7 +211,7 @@ public class RobotContainer {
                 // Fixed fallback shot with a known turret angle and fixed shooter
                 // speed. This gives the team a simple backup when vision/tracking is
                 // not the desired strategy.
-                operatorController.leftTrigger().onTrue(superStructure.shootFailsafe())
+                operatorController.rightBumper().onTrue(superStructure.shootFailsafe())
                                 .onFalse(superStructure.stopShoot()); // FAILSAFE
                 // While the operator holds the right trigger, keep the turret pointed
                 // at the current alliance tower. Releasing the trigger returns
@@ -237,7 +237,7 @@ public class RobotContainer {
                 operatorController.leftBumper().onTrue(superStructure.stopIntake());
                 // POV buttons are turret presets for common manual aiming positions.
                 operatorController.povUp().and(trackedShotNotHeld).onTrue(turret.setAngleRear());
-                operatorController.povDown().and(trackedShotNotHeld).onTrue(turret.setAngleRight());
+                operatorController.povDown().and(trackedShotNotHeld).onTrue(turret.setAngleLeft());
                 operatorController.povLeft().and(trackedShotNotHeld).onTrue(turret.setAngleLeftCorner());
                 operatorController.povRight().and(trackedShotNotHeld).onTrue(turret.setAngleRightCorner());
 
