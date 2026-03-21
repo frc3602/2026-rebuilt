@@ -10,6 +10,7 @@ import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import frc.team3602.robot.Constants.ShooterConstants;
 import frc.team3602.robot.subsystems.ClimberSubsystem;
 import frc.team3602.robot.subsystems.CommandSwerveDrivetrain;
@@ -283,6 +284,18 @@ public class Superstructure {
     //             spindexerSubsys.setFeedVelocity(-30));
     // }
 
+    public Command autonRightCorner() {
+        return Commands.sequence(
+         turretSubsys.setAngle(-130),
+        Commands.waitSeconds(1));
+    }
+
+    public Command autonLeftCorner() {
+        return Commands.sequence(
+         turretSubsys.setAngle(130),
+         Commands.waitSeconds(1));
+    }
+
     /**
      * Starts the autonomous tower-shot shooter speed without feeding.
      *
@@ -326,7 +339,8 @@ public class Superstructure {
     public Command autonStopShooter() {
         return Commands.sequence(
                 spindexerSubsys.stopSpindexer(),
-                shooterSubsys.stopShooter());
+                shooterSubsys.stopShooter(),
+                this.dropPivot());
     }
 
     /**
@@ -336,13 +350,39 @@ public class Superstructure {
      * tower, and ends once the flywheel is ready or the timeout expires. It is a
      * good "next step after driving" block for simple autonomous routines.
      */
-    public Command autonPrepareTowerShot() {
+    public Command autonPrepareTowerShotRight() {
         return Commands.sequence(
+                turretSubsys.setAngle(-130),
                 autonStartShooter(),
                 Commands.deadline(
-                        autonWaitForShooterReady(),
-                        turretSubsys.trackAllianceTower()));
+                        autonWaitForShooterReady()));
     }
+
+    public Command autonPrepareTowerShotLeft() {
+        return Commands.sequence(
+                turretSubsys.setAngle(130),
+                autonStartShooter(),
+                Commands.deadline(
+                        autonWaitForShooterReady()));
+    }
+
+        public Command autonShootRightCorner() {
+        return Commands.sequence(
+                turretSubsys.setAngleRightCorner(),
+                shooterSubsys.setShootVelocity(55),
+                autonWaitForShooterReady(),
+                autonFireShot(),
+                autonStopShooter());
+    }
+
+    public Command autonShootCenterDumb() {
+        return Commands.sequence(
+                shooterSubsys.setShootVelocity(-37.5),
+                autonWaitForShooterReady(),
+                autonFireShot(),
+                autonStopShooter());
+    }
+
 
     /**
      * Runs the full simple tower shot as one reusable macro.
@@ -350,9 +390,15 @@ public class Superstructure {
      * This keeps the original one-command auto behavior available even after we
      * split the sequence into smaller named pieces for PathPlanner.
      */
-    public Command autonShootTower() {
+    public Command autonShootTowerRight() {
         return Commands.sequence(
-                autonPrepareTowerShot(),
+                autonPrepareTowerShotRight(),
+                autonFireShot(),
+                autonStopShooter());
+    }
+    public Command autonShootTowerLeft() {
+        return Commands.sequence(
+                autonPrepareTowerShotLeft(),
                 autonFireShot(),
                 autonStopShooter());
     }

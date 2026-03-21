@@ -18,7 +18,7 @@ public final class Constants {
         public final static double kShooterSpeed = .75;
 
         //Failsafe Speed
-        public final static double kShooterFailsafeSpeed = -41.5;
+        public final static double kShooterFailsafeSpeed = -37.5;
     }
 
     public final class ClimberConstants {

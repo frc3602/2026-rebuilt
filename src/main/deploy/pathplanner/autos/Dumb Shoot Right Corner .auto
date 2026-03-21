@@ -7,13 +7,13 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Shoot Right Corner Red"
+            "pathName": "Dumb Shoot Right Corner Blue"
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "autonShootTowerRight"
+            "name": "autonShootTower"
           }
         }
       ]

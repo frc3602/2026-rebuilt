@@ -16,12 +16,12 @@
     },
     {
       "anchor": {
-        "x": 0.4162339514978599,
-        "y": 0.4574607703281026
+        "x": 0.8282289156626503,
+        "y": 0.4725662650602419
       },
       "prevControl": {
-        "x": -0.5837660485021401,
-        "y": 0.4574607703281026
+        "x": -0.17177108433734967,
+        "y": 0.4725662650602419
       },
       "nextControl": null,
       "isLocked": false,
@@ -42,7 +42,7 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 0.0
+    "rotation": 180.0
   },
   "reversed": false,
   "folder": "Right Auton Paths",

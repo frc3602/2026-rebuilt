@@ -45,6 +45,8 @@ import frc.team3602.robot.subsystems.TurretSubsystem;
 public class RobotContainer {
         private static final double DRIVER_SHOT_READY_RUMBLE = 1.0;
 
+        private double polarityValue = 1.0;
+
         private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired
                                                                                             // top // speed
         private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per
@@ -105,8 +107,12 @@ public class RobotContainer {
         public RobotContainer() {
                 // Register the named commands that PathPlanner autos can call by
                 // name from the GUI.
-                NamedCommands.registerCommand("autonShootTower", superStructure.autonShootTower());
+                NamedCommands.registerCommand("autonShootTowerLeft", superStructure.autonShootTowerLeft());
+                NamedCommands.registerCommand("autonShootTowerRight", superStructure.autonShootTowerRight());
                 NamedCommands.registerCommand("autonLowerIntake", superStructure.autonLowerIntake());
+                NamedCommands.registerCommand("autonLeftCorner", superStructure.autonLeftCorner());
+                NamedCommands.registerCommand("autonRightCorner", superStructure.autonShootRightCorner());
+                NamedCommands.registerCommand("autonShootCenterDumb", superStructure.autonShootCenterDumb());
                 // Convenience macro for the common "start collecting now" state:
                 // drop the intake path and start the roller together.
                 NamedCommands.registerCommand("autonRunIntake", superStructure.autonRunIntake());
@@ -125,7 +131,8 @@ public class RobotContainer {
                 // Prepare the basic autonomous tower shot by spinning up the shooter
                 // while
                 // the turret tracks the alliance tower.
-                NamedCommands.registerCommand("autonPrepareTowerShot", superStructure.autonPrepareTowerShot());
+                NamedCommands.registerCommand("autonPrepareTowerShotLeft", superStructure.autonPrepareTowerShotLeft());
+                NamedCommands.registerCommand("autonPrepareTowerShotRight", superStructure.autonPrepareTowerShotRight());
                 // Feed the fuel for the current autonomous shot, then stop the
                 // spindexer so the command finishes cleanly.
                 NamedCommands.registerCommand("autonFireShot", superStructure.autonFireShot());
@@ -172,13 +179,13 @@ public class RobotContainer {
                 // and Y is defined as to the left according to WPILib convention.
                 drivetrain.setDefaultCommand(
                                 // Drivetrain will execute this command periodically
-                                drivetrain.applyRequest(() -> drive.withVelocityX(polarityChooser.getSelected()
+                                drivetrain.applyRequest(() -> drive.withVelocityX(polarityChooser.getSelected() *polarityValue
                                                 * -driverController.getLeftY() * MaxSpeed * drivetrain.turbo) // Drive
                                                                                                               // forward
                                                                                                               // with
                                                 // negative Y
                                                 // (forward)
-                                                .withVelocityY(polarityChooser.getSelected()
+                                                .withVelocityY(polarityChooser.getSelected() * polarityValue
                                                                 * -driverController.getLeftX() * MaxSpeed
                                                                 * drivetrain.turbo) // Drive left with negative X (left)
                                                 .withRotationalRate(-driverController.getRightX() * MaxAngularRate) // Drive
@@ -228,13 +235,14 @@ public class RobotContainer {
                 // not fight each other.
 
                 //Corner shot likes -53.0, -90 is max power for a test
-                operatorController.a().and(trackedShotNotHeld).onTrue(shooter.setShootVelocity(-53.0))
+                operatorController.a().and(trackedShotNotHeld).onTrue(shooter.setShootVelocity(-51.0))
                                 .onFalse(shooter.stopShooter());
                 operatorController.x().and(trackedShotNotHeld).onTrue(shooter.setShootVelocity(-90))
                                 .onFalse(shooter.stopShooter());
                                 //Feed
                 // Left bumper raises/stows the intake path through the superstructure.
                 operatorController.leftBumper().onTrue(superStructure.stopIntake());
+                operatorController.leftTrigger().whileTrue(superStructure.reverseShootSpindexer()).onFalse(superStructure.stopShoot());
                 // POV buttons are turret presets for common manual aiming positions.
                 operatorController.povUp().and(trackedShotNotHeld).onTrue(turret.setAngleRear());
                 operatorController.povDown().and(trackedShotNotHeld).onTrue(turret.setAngleLeft());
@@ -262,6 +270,8 @@ public class RobotContainer {
                 // The right trigger temporarily removes the normal speed cap for a
                 // "turbo" driving mode while the driver holds it.
                 driverController.rightTrigger().onTrue(drivetrain.setTurbo()).onFalse(drivetrain.setNormalSpeed());
+
+                driverController.a().onTrue(changePolarity());
 
                 // ---------------- Optional Climber Controls ----------------
                 if (ClimberConstants.kClimberEnabled) {
@@ -306,6 +316,12 @@ public class RobotContainer {
         private void configAutonomous() {
                 autoChooser = AutoBuilder.buildAutoChooser();
                 SmartDashboard.putData(autoChooser);
+        }
+
+        public Command changePolarity(){
+                return Commands.runOnce(() -> {
+                        polarityValue = polarityValue * -1.0;
+                });
         }
 
         /**

@@ -7,19 +7,19 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Shoot Right Corner Red"
+            "pathName": "Dumb Shoot Left Corner "
           }
         },
         {
           "type": "named",
           "data": {
-            "name": "autonShootTowerRight"
+            "name": "autonShootTower"
           }
         }
       ]
     }
   },
   "resetOdom": true,
-  "folder": "Right Autons",
+  "folder": "Left Autons",
   "choreoAuto": false
 }
